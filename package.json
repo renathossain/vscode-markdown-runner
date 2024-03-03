@@ -1,0 +1,47 @@
+{
+  "name": "markdown-python-code-runner",
+  "displayName": "Markdown Python Code Runner",
+  "description": "This extension enables users to effortlessly run Python code blocks directly within Markdown documents, enhancing the document's interactivity and utility. A distinctive feature allows users to toggle automatic pasting of results at the bottom of the code block, promoting clarity and organization within the Markdown file. Additionally, users can flexibly select Python environments, including virtual environments (venv), ensuring compatibility with various project setups and dependencies. With its intuitive interface and adaptable functionality, this Markdown Python code runner extension empowers users to effortlessly integrate code execution into their Markdown workflow, enhancing productivity.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.87.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "markdown-python-code-runner.helloWorld",
+        "title": "Hello World"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.87.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "18.x",
+    "@typescript-eslint/eslint-plugin": "^7.0.2",
+    "@typescript-eslint/parser": "^7.0.2",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3",
+    "ts-loader": "^9.5.1",
+    "webpack": "^5.90.3",
+    "webpack-cli": "^5.1.4",
+    "@vscode/test-cli": "^0.0.6",
+    "@vscode/test-electron": "^2.3.9"
+  }
+}
