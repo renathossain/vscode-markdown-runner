@@ -23,6 +23,8 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     }
 }
 
+let codeLensProvider: vscode.Disposable | undefined;
+
 function runCommandInTerminal(command: string) {
     const terminal = vscode.window.activeTerminal || vscode.window.createTerminal();
     terminal.show();
@@ -79,10 +81,12 @@ function updatePythonCodeBlocks(editor: vscode.TextEditor | undefined, context: 
     const pythonCodeBlocks = extractPythonCodeBlocks(editor.document.getText());
     const buttons = generateButtons(editor);
 
-    let codeLensProvider = new ButtonCodeLensProvider(buttons);
-    context.subscriptions.push(
-        vscode.languages.registerCodeLensProvider({ scheme: 'file' }, codeLensProvider)
-    );
+    if (codeLensProvider) {
+        codeLensProvider.dispose();
+    }
+
+    codeLensProvider = vscode.languages.registerCodeLensProvider({ scheme: 'file' }, new ButtonCodeLensProvider(buttons));
+    context.subscriptions.push(codeLensProvider);
 
     return pythonCodeBlocks;
 }
