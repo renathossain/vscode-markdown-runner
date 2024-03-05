@@ -45,6 +45,15 @@ function executePythonCodeBlock(code: string) {
 	runCommandInTerminal(`python -c "${code}"`);
 }
 
+function runPythonCodeBlock(index: number) {
+    if (index < 0 || index >= pythonCodeBlocks.length) {
+        vscode.window.showErrorMessage('Invalid index for Python code block.');
+        return;
+    }
+
+    executePythonCodeBlock(pythonCodeBlocks[index]);
+}
+
 function extractPythonCodeBlocks(text: string): string[] {
     const codeBlocks: string[] = [];
 
@@ -72,15 +81,6 @@ function updatePythonCodeBlocks(editor: vscode.TextEditor | undefined, context: 
     context.subscriptions.push(
         vscode.languages.registerCodeLensProvider({ scheme: 'file' }, codeLensProvider)
     );
-}
-
-function runPythonCodeBlock(index: number) {
-    if (index < 0 || index >= pythonCodeBlocks.length) {
-        vscode.window.showErrorMessage('Invalid index for Python code block.');
-        return;
-    }
-
-    executePythonCodeBlock(pythonCodeBlocks[index]);
 }
 
 export function activate(context: vscode.ExtensionContext) {
