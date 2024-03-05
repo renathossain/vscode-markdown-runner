@@ -14,6 +14,9 @@ function executePythonCodeBlock(code: string) {
 
 function extractPythonCodeBlocks(text: string): string[] {
     const codeBlocks: string[] = [];
+
+	// Currently, there is a bug where headers such as `python23` are accepted
+	// Think of it as a feature or fix the regex
     const regex = /```python\s*([\s\S]+?)\s*```/g;
     let match;
 
@@ -33,13 +36,13 @@ function updatePythonCodeBlocks(editor: vscode.TextEditor | undefined) {
     pythonCodeBlocks = extractPythonCodeBlocks(editor.document.getText());
 }
 
-function runFirstPythonCodeBlock() {
-    if (pythonCodeBlocks.length === 0) {
-        vscode.window.showInformationMessage('No Python code blocks found in the active document.');
+function runPythonCodeBlock(index: number) {
+    if (index < 0 || index >= pythonCodeBlocks.length) {
+        vscode.window.showErrorMessage('Invalid index for Python code block.');
         return;
     }
 
-	executePythonCodeBlock(pythonCodeBlocks[0]);
+    executePythonCodeBlock(pythonCodeBlocks[index]);
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -50,7 +53,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('markdown.run.python', () => {
-            runFirstPythonCodeBlock();
+            runPythonCodeBlock(0);
         })
     );
 
