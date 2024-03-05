@@ -3,15 +3,25 @@ import * as vscode from 'vscode';
 let pythonCodeBlocks: string[] = [];
 
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
+    private buttons: [number, string, number][] = [];
+
+    constructor(buttons: [number, string, number][]) {
+        this.buttons = buttons;
+    }
+
     provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
-        const line = new vscode.Range(0, 0, 0, 0);
-        const command: vscode.Command = {
-            title: 'Test Button',
-            command: 'markdown.run.python',
-            arguments: [0]
-        };
-        const codeLens = new vscode.CodeLens(line, command);
-        return [codeLens];
+        const codeLenses: vscode.CodeLens[] = [];
+        for (const [line, title, arg] of this.buttons) {
+            const range = document.lineAt(line).range;
+            const command: vscode.Command = {
+                title: title,
+                command: 'markdown.run.python',
+                arguments: [arg]
+            };
+            const codeLens = new vscode.CodeLens(range, command);
+            codeLenses.push(codeLens);
+        }
+        return codeLenses;
     }
 
     resolveCodeLens(codeLens: vscode.CodeLens): vscode.CodeLens {
@@ -84,7 +94,13 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    let codeLensProvider = new ButtonCodeLensProvider();
+    let buttons: [number, string, number][] = [
+        [0, 'Test Button 1', 0],
+        [5, 'Test Button 2', 1],
+        // Add more tuples as needed
+    ];
+    
+    let codeLensProvider = new ButtonCodeLensProvider(buttons);
     context.subscriptions.push(
         vscode.languages.registerCodeLensProvider({ scheme: 'file' }, codeLensProvider)
     );
