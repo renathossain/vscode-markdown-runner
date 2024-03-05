@@ -57,31 +57,34 @@ function extractPythonCodeBlocks(text: string): string[] {
     return codeBlocks;
 }
 
-function generateButtons(editor: vscode.TextEditor, pythonCodeBlocks: string[]): [number, string, number][] {
+function generateButtons(editor: vscode.TextEditor): [number, string, number][] {
     const buttons: [number, string, number][] = [];
     const lines = editor.document.getText().split('\n');
-    pythonCodeBlocks.forEach((codeBlock, index) => {
-        const lineNumber = lines.findIndex(line => line.includes(codeBlock));
-        if (lineNumber !== -1) {
-            buttons.push([lineNumber - 1, 'Run Python Block', index]);
+
+    lines.forEach((line, index) => {
+        if (line.trim().startsWith("```python")) {
+            buttons.push([index, 'Run Python Block', buttons.length]);
         }
     });
+
     return buttons;
 }
 
-function updatePythonCodeBlocks(editor: vscode.TextEditor | undefined, context: vscode.ExtensionContext) {
+function updatePythonCodeBlocks(editor: vscode.TextEditor | undefined, context: vscode.ExtensionContext): string[] {
     if (!editor) {
         vscode.window.showErrorMessage('No active text editor!');
-        return;
+        return [];
     }
 
     const pythonCodeBlocks = extractPythonCodeBlocks(editor.document.getText());
-    const buttons = generateButtons(editor, pythonCodeBlocks);
+    const buttons = generateButtons(editor);
 
     let codeLensProvider = new ButtonCodeLensProvider(buttons);
     context.subscriptions.push(
         vscode.languages.registerCodeLensProvider({ scheme: 'file' }, codeLensProvider)
     );
+
+    return pythonCodeBlocks;
 }
 
 export function activate(context: vscode.ExtensionContext) {
