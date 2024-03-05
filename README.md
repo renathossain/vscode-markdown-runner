@@ -7,9 +7,10 @@ Enables seamless execution of Python code blocks within Markdown files in VS Cod
 - Executes Python code within the shell.
 - Toggle automatic pasting of results at the bottom of the code block within the settings.
 - Select Python environments within the settings.
-- Enable memory sharing, persistent execution, like in a Jupytrer notebook within the settings.
+- Enable memory sharing between runs, persistent execution, like in a Jupytrer notebook within the settings.
 - Model keyboard shortcuts after jupyter notebook.
 - If cursor is within a code block, it can execute that particular code block with a keyboard shortcut, or error message will appear.
+- Give option to have automatically execute import statements and other code in a prereq secion, that may target all files, a specific file, or just files within a folder (shallow/recursive)
 
 If these features are enabled, it will be easier and more practical more most people over a Jupyter notebook.
 
