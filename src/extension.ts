@@ -2,11 +2,7 @@ import * as vscode from 'vscode';
 
 let pythonCodeBlocks: string[] = [];
 
-let buttons: [number, string, number][] = [
-    [0, 'Test Button 1', 0],
-    [5, 'Test Button 2', 1],
-    // Add more tuples as needed
-];
+let buttons: [number, string, number][] = [];
 
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     private buttons: [number, string, number][] = [];
@@ -69,6 +65,18 @@ function extractPythonCodeBlocks(text: string): string[] {
     return codeBlocks;
 }
 
+function generateButtons(editor: vscode.TextEditor): [number, string, number][] {
+    const buttons: [number, string, number][] = [];
+    const lines = editor.document.getText().split('\n');
+    pythonCodeBlocks.forEach((codeBlock, index) => {
+        const lineNumber = lines.findIndex(line => line.includes(codeBlock));
+        if (lineNumber !== -1) {
+            buttons.push([lineNumber - 1, 'Run Python Block', index]);
+        }
+    });
+    return buttons;
+}
+
 function updatePythonCodeBlocks(editor: vscode.TextEditor | undefined, context: vscode.ExtensionContext) {
     if (!editor) {
         vscode.window.showErrorMessage('No active text editor!');
@@ -76,6 +84,7 @@ function updatePythonCodeBlocks(editor: vscode.TextEditor | undefined, context: 
     }
 
     pythonCodeBlocks = extractPythonCodeBlocks(editor.document.getText());
+    buttons = generateButtons(editor);
 
     let codeLensProvider = new ButtonCodeLensProvider(buttons);
     context.subscriptions.push(
