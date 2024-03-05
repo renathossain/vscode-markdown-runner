@@ -1,15 +1,7 @@
 import * as vscode from 'vscode';
 
-let pythonCodeBlocks: string[] = [];
-
-let buttons: [number, string, number][] = [];
-
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
-    private buttons: [number, string, number][] = [];
-
-    constructor(buttons: [number, string, number][]) {
-        this.buttons = buttons;
-    }
+    constructor(private buttons: [number, string, number][]) {}
 
     provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
         const codeLenses: vscode.CodeLens[] = [];
@@ -41,7 +33,7 @@ function executePythonCodeBlock(code: string) {
 	runCommandInTerminal(`python -c "${code}"`);
 }
 
-function runPythonCodeBlock(index: number) {
+function runPythonCodeBlock(index: number, pythonCodeBlocks: string[]) {
     if (index < 0 || index >= pythonCodeBlocks.length) {
         vscode.window.showErrorMessage('Invalid index for Python code block.');
         return;
@@ -65,7 +57,7 @@ function extractPythonCodeBlocks(text: string): string[] {
     return codeBlocks;
 }
 
-function generateButtons(editor: vscode.TextEditor): [number, string, number][] {
+function generateButtons(editor: vscode.TextEditor, pythonCodeBlocks: string[]): [number, string, number][] {
     const buttons: [number, string, number][] = [];
     const lines = editor.document.getText().split('\n');
     pythonCodeBlocks.forEach((codeBlock, index) => {
@@ -83,8 +75,8 @@ function updatePythonCodeBlocks(editor: vscode.TextEditor | undefined, context: 
         return;
     }
 
-    pythonCodeBlocks = extractPythonCodeBlocks(editor.document.getText());
-    buttons = generateButtons(editor);
+    const pythonCodeBlocks = extractPythonCodeBlocks(editor.document.getText());
+    const buttons = generateButtons(editor, pythonCodeBlocks);
 
     let codeLensProvider = new ButtonCodeLensProvider(buttons);
     context.subscriptions.push(
@@ -96,7 +88,11 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('markdown.run.python', (arg) => {
             if (typeof arg === 'number') {
-                runPythonCodeBlock(arg);
+                const editor = vscode.window.activeTextEditor;
+                if (editor) {
+                    const pythonCodeBlocks = extractPythonCodeBlocks(editor.document.getText());
+                    runPythonCodeBlock(arg, pythonCodeBlocks);
+                }
             } else {
                 vscode.window.showErrorMessage('Do not use this command.');
             }
