@@ -1,7 +1,7 @@
 {
   "name": "markdown-python-code-runner",
   "displayName": "Markdown Python Code Runner",
-  "description": "This extension enables users to effortlessly run Python code blocks directly within Markdown documents, enhancing the document's interactivity and utility. A distinctive feature allows users to toggle automatic pasting of results at the bottom of the code block, promoting clarity and organization within the Markdown file. Additionally, users can flexibly select Python environments, including virtual environments (venv), ensuring compatibility with various project setups and dependencies. With its intuitive interface and adaptable functionality, this Markdown Python code runner extension empowers users to effortlessly integrate code execution into their Markdown workflow, enhancing productivity.",
+  "description": "Enables seamless execution of Python code blocks within Markdown files in VS Code",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.87.0"
@@ -9,13 +9,19 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "repository": {
+		"type": "git",
+		"url": "https://github.com/renathossain/markdown-python-code-runner.git"
+	},
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "markdown-python-code-runner.helloWorld",
-        "title": "Hello World"
+        "command": "markdown.run.python",
+        "title": "Run Markdown Python Code Block"
       }
     ]
   },
