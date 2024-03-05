@@ -11,6 +11,7 @@ Enables seamless execution of Python code blocks within Markdown files in VS Cod
 - Model keyboard shortcuts after jupyter notebook.
 - If cursor is within a code block, it can execute that particular code block with a keyboard shortcut, or error message will appear.
 - Give option to have automatically execute import statements and other code in a prereq secion, that may target all files, a specific file, or just files within a folder (shallow/recursive)
+- theme it to look like obsidian, image support markdown, obsidian competitor
 
 If these features are enabled, it will be easier and more practical more most people over a Jupyter notebook.
 
