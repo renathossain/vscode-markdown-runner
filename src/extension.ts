@@ -2,6 +2,12 @@ import * as vscode from 'vscode';
 
 let pythonCodeBlocks: string[] = [];
 
+let buttons: [number, string, number][] = [
+    [0, 'Test Button 1', 0],
+    [5, 'Test Button 2', 1],
+    // Add more tuples as needed
+];
+
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     private buttons: [number, string, number][] = [];
 
@@ -54,13 +60,18 @@ function extractPythonCodeBlocks(text: string): string[] {
     return codeBlocks;
 }
 
-function updatePythonCodeBlocks(editor: vscode.TextEditor | undefined) {
+function updatePythonCodeBlocks(editor: vscode.TextEditor | undefined, context: vscode.ExtensionContext) {
     if (!editor) {
         vscode.window.showErrorMessage('No active text editor!');
         return;
     }
 
     pythonCodeBlocks = extractPythonCodeBlocks(editor.document.getText());
+
+    let codeLensProvider = new ButtonCodeLensProvider(buttons);
+    context.subscriptions.push(
+        vscode.languages.registerCodeLensProvider({ scheme: 'file' }, codeLensProvider)
+    );
 }
 
 function runPythonCodeBlock(index: number) {
@@ -78,32 +89,21 @@ export function activate(context: vscode.ExtensionContext) {
             if (typeof arg === 'number') {
                 runPythonCodeBlock(arg);
             } else {
-                vscode.window.showErrorMessage('Please provide a valid integer argument.');
+                vscode.window.showErrorMessage('Do not use this command.');
             }
         })
     );    
 
     const editor = vscode.window.activeTextEditor;
     if (editor && editor.document.languageId === 'markdown') {
-        updatePythonCodeBlocks(editor);
+        updatePythonCodeBlocks(editor, context);
     }
 
     vscode.workspace.onDidChangeTextDocument((event) => {
         if (event.document.languageId === 'markdown') {
-            updatePythonCodeBlocks(vscode.window.activeTextEditor);
+            updatePythonCodeBlocks(vscode.window.activeTextEditor, context);
         }
     });
-
-    let buttons: [number, string, number][] = [
-        [0, 'Test Button 1', 0],
-        [5, 'Test Button 2', 1],
-        // Add more tuples as needed
-    ];
-    
-    let codeLensProvider = new ButtonCodeLensProvider(buttons);
-    context.subscriptions.push(
-        vscode.languages.registerCodeLensProvider({ scheme: 'file' }, codeLensProvider)
-    );
 }
 
 export function deactivate() {}
