@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 
+let pythonCodeBlocks: string[] = [];
+
 function runCommandInTerminal(command: string) {
     const terminal = vscode.window.activeTerminal || vscode.window.createTerminal();
     terminal.show();
@@ -22,33 +24,41 @@ function extractPythonCodeBlocks(text: string): string[] {
     return codeBlocks;
 }
 
-function executePythonCodeBlocks(editor: vscode.TextEditor | undefined) {
+function updatePythonCodeBlocks(editor: vscode.TextEditor | undefined) {
     if (!editor) {
         vscode.window.showErrorMessage('No active text editor!');
         return;
     }
 
-    const pythonCodeBlocks = extractPythonCodeBlocks(editor.document.getText());
-    
+    pythonCodeBlocks = extractPythonCodeBlocks(editor.document.getText());
+}
+
+function runFirstPythonCodeBlock() {
     if (pythonCodeBlocks.length === 0) {
         vscode.window.showInformationMessage('No Python code blocks found in the active document.');
         return;
     }
 
-    pythonCodeBlocks.forEach((block, index) => {
-        console.log(`Executing Python Code Block ${index + 1}:`);
-        console.log(block);
-        executePythonCodeBlock(block);
-    });
+	executePythonCodeBlock(pythonCodeBlocks[0]);
 }
 
 export function activate(context: vscode.ExtensionContext) {
-	context.subscriptions.push(
-		vscode.commands.registerCommand('markdown.run.python', () => {
-			const editor = vscode.window.activeTextEditor;
-			executePythonCodeBlocks(editor);
-		})
-	);
+    const editor = vscode.window.activeTextEditor;
+    if (editor && editor.document.languageId === 'markdown') {
+        updatePythonCodeBlocks(editor);
+    }
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('markdown.run.python', () => {
+            runFirstPythonCodeBlock();
+        })
+    );
+
+    vscode.workspace.onDidChangeTextDocument((event) => {
+        if (event.document.languageId === 'markdown') {
+            updatePythonCodeBlocks(vscode.window.activeTextEditor);
+        }
+    });
 }
 
 export function deactivate() {}
