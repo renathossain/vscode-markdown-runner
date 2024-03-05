@@ -1,7 +1,23 @@
 import * as vscode from 'vscode';
-import { ButtonCodeLensProvider } from './button';
 
 let pythonCodeBlocks: string[] = [];
+
+export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
+    provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
+        const line = new vscode.Range(0, 0, 0, 0);
+        const command: vscode.Command = {
+            title: 'Test Button',
+            command: 'markdown.run.python',
+            arguments: [0]
+        };
+        const codeLens = new vscode.CodeLens(line, command);
+        return [codeLens];
+    }
+
+    resolveCodeLens(codeLens: vscode.CodeLens): vscode.CodeLens {
+        return codeLens;
+    }
+}
 
 function runCommandInTerminal(command: string) {
     const terminal = vscode.window.activeTerminal || vscode.window.createTerminal();
@@ -48,10 +64,14 @@ function runPythonCodeBlock(index: number) {
 
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.run.python', () => {
-            runPythonCodeBlock(0);
+        vscode.commands.registerCommand('markdown.run.python', (arg) => {
+            if (typeof arg === 'number') {
+                runPythonCodeBlock(arg);
+            } else {
+                vscode.window.showErrorMessage('Please provide a valid integer argument.');
+            }
         })
-    );
+    );    
 
     const editor = vscode.window.activeTextEditor;
     if (editor && editor.document.languageId === 'markdown') {
