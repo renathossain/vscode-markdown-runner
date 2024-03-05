@@ -8,6 +8,8 @@ Enables seamless execution of Python code blocks within Markdown files in VS Cod
 - Toggle automatic pasting of results at the bottom of the code block within the settings.
 - Select Python environments within the settings.
 - Enable memory sharing, persistent execution, like in a Jupytrer notebook within the settings.
+- Model keyboard shortcuts after jupyter notebook.
+- If cursor is within a code block, it can execute that particular code block with a keyboard shortcut, or error message will appear.
 
 If these features are enabled, it will be easier and more practical more most people over a Jupyter notebook.
 
