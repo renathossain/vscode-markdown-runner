@@ -1,4 +1,9 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
+const tempFilePaths: string[] = [];
 
 function generateButtons(document: vscode.TextDocument): [number, string, number][] {
     const buttons: [number, string, number][] = [];
@@ -44,7 +49,18 @@ function runCommandInTerminal(command: string) {
 }
 
 function executePythonCodeBlock(code: string) {
-	runCommandInTerminal(`python -c "${code}"`);
+    // Create a unique filename
+    const tempFileName = `temp_${Date.now()}.py`;
+    const tempFilePath = path.join(os.tmpdir(), tempFileName);
+
+    // Write the code to the temporary file
+    fs.writeFileSync(tempFilePath, code);
+
+    // Push the file path to the global variable
+    tempFilePaths.push(tempFilePath);
+
+    // Execute the Python file using runCommandInTerminal
+    runCommandInTerminal(`python "${tempFilePath}"`);
 }
 
 function runPythonCodeBlock(index: number, pythonCodeBlocks: string[]) {
@@ -95,4 +111,13 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 }
 
-export function deactivate() {}
+export function deactivate() {
+    // Delete temporary files when the extension is deactivated or VS Code is closed
+    tempFilePaths.forEach(filePath => {
+        try {
+            fs.unlinkSync(filePath);
+        } catch (error) {
+            console.error(`Error deleting file ${filePath}:`, error);
+        }
+    });
+}
