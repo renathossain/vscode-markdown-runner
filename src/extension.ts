@@ -1,6 +1,41 @@
 import * as vscode from 'vscode';
 
-let pythonCodeBlocks: string[] = [];
+function generateButtons(document: vscode.TextDocument): [number, string, number][] {
+    const buttons: [number, string, number][] = [];
+    const lines = document.getText().split('\n');
+
+    lines.forEach((line, index) => {
+        if (line.trim().startsWith("```python")) {
+            buttons.push([index, 'Run Python Block', buttons.length]);
+        }
+    });
+
+    return buttons;
+}
+
+export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
+    onDidChangeCodeLenses?: vscode.Event<void>;
+
+    provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens[]> {
+        const codeLenses: vscode.CodeLens[] = [];
+        const buttons = generateButtons(document);
+        for (const [line, title, arg] of buttons) {
+            const range = document.lineAt(line).range;
+            const command: vscode.Command = {
+                title: title,
+                command: 'markdown.run.python',
+                arguments: [arg]
+            };
+            const codeLens = new vscode.CodeLens(range, command);
+            codeLenses.push(codeLens);
+        }
+        return codeLenses;
+    }
+
+    resolveCodeLens?(codeLens: vscode.CodeLens, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens> {
+        return null;
+    }
+}
 
 function runCommandInTerminal(command: string) {
     const terminal = vscode.window.activeTerminal || vscode.window.createTerminal();
@@ -10,6 +45,15 @@ function runCommandInTerminal(command: string) {
 
 function executePythonCodeBlock(code: string) {
 	runCommandInTerminal(`python -c "${code}"`);
+}
+
+function runPythonCodeBlock(index: number, pythonCodeBlocks: string[]) {
+    if (index < 0 || index >= pythonCodeBlocks.length) {
+        vscode.window.showErrorMessage('Invalid index for Python code block.');
+        return;
+    }
+
+    executePythonCodeBlock(pythonCodeBlocks[index]);
 }
 
 function extractPythonCodeBlocks(text: string): string[] {
@@ -27,41 +71,28 @@ function extractPythonCodeBlocks(text: string): string[] {
     return codeBlocks;
 }
 
-function updatePythonCodeBlocks(editor: vscode.TextEditor | undefined) {
-    if (!editor) {
-        vscode.window.showErrorMessage('No active text editor!');
-        return;
-    }
-
-    pythonCodeBlocks = extractPythonCodeBlocks(editor.document.getText());
-}
-
-function runPythonCodeBlock(index: number) {
-    if (index < 0 || index >= pythonCodeBlocks.length) {
-        vscode.window.showErrorMessage('Invalid index for Python code block.');
-        return;
-    }
-
-    executePythonCodeBlock(pythonCodeBlocks[index]);
-}
-
 export function activate(context: vscode.ExtensionContext) {
-    const editor = vscode.window.activeTextEditor;
-    if (editor && editor.document.languageId === 'markdown') {
-        updatePythonCodeBlocks(editor);
-    }
-
     context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.run.python', () => {
-            runPythonCodeBlock(0);
+        vscode.commands.registerCommand('markdown.run.python', (arg) => {
+            if (typeof arg === 'number') {
+                const editor = vscode.window.activeTextEditor;
+                if (editor) {
+                    const pythonCodeBlocks = extractPythonCodeBlocks(editor.document.getText());
+                    runPythonCodeBlock(arg, pythonCodeBlocks);
+                } else {
+                    vscode.window.showErrorMessage('No active text editor!');
+                }
+            } else {
+                vscode.window.showErrorMessage('Do not use this command.');
+            }
         })
     );
 
-    vscode.workspace.onDidChangeTextDocument((event) => {
-        if (event.document.languageId === 'markdown') {
-            updatePythonCodeBlocks(vscode.window.activeTextEditor);
-        }
-    });
+    context.subscriptions.push(
+		vscode.languages.registerCodeLensProvider({ language: 'markdown', scheme: 'file' },
+            new ButtonCodeLensProvider()
+        )
+	);
 }
 
 export function deactivate() {}
