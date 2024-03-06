@@ -1,11 +1,25 @@
 import * as vscode from 'vscode';
 
-export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
-    constructor(private buttons: [number, string, number][]) {}
+function generateButtons(document: vscode.TextDocument): [number, string, number][] {
+    const buttons: [number, string, number][] = [];
+    const lines = document.getText().split('\n');
 
-    provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
+    lines.forEach((line, index) => {
+        if (line.trim().startsWith("```python")) {
+            buttons.push([index, 'Run Python Block', buttons.length]);
+        }
+    });
+
+    return buttons;
+}
+
+export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
+    onDidChangeCodeLenses?: vscode.Event<void>;
+
+    provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens[]> {
         const codeLenses: vscode.CodeLens[] = [];
-        for (const [line, title, arg] of this.buttons) {
+        const buttons = generateButtons(document);
+        for (const [line, title, arg] of buttons) {
             const range = document.lineAt(line).range;
             const command: vscode.Command = {
                 title: title,
@@ -18,12 +32,10 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         return codeLenses;
     }
 
-    resolveCodeLens(codeLens: vscode.CodeLens): vscode.CodeLens {
-        return codeLens;
+    resolveCodeLens?(codeLens: vscode.CodeLens, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens> {
+        return null;
     }
 }
-
-let codeLensProvider: vscode.Disposable | undefined;
 
 function runCommandInTerminal(command: string) {
     const terminal = vscode.window.activeTerminal || vscode.window.createTerminal();
@@ -59,38 +71,6 @@ function extractPythonCodeBlocks(text: string): string[] {
     return codeBlocks;
 }
 
-function generateButtons(editor: vscode.TextEditor): [number, string, number][] {
-    const buttons: [number, string, number][] = [];
-    const lines = editor.document.getText().split('\n');
-
-    lines.forEach((line, index) => {
-        if (line.trim().startsWith("```python")) {
-            buttons.push([index, 'Run Python Block', buttons.length]);
-        }
-    });
-
-    return buttons;
-}
-
-function updatePythonCodeBlocks(editor: vscode.TextEditor | undefined, context: vscode.ExtensionContext): string[] {
-    if (!editor) {
-        vscode.window.showErrorMessage('No active text editor!');
-        return [];
-    }
-
-    const pythonCodeBlocks = extractPythonCodeBlocks(editor.document.getText());
-    const buttons = generateButtons(editor);
-
-    if (codeLensProvider) {
-        codeLensProvider.dispose();
-    }
-
-    codeLensProvider = vscode.languages.registerCodeLensProvider({ scheme: 'file' }, new ButtonCodeLensProvider(buttons));
-    context.subscriptions.push(codeLensProvider);
-
-    return pythonCodeBlocks;
-}
-
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('markdown.run.python', (arg) => {
@@ -99,23 +79,20 @@ export function activate(context: vscode.ExtensionContext) {
                 if (editor) {
                     const pythonCodeBlocks = extractPythonCodeBlocks(editor.document.getText());
                     runPythonCodeBlock(arg, pythonCodeBlocks);
+                } else {
+                    vscode.window.showErrorMessage('No active text editor!');
                 }
             } else {
                 vscode.window.showErrorMessage('Do not use this command.');
             }
         })
-    );    
+    );
 
-    const editor = vscode.window.activeTextEditor;
-    if (editor && editor.document.languageId === 'markdown') {
-        updatePythonCodeBlocks(editor, context);
-    }
-
-    vscode.workspace.onDidChangeTextDocument((event) => {
-        if (event.document.languageId === 'markdown') {
-            updatePythonCodeBlocks(vscode.window.activeTextEditor, context);
-        }
-    });
+    context.subscriptions.push(
+		vscode.languages.registerCodeLensProvider({ language: 'markdown', scheme: 'file' },
+            new ButtonCodeLensProvider()
+        )
+	);
 }
 
 export function deactivate() {}
