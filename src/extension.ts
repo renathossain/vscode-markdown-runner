@@ -32,19 +32,26 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         
         while ((match = codeBlockRegex.exec(document.getText())) !== null) {
             let code = match[1].trim();
-            code = code.replace(/^[^\n]*\n/, ''); // Removes the first line which is code block type
+            let codeBlockType = match[0].split('\n')[0].substring(3).trim();
+            code = code.replace(/^[^\n]*\n/, ''); // remove code block type
             const line = document.positionAt(match.index).line;
             
-            if (match[0].includes('python')) {
+            if (codeBlockType.includes('python')) {
                 const codeLens = createCodeLens(
                     document, line, "Run Python Block",
                     "markdown.run.python", code
                 );
                 codeLenses.push(codeLens);
-            } else if (match[0].includes('bash')) {
+            } else if (codeBlockType.includes('bash')) {
                 const codeLens = createCodeLens(
                     document, line, "Run Bash Block",
                     "markdown.run.bash", code
+                );
+                codeLenses.push(codeLens);
+            } else if (codeBlockType === "") {
+                const codeLens = createCodeLens(
+                    document, line, "Run in Terminal",
+                    "markdown.run.terminal", code
                 );
                 codeLenses.push(codeLens);
             }
@@ -85,6 +92,16 @@ function executeCodeBlock(extension: string, command: string, code: string) {
     runCommandInTerminal(`${command} "${tempFilePath}"`);
 }
 
+// Run the code line by line the terminal 
+export function runCommandsInTerminal(code: string) {
+    const lines = code.split('\n');
+    for (const line of lines) {
+        if (line.trim() !== '') { // Ignore empty lines
+            runCommandInTerminal(line);
+        }
+    }
+}
+
 // Main function that runs when the extension is activated
 // - Initializes and runs the code lens buttons
 // - Handles request for running a Python Code Block
@@ -106,6 +123,12 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('markdown.run.bash', async (code: string) => {
             await executeCodeBlock('sh', 'bash', code);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('markdown.run.terminal', async (code: string) => {
+            await runCommandsInTerminal(code);
         })
     );
 
