@@ -22,7 +22,7 @@ function createCodeLens(document: vscode.TextDocument, line: number, title: stri
 // - Parses all code blocks:
 //     - Determine the line number
 //     - Parse the code
-// - Render the buttons at the parsed line number
+// - Render the buttons at the correct line number
 // - Give each button the correct title based on the code block type
 // - Assign each button the right code runner based on the code block type
 // - Pass the code to the code runner
@@ -85,16 +85,7 @@ function executePythonCodeBlock(code: string) {
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('markdown.run.python', (arg) => {
-            if (typeof arg === 'string') {
-                const editor = vscode.window.activeTextEditor;
-                if (editor) {
-                    executePythonCodeBlock(arg);
-                } else {
-                    vscode.window.showErrorMessage('No active text editor!');
-                }
-            } else {
-                vscode.window.showErrorMessage('Do not use this command!');
-            }
+            executePythonCodeBlock(arg);
         })
     );
 
@@ -112,7 +103,7 @@ export function deactivate() {
         try {
             fs.unlinkSync(filePath);
         } catch (error) {
-            console.error(`Error deleting file ${filePath}:`, error);
+            vscode.window.showErrorMessage(`Error deleting file ${filePath}:`);
         }
     });
 }
