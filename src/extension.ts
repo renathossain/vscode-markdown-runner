@@ -6,17 +6,18 @@ import * as path from 'path';
 // Stores the paths of the temporary files created for running code
 const tempFilePaths: string[] = [];
 
-// - Generate the code lens with the required parameters
+// - Generate the code lens with the required parameters and push it to the list
 // - Helper for provideCodeLenses
-function createCodeLens(document: vscode.TextDocument, line: number, title: string, 
-    commandString: string, code: string): vscode.CodeLens {
+function createCodeLens(codeLenses: vscode.CodeLens[], document: vscode.TextDocument,
+    line: number, title: string, commandString: string, code: string) {
     const range = document.lineAt(line).range;
     const command: vscode.Command = {
         title: title,
         command: commandString,
         arguments: [code]
     };
-    return new vscode.CodeLens(range, command);
+    const codeLens = new vscode.CodeLens(range, command);
+    codeLenses.push(codeLens);
 }
 
 function readFirstLine(input: string): string {
@@ -43,38 +44,33 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
             const line = document.positionAt(match.index).line;
             
             if (codeBlockType.includes('python')) {
-                const codeLens = createCodeLens(
-                    document, line, "Run as Python File",
+                createCodeLens(
+                    codeLenses, document, line, "Run as Python File",
                     "markdown.run.python", code
                 );
-                codeLenses.push(codeLens);
             } else if (codeBlockType.includes('bash')) {
                 const header = readFirstLine(code);
                 if (header !== "#!/bin/bash") {
-                    const codeLens = createCodeLens(
-                        document, line, "Run Line by Line",
+                    createCodeLens(
+                        codeLenses, document, line, "Run Line by Line",
                         "markdown.run.terminal", code
                     );
-                    codeLenses.push(codeLens);
                 }
-                const codeLens = createCodeLens(
-                    document, line, "Run as Bash File",
+                createCodeLens(
+                    codeLenses, document, line, "Run as Bash File",
                     "markdown.run.bash", code
                 );
-                codeLenses.push(codeLens);
             } else if (codeBlockType === "") {
-                const codeLens = createCodeLens(
-                    document, line, "Run Line by Line",
+                createCodeLens(
+                    codeLenses, document, line, "Run Line by Line",
                     "markdown.run.terminal", code
                 );
-                codeLenses.push(codeLens);
             }
 
-            const codeLens = createCodeLens(
-                document, line, "Copy",
+            createCodeLens(
+                codeLenses, document, line, "Copy",
                 "markdown.copy", code
             );
-            codeLenses.push(codeLens);
         }
 
         return codeLenses;
