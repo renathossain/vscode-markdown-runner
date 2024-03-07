@@ -19,6 +19,10 @@ function createCodeLens(document: vscode.TextDocument, line: number, title: stri
     return new vscode.CodeLens(range, command);
 }
 
+function readFirstLine(input: string): string {
+    return input.split('\n')[0].trim().toLowerCase();
+}
+
 // - Parses all code blocks -> (line number, code)
 // - Render the `Run Code Block` and `Copy` buttons at the correct line number
 // - Give each button the correct title and action based on the code block type
@@ -32,7 +36,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         
         while ((match = codeBlockRegex.exec(document.getText())) !== null) {
             let code = match[1].trim();
-            let codeBlockType = match[0].split('\n')[0].substring(3).trim().toLowerCase();
+            let codeBlockType = readFirstLine(match[0]).substring(3);
             if (codeBlockType !== "") {
                 code = code.replace(/^[^\n]*\n/, ''); // remove code block type
             }
@@ -45,12 +49,15 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
                 );
                 codeLenses.push(codeLens);
             } else if (codeBlockType.includes('bash')) {
-                let codeLens = createCodeLens(
-                    document, line, "Run Line by Line",
-                    "markdown.run.terminal", code
-                );
-                codeLenses.push(codeLens);
-                codeLens = createCodeLens(
+                const header = readFirstLine(code);
+                if (header !== "#!/bin/bash") {
+                    const codeLens = createCodeLens(
+                        document, line, "Run Line by Line",
+                        "markdown.run.terminal", code
+                    );
+                    codeLenses.push(codeLens);
+                }
+                const codeLens = createCodeLens(
                     document, line, "Run as Bash File",
                     "markdown.run.bash", code
                 );
