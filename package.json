@@ -30,6 +30,11 @@
         "hidden": true
       },
       {
+        "command": "markdown.run.terminal",
+        "title": "Run Markdown Code Block Lines Sequentially in the Terminal",
+        "hidden": true
+      },
+      {
         "command": "markdown.copy",
         "title": "Copy Code Block",
         "hidden": true
