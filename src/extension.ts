@@ -25,7 +25,7 @@ function createCodeLens(document: vscode.TextDocument, line: number, title: stri
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     onDidChangeCodeLenses?: vscode.Event<void>;
 
-    provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens[]> {
+    provideCodeLenses(document: vscode.TextDocument): vscode.ProviderResult<vscode.CodeLens[]> {
         const codeLenses: vscode.CodeLens[] = [];
         const codeBlockRegex = /```([\s\S]+?)```/g;
         let match;
@@ -59,7 +59,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         return codeLenses;
     }
 
-    resolveCodeLens?(codeLens: vscode.CodeLens, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens> {
+    resolveCodeLens?(): vscode.ProviderResult<vscode.CodeLens> {
         return null;
     }
 }
