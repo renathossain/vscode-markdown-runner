@@ -40,24 +40,24 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
             
             if (codeBlockType.includes('python')) {
                 const codeLens = createCodeLens(
-                    document, line, "Run Python Block",
+                    document, line, "Run as Python File",
                     "markdown.run.python", code
                 );
                 codeLenses.push(codeLens);
             } else if (codeBlockType.includes('bash')) {
                 let codeLens = createCodeLens(
-                    document, line, "Run in Terminal",
+                    document, line, "Run Line by Line",
                     "markdown.run.terminal", code
                 );
                 codeLenses.push(codeLens);
                 codeLens = createCodeLens(
-                    document, line, "Run Bash Block",
+                    document, line, "Run as Bash File",
                     "markdown.run.bash", code
                 );
                 codeLenses.push(codeLens);
             } else if (codeBlockType === "") {
                 const codeLens = createCodeLens(
-                    document, line, "Run in Terminal",
+                    document, line, "Run Line by Line",
                     "markdown.run.terminal", code
                 );
                 codeLenses.push(codeLens);
