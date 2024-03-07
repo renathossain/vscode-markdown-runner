@@ -43,7 +43,12 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
                 );
                 codeLenses.push(codeLens);
             } else if (codeBlockType.includes('bash')) {
-                const codeLens = createCodeLens(
+                let codeLens = createCodeLens(
+                    document, line, "Run in Terminal",
+                    "markdown.run.terminal", code
+                );
+                codeLenses.push(codeLens);
+                codeLens = createCodeLens(
                     document, line, "Run Bash Block",
                     "markdown.run.bash", code
                 );
