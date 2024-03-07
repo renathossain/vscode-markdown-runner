@@ -21,11 +21,18 @@
     "commands": [
       {
         "command": "markdown.run.python",
-        "title": "Run Markdown Python Code Block"
+        "title": "Run Markdown Python Code Block",
+        "hidden": true
       },
       {
         "command": "markdown.run.bash",
-        "title": "Run Markdown Bash Code Block"
+        "title": "Run Markdown Bash Code Block",
+        "hidden": true
+      },
+      {
+        "command": "markdown.copy",
+        "title": "Copy Code Block",
+        "hidden": true
       }
     ]
   },

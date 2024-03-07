@@ -19,13 +19,9 @@ function createCodeLens(document: vscode.TextDocument, line: number, title: stri
     return new vscode.CodeLens(range, command);
 }
 
-// - Parses all code blocks:
-//     - Determine the line number
-//     - Parse the code
-// - Render the buttons at the correct line number
-// - Give each button the correct title based on the code block type
-// - Assign each button the right code runner based on the code block type
-// - Pass the code to the code runner
+// - Parses all code blocks -> (line number, code)
+// - Render the `Run Code Block` and `Copy` buttons at the correct line number
+// - Give each button the correct title and action based on the code block type
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     onDidChangeCodeLenses?: vscode.Event<void>;
 
@@ -36,22 +32,28 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         
         while ((match = codeBlockRegex.exec(document.getText())) !== null) {
             let code = match[1].trim();
-            code = code.replace(/^[^\n]*\n/, ''); // Remove the first line which is code block type
+            code = code.replace(/^[^\n]*\n/, ''); // Removes the first line which is code block type
             const line = document.positionAt(match.index).line;
             
             if (match[0].includes('python')) {
                 const codeLens = createCodeLens(
-                    document, line, "Run Python Code Block",
+                    document, line, "Run Python Block",
                     "markdown.run.python", code
                 );
                 codeLenses.push(codeLens);
             } else if (match[0].includes('bash')) {
                 const codeLens = createCodeLens(
-                    document, line, "Run Bash Code Block",
+                    document, line, "Run Bash Block",
                     "markdown.run.bash", code
                 );
                 codeLenses.push(codeLens);
             }
+
+            const codeLens = createCodeLens(
+                document, line, "Copy",
+                "markdown.copy", code
+            );
+            codeLenses.push(codeLens);
         }
 
         return codeLenses;
@@ -62,10 +64,8 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     }
 }
 
-// - If there exists an active terminal, use that one
-// - Else, create a new terminal and use that
-// - Display the terminal
-// - Execute the code within that terminal
+// - If there exists an active terminal, display and run code in that one
+// - Otherwise, create a new terminal to run the code
 function runCommandInTerminal(command: string) {
     const terminal = vscode.window.activeTerminal || vscode.window.createTerminal();
     terminal.show();
@@ -86,27 +86,35 @@ function executeCodeBlock(extension: string, command: string, code: string) {
 }
 
 // Main function that runs when the extension is activated
+// - Initializes and runs the code lens buttons
 // - Handles request for running a Python Code Block
 // - Handles request for running a Bash Code Block
-// - Initializes and runs the code lens buttons
+// - Handles request for copying a Code Block
 export function activate(context: vscode.ExtensionContext) {
-    context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.run.python', (arg) => {
-            executeCodeBlock('py', 'python', arg);
-        })
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.run.bash', (arg) => {
-            executeCodeBlock('sh', 'bash', arg);
-        })
-    );
-
     context.subscriptions.push(
 		vscode.languages.registerCodeLensProvider({ language: 'markdown', scheme: 'file' },
             new ButtonCodeLensProvider()
         )
 	);
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('markdown.run.python', async (code: string) => {
+            await executeCodeBlock('py', 'python', code);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('markdown.run.bash', async (code: string) => {
+            await executeCodeBlock('sh', 'bash', code);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('markdown.copy', async (code: string) => {
+            await vscode.env.clipboard.writeText(code);;
+            vscode.window.showInformationMessage('Code copied to clipboard.');
+        })
+    );
 }
 
 // Deletes the temporary files that were generated during the extension's usage
