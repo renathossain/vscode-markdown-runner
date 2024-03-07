@@ -36,13 +36,19 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         
         while ((match = codeBlockRegex.exec(document.getText())) !== null) {
             let code = match[1].trim();
-            code = code.replace(/^[^\n]*\n/, '');
+            code = code.replace(/^[^\n]*\n/, ''); // Remove the first line which is code block type
             const line = document.positionAt(match.index).line;
             
             if (match[0].includes('python')) {
                 const codeLens = createCodeLens(
                     document, line, "Run Python Code Block",
                     "markdown.run.python", code
+                );
+                codeLenses.push(codeLens);
+            } else if (match[0].includes('bash')) {
+                const codeLens = createCodeLens(
+                    document, line, "Run Bash Code Block",
+                    "markdown.run.bash", code
                 );
                 codeLenses.push(codeLens);
             }
@@ -67,25 +73,32 @@ function runCommandInTerminal(command: string) {
 }
 
 // - Creates a temporary file with a unique name
-// - Writes the parsed Python code to that file
+// - Writes the parsed code to that file
 // - Runs the temporary file
-function executePythonCodeBlock(code: string) {
-    const tempFileName = `temp_${Date.now()}.py`;
+function executeCodeBlock(extension: string, command: string, code: string) {
+    const tempFileName = `temp_${Date.now()}.${extension}`;
     const tempFilePath = path.join(os.tmpdir(), tempFileName);
     tempFilePaths.push(tempFilePath);
 
     fs.writeFileSync(tempFilePath, code);
 
-    runCommandInTerminal(`python "${tempFilePath}"`);
+    runCommandInTerminal(`${command} "${tempFilePath}"`);
 }
 
 // Main function that runs when the extension is activated
 // - Handles request for running a Python Code Block
+// - Handles request for running a Bash Code Block
 // - Initializes and runs the code lens buttons
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('markdown.run.python', (arg) => {
-            executePythonCodeBlock(arg);
+            executeCodeBlock('py', 'python', arg);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('markdown.run.bash', (arg) => {
+            executeCodeBlock('sh', 'bash', arg);
         })
     );
 

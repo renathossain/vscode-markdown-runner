@@ -22,6 +22,10 @@
       {
         "command": "markdown.run.python",
         "title": "Run Markdown Python Code Block"
+      },
+      {
+        "command": "markdown.run.bash",
+        "title": "Run Markdown Bash Code Block"
       }
     ]
   },
