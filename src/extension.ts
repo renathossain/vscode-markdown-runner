@@ -32,7 +32,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         
         while ((match = codeBlockRegex.exec(document.getText())) !== null) {
             let code = match[1].trim();
-            let codeBlockType = match[0].split('\n')[0].substring(3).trim();
+            let codeBlockType = match[0].split('\n')[0].substring(3).trim().toLowerCase();
             code = code.replace(/^[^\n]*\n/, ''); // remove code block type
             const line = document.positionAt(match.index).line;
             
