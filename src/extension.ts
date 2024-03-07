@@ -33,7 +33,9 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         while ((match = codeBlockRegex.exec(document.getText())) !== null) {
             let code = match[1].trim();
             let codeBlockType = match[0].split('\n')[0].substring(3).trim().toLowerCase();
-            code = code.replace(/^[^\n]*\n/, ''); // remove code block type
+            if (codeBlockType !== "") {
+                code = code.replace(/^[^\n]*\n/, ''); // remove code block type
+            }
             const line = document.positionAt(match.index).line;
             
             if (codeBlockType.includes('python')) {
@@ -99,10 +101,12 @@ function executeCodeBlock(extension: string, command: string, code: string) {
 
 // Run the code line by line the terminal 
 export function runCommandsInTerminal(code: string) {
+    console.log(code);
     const lines = code.split('\n');
     for (const line of lines) {
         if (line.trim() !== '') { // Ignore empty lines
             runCommandInTerminal(line);
+            // console.log(line);
         }
     }
 }
