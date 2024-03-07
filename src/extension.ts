@@ -19,22 +19,35 @@ function createCodeLens(document: vscode.TextDocument, line: number, title: stri
     return new vscode.CodeLens(range, command);
 }
 
-// - Render the buttons at the correct locations
+// - Parses all code blocks:
+//     - Determine the line number
+//     - Parse the code
+// - Render the buttons at the parsed line number
 // - Give each button the correct title based on the code block type
 // - Assign each button the right code runner based on the code block type
-// - Only the actual code is passed to the code runner
+// - Pass the code to the code runner
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     onDidChangeCodeLenses?: vscode.Event<void>;
 
     provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens[]> {
         const codeLenses: vscode.CodeLens[] = [];
-    
-        const codeLens = createCodeLens(
-            document, 0, "Run Python Code Block",
-            "markdown.run.python", "print(2 + 2)"
-        );
-        codeLenses.push(codeLens);
-    
+        const codeBlockRegex = /```([\s\S]+?)```/g;
+        let match;
+        
+        while ((match = codeBlockRegex.exec(document.getText())) !== null) {
+            let code = match[1].trim();
+            code = code.replace(/^[^\n]*\n/, '');
+            const line = document.positionAt(match.index).line;
+            
+            if (match[0].includes('python')) {
+                const codeLens = createCodeLens(
+                    document, line, "Run Python Code Block",
+                    "markdown.run.python", code
+                );
+                codeLenses.push(codeLens);
+            }
+        }
+
         return codeLenses;
     }
 
