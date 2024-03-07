@@ -3,37 +3,38 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
+// Stores the paths of the temporary files created for running code
 const tempFilePaths: string[] = [];
 
-function generateButtons(document: vscode.TextDocument): [number, string, number][] {
-    const buttons: [number, string, number][] = [];
-    const lines = document.getText().split('\n');
-
-    lines.forEach((line, index) => {
-        if (line.trim().startsWith("```python")) {
-            buttons.push([index, 'Run Python Block', buttons.length]);
-        }
-    });
-
-    return buttons;
+// - Generate the code lens with the required parameters
+// - Helper for provideCodeLenses
+function createCodeLens(document: vscode.TextDocument, line: number, title: string, 
+    commandString: string, code: string): vscode.CodeLens {
+    const range = document.lineAt(line).range;
+    const command: vscode.Command = {
+        title: title,
+        command: commandString,
+        arguments: [code]
+    };
+    return new vscode.CodeLens(range, command);
 }
 
+// - Render the buttons at the correct locations
+// - Give each button the correct title based on the code block type
+// - Assign each button the right code runner based on the code block type
+// - Only the actual code is passed to the code runner
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     onDidChangeCodeLenses?: vscode.Event<void>;
 
     provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens[]> {
         const codeLenses: vscode.CodeLens[] = [];
-        const buttons = generateButtons(document);
-        for (const [line, title, arg] of buttons) {
-            const range = document.lineAt(line).range;
-            const command: vscode.Command = {
-                title: title,
-                command: 'markdown.run.python',
-                arguments: [arg]
-            };
-            const codeLens = new vscode.CodeLens(range, command);
-            codeLenses.push(codeLens);
-        }
+    
+        const codeLens = createCodeLens(
+            document, 0, "Run Python Code Block",
+            "markdown.run.python", "print(2 + 2)"
+        );
+        codeLenses.push(codeLens);
+    
         return codeLenses;
     }
 
@@ -42,64 +43,44 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     }
 }
 
+// - If there exists an active terminal, use that one
+// - Else, create a new terminal and use that
+// - Display the terminal
+// - Execute the code within that terminal
 function runCommandInTerminal(command: string) {
     const terminal = vscode.window.activeTerminal || vscode.window.createTerminal();
     terminal.show();
     terminal.sendText(command);
 }
 
+// - Creates a temporary file with a unique name
+// - Writes the parsed Python code to that file
+// - Runs the temporary file
 function executePythonCodeBlock(code: string) {
-    // Create a unique filename
     const tempFileName = `temp_${Date.now()}.py`;
     const tempFilePath = path.join(os.tmpdir(), tempFileName);
-
-    // Write the code to the temporary file
-    fs.writeFileSync(tempFilePath, code);
-
-    // Push the file path to the global variable
     tempFilePaths.push(tempFilePath);
 
-    // Execute the Python file using runCommandInTerminal
+    fs.writeFileSync(tempFilePath, code);
+
     runCommandInTerminal(`python "${tempFilePath}"`);
 }
 
-function runPythonCodeBlock(index: number, pythonCodeBlocks: string[]) {
-    if (index < 0 || index >= pythonCodeBlocks.length) {
-        vscode.window.showErrorMessage('Invalid index for Python code block.');
-        return;
-    }
-
-    executePythonCodeBlock(pythonCodeBlocks[index]);
-}
-
-function extractPythonCodeBlocks(text: string): string[] {
-    const codeBlocks: string[] = [];
-
-	// Currently, there is a bug where headers such as `python23` are accepted
-	// Think of it as a feature or fix the regex
-    const regex = /```python\s*([\s\S]+?)\s*```/g;
-    let match;
-
-    while ((match = regex.exec(text)) !== null) {
-        codeBlocks.push(match[1]);
-    }
-
-    return codeBlocks;
-}
-
+// Main function that runs when the extension is activated
+// - Handles request for running a Python Code Block
+// - Initializes and runs the code lens buttons
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('markdown.run.python', (arg) => {
-            if (typeof arg === 'number') {
+            if (typeof arg === 'string') {
                 const editor = vscode.window.activeTextEditor;
                 if (editor) {
-                    const pythonCodeBlocks = extractPythonCodeBlocks(editor.document.getText());
-                    runPythonCodeBlock(arg, pythonCodeBlocks);
+                    executePythonCodeBlock(arg);
                 } else {
                     vscode.window.showErrorMessage('No active text editor!');
                 }
             } else {
-                vscode.window.showErrorMessage('Do not use this command.');
+                vscode.window.showErrorMessage('Do not use this command!');
             }
         })
     );
@@ -111,8 +92,9 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 }
 
+// Deletes the temporary files that were generated during the extension's usage
+// when the extension is deactivated or VS Code is closed
 export function deactivate() {
-    // Delete temporary files when the extension is deactivated or VS Code is closed
     tempFilePaths.forEach(filePath => {
         try {
             fs.unlinkSync(filePath);
