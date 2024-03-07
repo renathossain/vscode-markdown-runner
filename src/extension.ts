@@ -95,20 +95,31 @@ function executeCodeBlock(extension: string, command: string, code: string) {
     tempFilePaths.push(tempFilePath);
 
     fs.writeFileSync(tempFilePath, code);
-
+    
     runCommandInTerminal(`${command} "${tempFilePath}"`);
 }
 
 // Run the code line by line the terminal 
 export function runCommandsInTerminal(code: string) {
-    console.log(code);
     const lines = code.split('\n');
-    for (const line of lines) {
-        if (line.trim() !== '') { // Ignore empty lines
-            runCommandInTerminal(line);
-            // console.log(line);
-        }
+
+    let disposable = vscode.window.onDidOpenTerminal(terminal => {
+        disposable.dispose(); // Stop listening once a terminal is opened
+        sendCommandsToTerminal(lines, terminal);
+    });
+
+    const activeTerminal = vscode.window.activeTerminal;
+    if (activeTerminal) {
+        // If there's already an active terminal, send commands to it immediately
+        sendCommandsToTerminal(lines, activeTerminal);
+    } else {
+        vscode.window.createTerminal(); // Create a terminal if none exists
     }
+}
+
+function sendCommandsToTerminal(lines: string[], terminal: vscode.Terminal) {
+    terminal.show();
+    terminal.sendText(lines.join('\n'));
 }
 
 // Main function that runs when the extension is activated
