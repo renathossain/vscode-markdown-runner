@@ -1,19 +1,5 @@
 # Demo of extension's features
 
-Download or copy this markdown file into VS Code after installing this extension, and test all the features out!
-
-Keep in mind that before running a code block:
-- Make sure the code is correct
-- Install the language required by the code block
-
-On Arch Linux, you can run 1 command to install all languages!
-
-```bash
-sudo pacman --needed -S php perl r dart groovy go rust ghc julia lua ruby nodejs npm python bash
-```
-
-On other peasant operating systems, you will need to figure out the preferred installation process yourself.
-
 Run the following code blocks to test out Fibonacci in different languages:
 
 ```bash

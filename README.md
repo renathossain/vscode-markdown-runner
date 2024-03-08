@@ -1,26 +1,29 @@
-# markdown-python-code-runner README
+# Markdown Code Block Runner
 
-Enables seamless execution of Python code blocks within Markdown files in VS Code.
+Enables the seamless execution of code blocks in any language within Markdown files in VS Code.
+
+Download or copy DEMO.md into VS Code after installing this extension, and test all the features out!
 
 ## Features
 
-- Executes Python code within the shell.
-- Change name to markdown code block runner, since it supports many languages and google trends says run is more popular than execute.
-- Enable bash file line by line in settings if users need it
-- Create a settings menu, where users can add more languages if they need, where they need to specify the interpretter, file extension, language name, and if it is necessary to compile checkbox, and supply additional info for that
-- Toggle automatic pasting of results at the bottom of the code block within the settings.
-- Select Python environments within the settings.
-- Enable memory sharing between runs, persistent execution, like in a Jupytrer notebook within the settings.
-- Model keyboard shortcuts after jupyter notebook.
-- If cursor is within a code block, it can execute that particular code block with a keyboard shortcut, or error message will appear.
-- Give option to have automatically execute import statements and other code in a prereq secion, that may target all files, a specific file, or just files within a folder (shallow/recursive)
-- theme it to look like obsidian, image support markdown, obsidian competitor
-
-If these features are enabled, it will be easier and more practical more most people over a Jupyter notebook.
+- CodeLens buttons on top of each code block offer options to run or copy it. Code is saved temporarily, executed, and cleaned up afterward.
+- Supports: C, Rust, C++, Java, TypeScript, PHP, Perl, R, Dart, Groovy, Go, Haskell, Julia, Lua, Ruby, JavaScript, Python, Bash. Additional languages can be added via extension settings.
+- For Bash files, choose between executing code line by line or running the entire script at once.
+- Automatically displays and updates execution results below code blocks. Can be turned off in extension settings.
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+Keep in mind that before running a code block:
+- Make sure the code is correct
+- Install the language required by the code block
+
+On Arch Linux, you can run 1 command to install all languages!
+
+```bash
+sudo pacman --needed -S php perl r dart groovy go rust ghc julia lua ruby nodejs npm python bash
+```
+
+On other peasant operating systems, you will need to research what the installation process is.
 
 ## Extension Settings
 
@@ -35,43 +38,12 @@ This extension contributes the following settings:
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- Need to implement automatic pasting of results within the markdown file and a toggle to turn it on/off for that in settings.
+- Need to implement settings where users can specify how to run new languages or change how existing ones are run.
+- This extension was only tested on Arch Linux with VSCodium. Compatability with other setups is not guaranteed.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
 ### 1.0.0
 
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+To be released.

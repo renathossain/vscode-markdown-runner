@@ -107,11 +107,6 @@ const commands: { [key: string]: { title: string, command: string } } = {
     }
 };
 
-// Helper for provideCodeLenses
-function readFirstLine(input: string): string {
-    return input.split('\n')[0].trim().toLowerCase();
-}
-
 // - Parses all code blocks -> (line number, code)
 // - Render the `Run Code Block` and `Copy` buttons at the correct line number
 // - Give each button the correct title and action based on the code block type
@@ -125,14 +120,13 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         
         while ((match = codeBlockRegex.exec(document.getText())) !== null) {
             let code = match[1].trim();
-            let codeBlockType = readFirstLine(match[0]).substring(3);
+            let codeBlockType = match[0].split('\n')[0].trim().toLowerCase().substring(3);
             if (codeBlockType !== "") {
                 code = code.replace(/^[^\n]*\n/, ''); // remove code block type
             }
             const line = document.positionAt(match.index).line;
-            const header = readFirstLine(code);
             
-            if (codeBlockType === 'bash' && header !== "#!/bin/bash") {
+            if (codeBlockType === 'bash') {
                 createCodeLens(
                     codeLenses, document, line, commands[""].title,
                     commands[""].command, code
