@@ -22,6 +22,10 @@ function createCodeLens(codeLenses: vscode.CodeLens[], document: vscode.TextDocu
 
 // Map the buttons to the corresponding action
 const commands: { [key: string]: { title: string, command: string } } = {
+    ruby: {
+        title: "Run as Ruby File",
+        command: "markdown.run.ruby"
+    },
     javascript: {
         title: "Run as JavaScript File",
         command: "markdown.run.javascript"
@@ -158,7 +162,8 @@ export function activate(context: vscode.ExtensionContext) {
             new ButtonCodeLensProvider()
         )
     );
-    
+
+    registerCommand(context, 'markdown.run.ruby', 'rb', 'ruby');
     registerCommand(context, 'markdown.run.javascript', 'js', 'node');
     registerCommand(context, 'markdown.run.python', 'py', 'python');
     registerCommand(context, 'markdown.run.bash', 'sh', 'bash');
