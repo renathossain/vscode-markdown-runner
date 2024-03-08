@@ -33,10 +33,10 @@ const commands: { [key: string]: { title: string, command: string } } = {
         title: "Compile and Run C File",
         command: "markdown.run.c"
     },
-    // java: {
-    //     title: "Compile and Run Java File",
-    //     command: "markdown.run.java"
-    // },     
+    java: {
+        title: "Compile and Run Java File",
+        command: "markdown.run.java"
+    },     
     rust: {
         title: "Compile and Run Rust File",
         command: "markdown.run.rust"
@@ -180,6 +180,27 @@ export function runCommandsInTerminal(code: string) {
     }
 }
 
+// Java needs very special handling of executing a file
+function executeJavaBlock(code: string, extension: string, compiler: string) {
+    vscode.window.showInputBox({
+        prompt: 'Enter the name of the Java file (without extension). ' +
+                'Note: The filename needs to match the class name of the function.',
+        placeHolder: 'MyJavaFile'
+    }).then((javaCompiledName) => {
+        if (javaCompiledName) {
+            const javaCompiledPath = path.join(os.tmpdir(), javaCompiledName);
+            const javaSourcePath = `${javaCompiledPath}.${extension}`;
+
+            fs.writeFileSync(javaSourcePath, code);
+            tempFilePaths.push(javaSourcePath);
+
+            runCommandsInTerminal(`${compiler} ${javaSourcePath}`);
+            runCommandsInTerminal(`java -cp ${os.tmpdir()} ${javaCompiledName}`);
+            tempFilePaths.push(`${javaCompiledPath}.class`);
+        }
+    });
+}
+
 // - Creates a temporary file with a unique name
 // - Writes the parsed code to that file
 // - Compiles and/or Runs the temporary file
@@ -205,13 +226,17 @@ function registerCommand(context: vscode.ExtensionContext, commandId: string,
     extension?: string, compiler?: string) {
     context.subscriptions.push(
         vscode.commands.registerCommand(commandId, async (code: string) => {
-            if (extension && compiler) {
-                await executeCodeBlock(code, extension, compiler);
-            } else if (commandId === 'markdown.run.terminal') {
-                await runCommandsInTerminal(code);
-            } else if (commandId === 'markdown.copy') {
+            if (commandId === 'markdown.copy') {
                 await vscode.env.clipboard.writeText(code);
                 vscode.window.showInformationMessage('Code copied to clipboard.');
+            } else if (commandId === 'markdown.run.terminal') {
+                await runCommandsInTerminal(code);
+            } else if (extension && compiler) {
+                if (commandId === 'markdown.run.java') {
+                    await executeJavaBlock(code, extension, compiler);
+                } else {
+                    await executeCodeBlock(code, extension, compiler);
+                }
             }
         })
     );
@@ -231,7 +256,7 @@ export function activate(context: vscode.ExtensionContext) {
     registerCommand(context, 'markdown.run.c', 'c', 'gcc');
     registerCommand(context, 'markdown.run.rust', 'rs', 'rustc');
     registerCommand(context, 'markdown.run.cpp', 'cpp', 'g++');
-    // registerCommand(context, 'markdown.run.java', 'java', 'javac');
+    registerCommand(context, 'markdown.run.java', 'java', 'javac');
     // registerCommand(context, 'markdown.run.typescript', 'ts', 'tsc');
 
     // Non-compiled languages
