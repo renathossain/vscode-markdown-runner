@@ -2,8 +2,6 @@
 
 Enables the seamless execution of code blocks in any language within Markdown files in VS Code.
 
-Download or copy DEMO.md into VS Code after installing this extension, and test all the features out!
-
 ## Features
 
 - CodeLens buttons on top of each code block offer options to run or copy it. Code is saved temporarily, executed, and cleaned up afterward.
@@ -24,6 +22,12 @@ sudo pacman --needed -S php perl r dart groovy go rust ghc julia lua ruby nodejs
 ```
 
 On other peasant operating systems, you will need to research what the installation process is.
+
+## Demo
+
+Download or copy DEMO.md into VS Code after installing this extension, and test all the features out!
+
+- Paste gifs here
 
 ## Extension Settings
 
