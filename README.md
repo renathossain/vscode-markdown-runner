@@ -5,6 +5,7 @@ Enables seamless execution of Python code blocks within Markdown files in VS Cod
 ## Features
 
 - Executes Python code within the shell.
+- Change name to markdown code block runner, since it supports many languages and google trends says run is more popular than execute.
 - Enable bash file line by line in settings if users need it
 - Create a settings menu, where users can add more languages if they need, where they need to specify the interpretter, file extension, language name, and if it is necessary to compile checkbox, and supply additional info for that
 - Toggle automatic pasting of results at the bottom of the code block within the settings.
