@@ -2,7 +2,9 @@
 
 Download or copy this markdown file into VS Code after installing this extension, and test all the features out!
 
-Keep in mind that you need to install the language before running a code block of that type, or it will fail.
+Keep in mind that before running a code block:
+- Install the language required by the code block
+- Make sure the code is correct
 
 ```
 echo "This is the start of the demo"
