@@ -105,14 +105,30 @@ export function runCommandsInTerminal(code: string) {
 // - Creates a temporary file with a unique name
 // - Writes the parsed code to that file
 // - Runs the temporary file
-function executeCodeBlock(extension: string, command: string, code: string) {
+function executeCodeBlock(extension: string, interpreter: string, code: string) {
     const tempFileName = `temp_${Date.now()}.${extension}`;
     const tempFilePath = path.join(os.tmpdir(), tempFileName);
     tempFilePaths.push(tempFilePath);
 
     fs.writeFileSync(tempFilePath, code);
     
-    runCommandsInTerminal(`${command} "${tempFilePath}"`);
+    runCommandsInTerminal(`${interpreter} "${tempFilePath}"`);
+}
+
+// Helper for activate function
+function registerCommand(context: vscode.ExtensionContext, commandId: string, extension?: string, interpreter?: string) {
+    context.subscriptions.push(
+        vscode.commands.registerCommand(commandId, async (code: string) => {
+            if (extension && interpreter) {
+                await executeCodeBlock(extension, interpreter, code);
+            } else if (commandId === 'markdown.run.terminal') {
+                await runCommandsInTerminal(code);
+            } else if (commandId === 'markdown.copy') {
+                await vscode.env.clipboard.writeText(code);
+                vscode.window.showInformationMessage('Code copied to clipboard.');
+            }
+        })
+    );
 }
 
 // Main function that runs when the extension is activated
@@ -122,35 +138,15 @@ function executeCodeBlock(extension: string, command: string, code: string) {
 // - Handles request for copying a Code Block
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
-		vscode.languages.registerCodeLensProvider({ language: 'markdown', scheme: 'file' },
+        vscode.languages.registerCodeLensProvider({ language: 'markdown', scheme: 'file' },
             new ButtonCodeLensProvider()
         )
-	);
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.run.python', async (code: string) => {
-            await executeCodeBlock('py', 'python', code);
-        })
     );
 
-    context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.run.bash', async (code: string) => {
-            await executeCodeBlock('sh', 'bash', code);
-        })
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.run.terminal', async (code: string) => {
-            await runCommandsInTerminal(code);
-        })
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.copy', async (code: string) => {
-            await vscode.env.clipboard.writeText(code);;
-            vscode.window.showInformationMessage('Code copied to clipboard.');
-        })
-    );
+    registerCommand(context, 'markdown.run.python', 'py', 'python');
+    registerCommand(context, 'markdown.run.bash', 'sh', 'bash');
+    registerCommand(context, 'markdown.run.terminal');
+    registerCommand(context, 'markdown.copy');
 }
 
 // Deletes the temporary files that were generated during the extension's usage
