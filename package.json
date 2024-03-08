@@ -20,6 +20,11 @@
   "contributes": {
     "commands": [
       {
+        "command": "markdown.run.lua",
+        "title": "Run Markdown Lua Code Block",
+        "hidden": true
+      },
+      {
         "command": "markdown.run.ruby",
         "title": "Run Markdown Ruby Code Block",
         "hidden": true
