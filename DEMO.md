@@ -34,6 +34,7 @@ fib() {
     echo "$result"
 }
 
+echo "Bash Fibonacci:"
 fib 10
 ```
 
@@ -45,6 +46,7 @@ def f(n):
         return 1
     return f(n - 1) + f(n - 2)
 
+print("Python Fibonacci:")
 print([f(i) for i in range(10)])
 ```
 
@@ -63,6 +65,8 @@ const result = [];
 for (let i = 0; i < 10; i++) {
     result.push(f(i));
 }
+
+console.log("JavaScript Fibonacci:");
 console.log("[" + result.join(", ") + "]");
 ```
 
@@ -74,6 +78,7 @@ def f(n)
 end
 
 result = (0...10).map { |i| f(i) }
+puts "Ruby Fibonacci:"
 print result
 puts
 ```
@@ -94,5 +99,6 @@ for i = 0, 9 do
     table.insert(result, fibonacci(i))
 end
 
+print("Lua Fibonacci:")
 print("[" .. table.concat(result, ", ") .. "]")
 ```
