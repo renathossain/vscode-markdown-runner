@@ -9,7 +9,7 @@ Keep in mind that before running a code block:
 On Arch Linux, you can run 1 command to install all languages!
 
 ```bash
-sudo pacman --needed -S php perl r dart groovy go rust ghc julia lua ruby nodejs python bash
+sudo pacman --needed -S php perl r dart groovy go rust ghc julia lua ruby nodejs npm python bash
 ```
 
 On other peasant operating systems, you will need to figure out the preferred installation process yourself.

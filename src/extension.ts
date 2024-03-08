@@ -41,10 +41,10 @@ const commands: { [key: string]: { title: string, command: string } } = {
         title: "Compile and Run Rust File",
         command: "markdown.run.rust"
     },
-    // typescript: {
-    //     title: "Run TypeScript File",
-    //     command: "markdown.run.typescript"
-    // },
+    typescript: {
+        title: "Run TypeScript File",
+        command: "markdown.run.typescript"
+    },
     php: {
         title: "Run PHP File",
         command: "markdown.run.php"
@@ -257,9 +257,9 @@ export function activate(context: vscode.ExtensionContext) {
     registerCommand(context, 'markdown.run.rust', 'rs', 'rustc');
     registerCommand(context, 'markdown.run.cpp', 'cpp', 'g++');
     registerCommand(context, 'markdown.run.java', 'java', 'javac');
-    // registerCommand(context, 'markdown.run.typescript', 'ts', 'tsc');
 
     // Non-compiled languages
+    registerCommand(context, 'markdown.run.typescript', 'ts', 'npx ts-node');
     registerCommand(context, 'markdown.run.php', 'php', 'php');
     registerCommand(context, 'markdown.run.perl', 'pl', 'perl');
     registerCommand(context, 'markdown.run.r', 'r', 'Rscript');
