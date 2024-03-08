@@ -259,6 +259,21 @@ echo "[" . implode(", ", array_map("f", range(0, 9))) . "]\n";
 ?>
 ```
 
+```typescript
+function f(n: number): number {
+    if (n <= 0) {
+        return 0;
+    }
+    if (n === 1) {
+        return 1;
+    }
+    return f(n - 1) + f(n - 2);
+}
+
+console.log("TypeScript Fibonacci:");
+console.log(Array.from({ length: 10 }, (_, i) => f(i)));
+```
+
 ```c
 #include <stdio.h>
 
@@ -348,19 +363,4 @@ public class Fibonacci {
         System.out.println();
     }
 }
-```
-
-```typescript
-function f(n: number): number {
-    if (n <= 0) {
-        return 0;
-    }
-    if (n === 1) {
-        return 1;
-    }
-    return f(n - 1) + f(n - 2);
-}
-
-console.log("TypeScript Fibonacci:");
-console.log(Array.from({ length: 10 }, (_, i) => f(i)));
 ```
