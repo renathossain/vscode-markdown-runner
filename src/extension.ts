@@ -25,60 +25,68 @@ function createCodeLens(codeLenses: vscode.CodeLens[], document: vscode.TextDocu
 
 // Map the buttons to the corresponding action
 const commands: { [key: string]: { title: string, command: string } } = {
+    c: {
+        title: "Compile and Run C File",
+        command: "markdown.run.c"
+    },
+    java: {
+        title: "Compile and Run Java File",
+        command: "markdown.run.java"
+    },     
+    rust: {
+        title: "Compile and Run Rust File",
+        command: "markdown.run.rust"
+    },   
     php: {
-        title: "Run as PHP File",
+        title: "Run PHP File",
         command: "markdown.run.php"
     },
     perl: {
-        title: "Run as Perl File",
+        title: "Run Perl File",
         command: "markdown.run.perl"
     },
     r: {
-        title: "Run as R File",
+        title: "Run R File",
         command: "markdown.run.r"
     },
     dart: {
-        title: "Run as Dart File",
+        title: "Run Dart File",
         command: "markdown.run.dart"
     },
     groovy: {
-        title: "Run as Groovy File",
+        title: "Run Groovy File",
         command: "markdown.run.groovy"
     },
     go: {
-        title: "Run as Go File",
+        title: "Run Go File",
         command: "markdown.run.go"
     },
-    rust: {
-        title: "Run as Rust File",
-        command: "markdown.run.rust"
-    },
     haskell: {
-        title: "Run as Haskell File",
+        title: "Run Haskell File",
         command: "markdown.run.haskell"
     },
     julia: {
-        title: "Run as Julia File",
+        title: "Run Julia File",
         command: "markdown.run.julia"
     },  
     lua: {
-        title: "Run as Lua File",
+        title: "Run Lua File",
         command: "markdown.run.lua"
     },
     ruby: {
-        title: "Run as Ruby File",
+        title: "Run Ruby File",
         command: "markdown.run.ruby"
     },
     javascript: {
-        title: "Run as JavaScript File",
+        title: "Run JavaScript File",
         command: "markdown.run.javascript"
     },
     python: {
-        title: "Run as Python File",
+        title: "Run Python File",
         command: "markdown.run.python"
     },
     bash: {
-        title: "Run as Bash File",
+        title: "Run Bash File",
         command: "markdown.run.bash"
     },
     "": {
@@ -166,24 +174,44 @@ export function runCommandsInTerminal(code: string) {
 
 // - Creates a temporary file with a unique name
 // - Writes the parsed code to that file
-// - Runs the temporary file
-function executeCodeBlock(extension: string, interpreter: string, code: string) {
-    const tempFileName = `temp_${Date.now()}.${extension}`;
-    const tempFilePath = path.join(os.tmpdir(), tempFileName);
-    tempFilePaths.push(tempFilePath);
+// - Compiles and/or Runs the temporary file
+function executeCodeBlock(code: string, toCompile: Boolean, extension: string,
+    compiler: string, outputName?: string, interpreter?: string) {
+    const tempFileName = `temp_${Date.now()}`;
+    const tempFullFileName = `${tempFileName}.${extension}`;
+    const tempFullFilePath = path.join(os.tmpdir(), tempFullFileName);
 
-    fs.writeFileSync(tempFilePath, code);
+    fs.writeFileSync(tempFullFilePath, code);
+    tempFilePaths.push(tempFullFilePath);
+
+    runCommandsInTerminal(`${compiler} "${tempFullFilePath}"`);
     
-    runCommandsInTerminal(`${interpreter} "${tempFilePath}"`);
+    if (toCompile) {
+        if (outputName) {
+            if (interpreter) {
+                const outputPath = path.join(os.tmpdir(), outputName);
+                runCommandsInTerminal(`${interpreter} "${outputPath}"`);
+            } else {
+                runCommandsInTerminal(`./"${outputName}"`);
+            } 
+        } else {
+            if (interpreter) {
+                const tempFilePath = path.join(os.tmpdir(), tempFileName);
+                runCommandsInTerminal(`${interpreter} "${tempFilePath}"`);
+            } else {
+                runCommandsInTerminal(`./"${tempFileName}"`);
+            }
+        }
+    }
 }
 
 // Helper for activate function
-function registerCommand(context: vscode.ExtensionContext, commandId: string,
-    extension?: string, interpreter?: string) {
+function registerCommand(context: vscode.ExtensionContext, commandId: string, toCompile: Boolean,
+    extension?: string, compiler?: string, outputName?: string, interpreter?: string) {
     context.subscriptions.push(
         vscode.commands.registerCommand(commandId, async (code: string) => {
-            if (extension && interpreter) {
-                await executeCodeBlock(extension, interpreter, code);
+            if (extension && compiler) {
+                await executeCodeBlock(code, toCompile, extension, compiler, outputName, interpreter);
             } else if (commandId === 'markdown.run.terminal') {
                 await runCommandsInTerminal(code);
             } else if (commandId === 'markdown.copy') {
@@ -196,9 +224,7 @@ function registerCommand(context: vscode.ExtensionContext, commandId: string,
 
 // Main function that runs when the extension is activated
 // - Initializes and runs the code lens buttons
-// - Handles request for running a Python Code Block
-// - Handles request for running a Bash Code Block
-// - Handles request for copying a Code Block
+// - Handles request for running Markdown Code Blocks
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.languages.registerCodeLensProvider({ language: 'markdown', scheme: 'file' },
@@ -206,22 +232,27 @@ export function activate(context: vscode.ExtensionContext) {
         )
     );
 
-    registerCommand(context, 'markdown.run.php', 'php', 'php');
-    registerCommand(context, 'markdown.run.perl', 'pl', 'perl');
-    registerCommand(context, 'markdown.run.r', 'r', 'Rscript');
-    registerCommand(context, 'markdown.run.dart', 'dart', 'dart');
-    registerCommand(context, 'markdown.run.groovy', 'groovy', 'groovy');
-    registerCommand(context, 'markdown.run.go', 'go', 'go run');
-    // registerCommand(context, 'markdown.run.rust', 'rs', 'rust');
-    registerCommand(context, 'markdown.run.haskell', 'hs', 'runhaskell');
-    registerCommand(context, 'markdown.run.julia', 'jl', 'julia');
-    registerCommand(context, 'markdown.run.lua', 'lua', 'lua');
-    registerCommand(context, 'markdown.run.ruby', 'rb', 'ruby');
-    registerCommand(context, 'markdown.run.javascript', 'js', 'node');
-    registerCommand(context, 'markdown.run.python', 'py', 'python');
-    registerCommand(context, 'markdown.run.bash', 'sh', 'bash');
-    registerCommand(context, 'markdown.run.terminal');
-    registerCommand(context, 'markdown.copy');
+    // Compiled languages
+    registerCommand(context, 'markdown.run.c', true, 'c', 'gcc', 'a.out');
+    registerCommand(context, 'markdown.run.java', true, 'java', 'javac', undefined, 'java');
+    registerCommand(context, 'markdown.run.rust', true, 'rs', 'rustc');
+
+    // Non-compiled languages
+    registerCommand(context, 'markdown.run.php', false, 'php', 'php');
+    registerCommand(context, 'markdown.run.perl', false, 'pl', 'perl');
+    registerCommand(context, 'markdown.run.r', false, 'r', 'Rscript');
+    registerCommand(context, 'markdown.run.dart', false, 'dart', 'dart');
+    registerCommand(context, 'markdown.run.groovy', false, 'groovy', 'groovy');
+    registerCommand(context, 'markdown.run.go', false, 'go', 'go run');
+    registerCommand(context, 'markdown.run.haskell', false, 'hs', 'runhaskell');
+    registerCommand(context, 'markdown.run.julia', false, 'jl', 'julia');
+    registerCommand(context, 'markdown.run.lua', false, 'lua', 'lua');
+    registerCommand(context, 'markdown.run.ruby', false, 'rb', 'ruby');
+    registerCommand(context, 'markdown.run.javascript', false, 'js', 'node');
+    registerCommand(context, 'markdown.run.python', false, 'py', 'python');
+    registerCommand(context, 'markdown.run.bash', false, 'sh', 'bash');
+    registerCommand(context, 'markdown.run.terminal', false);
+    registerCommand(context, 'markdown.copy', false);
 }
 
 // Deletes the temporary files that were generated during the extension's usage
