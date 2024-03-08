@@ -8,7 +8,7 @@ Keep in mind that before running a code block:
 
 On Arch Linux, you can run 1 command to install all languages!
 
-```
+```bash
 sudo pacman --needed -S php perl r dart groovy go rust ghc julia lua ruby nodejs python bash
 ```
 
@@ -282,28 +282,6 @@ int main() {
 }
 ```
 
-```java
-public class Fibonacci {
-    public static int f(int n) {
-        if (n <= 0) {
-            return 0;
-        }
-        if (n == 1) {
-            return 1;
-        }
-        return f(n - 1) + f(n - 2);
-    }
-
-    public static void main(String[] args) {
-        System.out.println("Java Fibonacci:");
-        for (int i = 0; i < 10; i++) {
-            System.out.print(f(i) + " ");
-        }
-        System.out.println();
-    }
-}
-```
-
 ```rust
 fn f(n: i32) -> i32 {
     if n <= 0 {
@@ -348,4 +326,41 @@ int main() {
     std::cout << std::endl;
     return 0;
 }
+```
+
+```java
+public class Fibonacci {
+    public static int f(int n) {
+        if (n <= 0) {
+            return 0;
+        }
+        if (n == 1) {
+            return 1;
+        }
+        return f(n - 1) + f(n - 2);
+    }
+
+    public static void main(String[] args) {
+        System.out.println("Java Fibonacci:");
+        for (int i = 0; i < 10; i++) {
+            System.out.print(f(i) + " ");
+        }
+        System.out.println();
+    }
+}
+```
+
+```typescript
+function f(n: number): number {
+    if (n <= 0) {
+        return 0;
+    }
+    if (n === 1) {
+        return 1;
+    }
+    return f(n - 1) + f(n - 2);
+}
+
+console.log("TypeScript Fibonacci:");
+console.log(Array.from({ length: 10 }, (_, i) => f(i)));
 ```
