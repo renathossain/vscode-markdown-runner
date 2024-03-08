@@ -33,14 +33,18 @@ const commands: { [key: string]: { title: string, command: string } } = {
         title: "Compile and Run C File",
         command: "markdown.run.c"
     },
-    java: {
-        title: "Compile and Run Java File",
-        command: "markdown.run.java"
-    },     
+    // java: {
+    //     title: "Compile and Run Java File",
+    //     command: "markdown.run.java"
+    // },     
     rust: {
         title: "Compile and Run Rust File",
         command: "markdown.run.rust"
-    },   
+    },
+    // typescript: {
+    //     title: "Run TypeScript File",
+    //     command: "markdown.run.typescript"
+    // },
     php: {
         title: "Run PHP File",
         command: "markdown.run.php"
@@ -179,43 +183,30 @@ export function runCommandsInTerminal(code: string) {
 // - Creates a temporary file with a unique name
 // - Writes the parsed code to that file
 // - Compiles and/or Runs the temporary file
-function executeCodeBlock(code: string, toCompile: Boolean, extension: string,
-    compiler: string, outputName?: string, interpreter?: string) {
-    const tempFileName = `temp_${Date.now()}`;
-    const tempFullFileName = `${tempFileName}.${extension}`;
-    const tempFullFilePath = path.join(os.tmpdir(), tempFullFileName);
+function executeCodeBlock(code: string, extension: string, compiler: string) {
+    const compiledName = `temp_${Date.now()}`;
+    const compiledPath = path.join(os.tmpdir(), compiledName);
+    const sourcePath = `${compiledPath}.${extension}`;
 
-    fs.writeFileSync(tempFullFilePath, code);
-    tempFilePaths.push(tempFullFilePath);
+    fs.writeFileSync(sourcePath, code);
+    tempFilePaths.push(sourcePath);
 
-    runCommandsInTerminal(`${compiler} "${tempFullFilePath}"`);
-    
-    if (toCompile) {
-        if (outputName) {
-            if (interpreter) {
-                const outputPath = path.join(os.tmpdir(), outputName);
-                runCommandsInTerminal(`${interpreter} "${outputPath}"`);
-            } else {
-                runCommandsInTerminal(`./"${outputName}"`);
-            } 
-        } else {
-            if (interpreter) {
-                const tempFilePath = path.join(os.tmpdir(), tempFileName);
-                runCommandsInTerminal(`${interpreter} "${tempFilePath}"`);
-            } else {
-                runCommandsInTerminal(`./"${tempFileName}"`);
-            }
-        }
+    if (extension === 'c' || extension === 'cpp' || extension === 'rs') {
+        runCommandsInTerminal(`${compiler} -o ${compiledPath} ${sourcePath}`);
+        runCommandsInTerminal(compiledPath);
+        tempFilePaths.push(compiledPath);
+    } else {
+        runCommandsInTerminal(`${compiler} ${sourcePath}`);
     }
 }
 
 // Helper for activate function
-function registerCommand(context: vscode.ExtensionContext, commandId: string, toCompile: Boolean,
-    extension?: string, compiler?: string, outputName?: string, interpreter?: string) {
+function registerCommand(context: vscode.ExtensionContext, commandId: string,
+    extension?: string, compiler?: string) {
     context.subscriptions.push(
         vscode.commands.registerCommand(commandId, async (code: string) => {
             if (extension && compiler) {
-                await executeCodeBlock(code, toCompile, extension, compiler, outputName, interpreter);
+                await executeCodeBlock(code, extension, compiler);
             } else if (commandId === 'markdown.run.terminal') {
                 await runCommandsInTerminal(code);
             } else if (commandId === 'markdown.copy') {
@@ -237,27 +228,28 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     // Compiled languages
-    registerCommand(context, 'markdown.run.c', true, 'c', 'gcc', 'a.out');
-    registerCommand(context, 'markdown.run.java', true, 'java', 'javac', undefined, 'java');
-    registerCommand(context, 'markdown.run.rust', true, 'rs', 'rustc');
-    registerCommand(context, 'markdown.run.cpp', true, 'cpp', 'g++', `a.out`);
+    registerCommand(context, 'markdown.run.c', 'c', 'gcc');
+    registerCommand(context, 'markdown.run.rust', 'rs', 'rustc');
+    registerCommand(context, 'markdown.run.cpp', 'cpp', 'g++');
+    // registerCommand(context, 'markdown.run.java', 'java', 'javac');
+    // registerCommand(context, 'markdown.run.typescript', 'ts', 'tsc');
 
     // Non-compiled languages
-    registerCommand(context, 'markdown.run.php', false, 'php', 'php');
-    registerCommand(context, 'markdown.run.perl', false, 'pl', 'perl');
-    registerCommand(context, 'markdown.run.r', false, 'r', 'Rscript');
-    registerCommand(context, 'markdown.run.dart', false, 'dart', 'dart');
-    registerCommand(context, 'markdown.run.groovy', false, 'groovy', 'groovy');
-    registerCommand(context, 'markdown.run.go', false, 'go', 'go run');
-    registerCommand(context, 'markdown.run.haskell', false, 'hs', 'runhaskell');
-    registerCommand(context, 'markdown.run.julia', false, 'jl', 'julia');
-    registerCommand(context, 'markdown.run.lua', false, 'lua', 'lua');
-    registerCommand(context, 'markdown.run.ruby', false, 'rb', 'ruby');
-    registerCommand(context, 'markdown.run.javascript', false, 'js', 'node');
-    registerCommand(context, 'markdown.run.python', false, 'py', 'python');
-    registerCommand(context, 'markdown.run.bash', false, 'sh', 'bash');
-    registerCommand(context, 'markdown.run.terminal', false);
-    registerCommand(context, 'markdown.copy', false);
+    registerCommand(context, 'markdown.run.php', 'php', 'php');
+    registerCommand(context, 'markdown.run.perl', 'pl', 'perl');
+    registerCommand(context, 'markdown.run.r', 'r', 'Rscript');
+    registerCommand(context, 'markdown.run.dart', 'dart', 'dart');
+    registerCommand(context, 'markdown.run.groovy', 'groovy', 'groovy');
+    registerCommand(context, 'markdown.run.go', 'go', 'go run');
+    registerCommand(context, 'markdown.run.haskell', 'hs', 'runhaskell');
+    registerCommand(context, 'markdown.run.julia', 'jl', 'julia');
+    registerCommand(context, 'markdown.run.lua', 'lua', 'lua');
+    registerCommand(context, 'markdown.run.ruby', 'rb', 'ruby');
+    registerCommand(context, 'markdown.run.javascript', 'js', 'node');
+    registerCommand(context, 'markdown.run.python', 'py', 'python');
+    registerCommand(context, 'markdown.run.bash', 'sh', 'bash');
+    registerCommand(context, 'markdown.run.terminal');
+    registerCommand(context, 'markdown.copy');
 }
 
 // Deletes the temporary files that were generated during the extension's usage
