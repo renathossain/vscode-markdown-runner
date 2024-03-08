@@ -40,3 +40,22 @@ result = (0...10).map { |i| f(i) }
 print result
 puts
 ```
+
+```lua
+function fibonacci(n)
+    if n <= 0 then
+        return 0
+    elseif n == 1 then
+        return 1
+    else
+        return fibonacci(n - 1) + fibonacci(n - 2)
+    end
+end
+
+local result = {}
+for i = 0, 9 do
+    table.insert(result, fibonacci(i))
+end
+
+print("[" .. table.concat(result, ", ") .. "]")
+```

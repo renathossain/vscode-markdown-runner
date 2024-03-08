@@ -22,6 +22,10 @@ function createCodeLens(codeLenses: vscode.CodeLens[], document: vscode.TextDocu
 
 // Map the buttons to the corresponding action
 const commands: { [key: string]: { title: string, command: string } } = {
+    lua: {
+        title: "Run as Lua File",
+        command: "markdown.run.lua"
+    },
     ruby: {
         title: "Run as Ruby File",
         command: "markdown.run.ruby"
@@ -163,6 +167,7 @@ export function activate(context: vscode.ExtensionContext) {
         )
     );
 
+    registerCommand(context, 'markdown.run.lua', 'lua', 'lua');
     registerCommand(context, 'markdown.run.ruby', 'rb', 'ruby');
     registerCommand(context, 'markdown.run.javascript', 'js', 'node');
     registerCommand(context, 'markdown.run.python', 'py', 'python');
