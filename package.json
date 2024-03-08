@@ -20,6 +20,11 @@
   "contributes": {
     "commands": [
       {
+        "command": "markdown.run.javascript",
+        "title": "Run Markdown JavaScript Code Block",
+        "hidden": true
+      },
+      {
         "command": "markdown.run.python",
         "title": "Run Markdown Python Code Block",
         "hidden": true
