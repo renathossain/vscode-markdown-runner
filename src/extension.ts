@@ -25,6 +25,10 @@ function createCodeLens(codeLenses: vscode.CodeLens[], document: vscode.TextDocu
 
 // Map the buttons to the corresponding action
 const commands: { [key: string]: { title: string, command: string } } = {
+    cpp: {
+        title: "Compile and Run C++ File",
+        command: "markdown.run.cpp"
+    },
     c: {
         title: "Compile and Run C File",
         command: "markdown.run.c"
@@ -236,6 +240,7 @@ export function activate(context: vscode.ExtensionContext) {
     registerCommand(context, 'markdown.run.c', true, 'c', 'gcc', 'a.out');
     registerCommand(context, 'markdown.run.java', true, 'java', 'javac', undefined, 'java');
     registerCommand(context, 'markdown.run.rust', true, 'rs', 'rustc');
+    registerCommand(context, 'markdown.run.cpp', true, 'cpp', 'g++', `a.out`);
 
     // Non-compiled languages
     registerCommand(context, 'markdown.run.php', false, 'php', 'php');
