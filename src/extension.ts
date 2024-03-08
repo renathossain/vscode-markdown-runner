@@ -184,7 +184,7 @@ export function runCommandsInTerminal(code: string) {
 function executeJavaBlock(code: string, extension: string, compiler: string) {
     vscode.window.showInputBox({
         prompt: 'Enter the name of the Java file (without extension). ' +
-                'Note: The filename needs to match the class name of the function.',
+                'Note: The Java standard requires the filename to be the same as the name of the main class.',
         placeHolder: 'MyJavaFile'
     }).then((javaCompiledName) => {
         if (javaCompiledName) {
