@@ -5,6 +5,7 @@ Enables seamless execution of Python code blocks within Markdown files in VS Cod
 ## Features
 
 - Executes Python code within the shell.
+- Enable bash file line by line in settings if users need it
 - Toggle automatic pasting of results at the bottom of the code block within the settings.
 - Select Python environments within the settings.
 - Enable memory sharing between runs, persistent execution, like in a Jupytrer notebook within the settings.
