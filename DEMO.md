@@ -3,12 +3,18 @@
 Download or copy this markdown file into VS Code after installing this extension, and test all the features out!
 
 Keep in mind that before running a code block:
-- Install the language required by the code block
 - Make sure the code is correct
+- Install the language required by the code block
+
+On Arch Linux, you can run 1 command to install all languages!
 
 ```
-echo "This is the start of the demo"
+sudo pacman --needed -S php perl r dart groovy go rust ghc julia lua ruby nodejs python bash
 ```
+
+On other peasant operating systems, you will need to figure out the preferred installation process yourself.
+
+Run the following code blocks to test out Fibonacci in different languages:
 
 ```bash
 echo "For bash files:"
@@ -103,4 +109,170 @@ end
 
 print("Lua Fibonacci:")
 print("[" .. table.concat(result, ", ") .. "]")
+```
+
+```julia
+function f(n)
+    if n <= 0
+        return 0
+    elseif n == 1
+        return 1
+    else
+        return f(n - 1) + f(n - 2)
+    end
+end
+
+println("Julia Fibonacci:")
+println([f(i) for i in 0:9])
+```
+
+```haskell
+f :: Int -> Int
+f n
+    | n <= 0    = 0
+    | n == 1    = 1
+    | otherwise = f (n - 1) + f (n - 2)
+
+intercalate :: String -> [String] -> String
+intercalate _ [] = ""
+intercalate sep [x] = x
+intercalate sep (x:xs) = x ++ sep ++ intercalate sep xs
+
+main :: IO ()
+main = do
+    putStrLn "Haskell Fibonacci:"
+    putStrLn $ "[" ++ intercalate ", " (map show [f i | i <- [0..9]]) ++ "]"
+```
+
+```rust
+fn f(n: i32) -> i32 {
+    if n <= 0 {
+        return 0;
+    } else if n == 1 {
+        return 1;
+    } else {
+        return f(n - 1) + f(n - 2);
+    }
+}
+
+fn main() {
+    println!("Rust Fibonacci:");
+    let fibonacci: Vec<i32> = (0..10).map(|i| f(i)).collect();
+    println!("{:?}", fibonacci);
+}
+```
+
+```go
+package main
+
+import (
+    "fmt"
+    "strings"
+)
+
+func f(n int) int {
+    if n <= 0 {
+        return 0
+    } else if n == 1 {
+        return 1
+    } else {
+        return f(n-1) + f(n-2)
+    }
+}
+
+func main() {
+    fmt.Println("Go Fibonacci:")
+    fibonacci := make([]string, 10)
+    for i := range fibonacci {
+        fibonacci[i] = fmt.Sprintf("%d", f(i))
+    }
+    fmt.Printf("[%s]\n", strings.Join(fibonacci, ", "))
+}
+```
+
+```groovy
+def f(n) {
+    if (n <= 0) {
+        return 0
+    }
+    if (n == 1) {
+        return 1
+    }
+    return f(n - 1) + f(n - 2)
+}
+
+println("Groovy Fibonacci:")
+println((0..9).collect { f(it) })
+```
+
+```dart
+int f(int n) {
+  if (n <= 0) {
+    return 0;
+  } else if (n == 1) {
+    return 1;
+  } else {
+    return f(n - 1) + f(n - 2);
+  }
+}
+
+void main() {
+  print("Dart Fibonacci:");
+  List<int> fibonacci = List<int>.generate(10, (i) => f(i));
+  print(fibonacci);
+}
+```
+
+```r
+f <- function(n) {
+  if (n <= 0) {
+    return(0)
+  } else if (n == 1) {
+    return(1)
+  } else {
+    return(f(n - 1) + f(n - 2))
+  }
+}
+
+cat("R Fibonacci:\n")
+cat("[", paste(sapply(0:9, f), collapse = ", "), "]\n", sep = "")
+```
+
+```perl
+sub f {
+    my $n = shift;
+    if ($n <= 0) {
+        return 0;
+    }
+    if ($n == 1) {
+        return 1;
+    }
+    return f($n - 1) + f($n - 2);
+}
+
+print "Perl Fibonacci:\n";
+my @fibonacci;
+for my $i (0..9) {
+    push @fibonacci, f($i);
+}
+print "[" . join(", ", @fibonacci) . "]\n";
+```
+
+```php
+<?php
+
+function f($n) {
+    if ($n <= 0) {
+        return 0;
+    }
+    if ($n == 1) {
+        return 1;
+    }
+    return f($n - 1) + f($n - 2);
+}
+
+echo "PHP Fibonacci:\n";
+echo "[" . implode(", ", array_map("f", range(0, 9))) . "]\n";
+
+?>
 ```
