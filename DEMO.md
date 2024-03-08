@@ -271,7 +271,7 @@ function f(n: number): number {
 }
 
 console.log("TypeScript Fibonacci:");
-console.log(Array.from({ length: 10 }, (_, i) => f(i)));
+console.log("[" + Array.from({ length: 10 }, (_, i) => f(i)).join(', ') + "]");
 ```
 
 ```c
@@ -288,11 +288,14 @@ int fibonacci(int n) {
 }
 
 int main() {
-    printf("C Fibonacci:\n");
+    printf("C Fibonacci:\n[");
     for (int i = 0; i < 10; i++) {
-        printf("%d ", fibonacci(i));
+        printf("%d", fibonacci(i));
+        if (i < 9) {
+            printf(", ");
+        }
     }
-    printf("\n");
+    printf("]\n");
     return 0;
 }
 ```
@@ -317,28 +320,27 @@ fn main() {
 
 ```cpp
 #include <iostream>
-#include <vector>
 
-int f(int n) {
+int fibonacci(int n) {
     if (n <= 0) {
         return 0;
     }
     if (n == 1) {
         return 1;
     }
-    return f(n - 1) + f(n - 2);
+    return fibonacci(n - 1) + fibonacci(n - 2);
 }
 
 int main() {
     std::cout << "C++ Fibonacci:" << std::endl;
-    std::vector<int> fib_sequence;
+    std::cout << "[";
     for (int i = 0; i < 10; i++) {
-        fib_sequence.push_back(f(i));
+        std::cout << fibonacci(i);
+        if (i < 9) {
+            std::cout << ", ";
+        }
     }
-    for (int num : fib_sequence) {
-        std::cout << num << " ";
-    }
-    std::cout << std::endl;
+    std::cout << "]" << std::endl;
     return 0;
 }
 ```
@@ -357,10 +359,14 @@ public class Fibonacci {
 
     public static void main(String[] args) {
         System.out.println("Java Fibonacci:");
+        System.out.print("[");
         for (int i = 0; i < 10; i++) {
-            System.out.print(f(i) + " ");
+            System.out.print(f(i));
+            if (i < 9) {
+                System.out.print(", ");
+            }
         }
-        System.out.println();
+        System.out.println("]");
     }
 }
 ```
