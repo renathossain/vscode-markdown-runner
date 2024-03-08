@@ -144,24 +144,6 @@ main = do
     putStrLn $ "[" ++ intercalate ", " (map show [f i | i <- [0..9]]) ++ "]"
 ```
 
-```rust
-fn f(n: i32) -> i32 {
-    if n <= 0 {
-        return 0;
-    } else if n == 1 {
-        return 1;
-    } else {
-        return f(n - 1) + f(n - 2);
-    }
-}
-
-fn main() {
-    println!("Rust Fibonacci:");
-    let fibonacci: Vec<i32> = (0..10).map(|i| f(i)).collect();
-    println!("{:?}", fibonacci);
-}
-```
-
 ```go
 package main
 
@@ -275,4 +257,95 @@ echo "PHP Fibonacci:\n";
 echo "[" . implode(", ", array_map("f", range(0, 9))) . "]\n";
 
 ?>
+```
+
+```c
+#include <stdio.h>
+
+int fibonacci(int n) {
+    if (n <= 0) {
+        return 0;
+    }
+    if (n == 1) {
+        return 1;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+int main() {
+    printf("C Fibonacci:\n");
+    for (int i = 0; i < 10; i++) {
+        printf("%d ", fibonacci(i));
+    }
+    printf("\n");
+    return 0;
+}
+```
+
+```java
+public class Fibonacci {
+    public static int f(int n) {
+        if (n <= 0) {
+            return 0;
+        }
+        if (n == 1) {
+            return 1;
+        }
+        return f(n - 1) + f(n - 2);
+    }
+
+    public static void main(String[] args) {
+        System.out.println("Java Fibonacci:");
+        for (int i = 0; i < 10; i++) {
+            System.out.print(f(i) + " ");
+        }
+        System.out.println();
+    }
+}
+```
+
+```rust
+fn f(n: i32) -> i32 {
+    if n <= 0 {
+        return 0;
+    } else if n == 1 {
+        return 1;
+    } else {
+        return f(n - 1) + f(n - 2);
+    }
+}
+
+fn main() {
+    println!("Rust Fibonacci:");
+    let fibonacci: Vec<i32> = (0..10).map(|i| f(i)).collect();
+    println!("{:?}", fibonacci);
+}
+```
+
+```cpp
+#include <iostream>
+#include <vector>
+
+int f(int n) {
+    if (n <= 0) {
+        return 0;
+    }
+    if (n == 1) {
+        return 1;
+    }
+    return f(n - 1) + f(n - 2);
+}
+
+int main() {
+    std::cout << "C++ Fibonacci:" << std::endl;
+    std::vector<int> fib_sequence;
+    for (int i = 0; i < 10; i++) {
+        fib_sequence.push_back(f(i));
+    }
+    for (int num : fib_sequence) {
+        std::cout << num << " ";
+    }
+    std::cout << std::endl;
+    return 0;
+}
 ```
