@@ -20,6 +20,27 @@ function createCodeLens(codeLenses: vscode.CodeLens[], document: vscode.TextDocu
     codeLenses.push(codeLens);
 }
 
+// Map the buttons to the corresponding action
+const commands: { [key: string]: { title: string, command: string } } = {
+    python: {
+        title: "Run as Python File",
+        command: "markdown.run.python"
+    },
+    bash: {
+        title: "Run as Bash File",
+        command: "markdown.run.bash"
+    },
+    "": {
+        title: "Run Line by Line",
+        command: "markdown.run.terminal"
+    },
+    copy: {
+        title: "Copy",
+        command: "markdown.copy"
+    }
+};
+
+// Helper for provideCodeLenses
 function readFirstLine(input: string): string {
     return input.split('\n')[0].trim().toLowerCase();
 }
@@ -43,33 +64,22 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
             }
             const line = document.positionAt(match.index).line;
             
-            if (codeBlockType.includes('python')) {
+            if (commands.hasOwnProperty(codeBlockType)) {
                 createCodeLens(
-                    codeLenses, document, line, "Run as Python File",
-                    "markdown.run.python", code
-                );
-            } else if (codeBlockType.includes('bash')) {
-                const header = readFirstLine(code);
-                if (header !== "#!/bin/bash") {
-                    createCodeLens(
-                        codeLenses, document, line, "Run Line by Line",
-                        "markdown.run.terminal", code
-                    );
-                }
-                createCodeLens(
-                    codeLenses, document, line, "Run as Bash File",
-                    "markdown.run.bash", code
-                );
-            } else if (codeBlockType === "") {
-                createCodeLens(
-                    codeLenses, document, line, "Run Line by Line",
-                    "markdown.run.terminal", code
+                    codeLenses, document, line, commands[codeBlockType].title,
+                    commands[codeBlockType].command, code
                 );
             }
-
+            const header = readFirstLine(code);
+            if (codeBlockType === 'bash' && header !== "#!/bin/bash") {
+                createCodeLens(
+                    codeLenses, document, line, commands[""].title,
+                    commands[""].command, code
+                );
+            }
             createCodeLens(
-                codeLenses, document, line, "Copy",
-                "markdown.copy", code
+                codeLenses, document, line, commands["copy"].title,
+                commands["copy"].command, code
             );
         }
 
@@ -81,6 +91,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     }
 }
 
+// Helper for runCommandsInTerminal
 function sendCommandsToTerminal(code: string, terminal: vscode.Terminal) {
     terminal.show();
     terminal.sendText(code);
@@ -116,7 +127,8 @@ function executeCodeBlock(extension: string, interpreter: string, code: string) 
 }
 
 // Helper for activate function
-function registerCommand(context: vscode.ExtensionContext, commandId: string, extension?: string, interpreter?: string) {
+function registerCommand(context: vscode.ExtensionContext, commandId: string,
+    extension?: string, interpreter?: string) {
     context.subscriptions.push(
         vscode.commands.registerCommand(commandId, async (code: string) => {
             if (extension && interpreter) {
