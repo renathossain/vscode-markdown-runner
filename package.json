@@ -18,43 +18,7 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "markdown.run.lua",
-        "title": "Run Markdown Lua Code Block",
-        "hidden": true
-      },
-      {
-        "command": "markdown.run.ruby",
-        "title": "Run Markdown Ruby Code Block",
-        "hidden": true
-      },
-      {
-        "command": "markdown.run.javascript",
-        "title": "Run Markdown JavaScript Code Block",
-        "hidden": true
-      },
-      {
-        "command": "markdown.run.python",
-        "title": "Run Markdown Python Code Block",
-        "hidden": true
-      },
-      {
-        "command": "markdown.run.bash",
-        "title": "Run Markdown Bash Code Block",
-        "hidden": true
-      },
-      {
-        "command": "markdown.run.terminal",
-        "title": "Run Markdown Code Block Lines Sequentially in the Terminal",
-        "hidden": true
-      },
-      {
-        "command": "markdown.copy",
-        "title": "Copy Code Block",
-        "hidden": true
-      }
-    ]
+    "commands": []
   },
   "scripts": {
     "build": "vsce package",
