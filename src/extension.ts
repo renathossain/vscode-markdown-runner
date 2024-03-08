@@ -1,3 +1,6 @@
+// Copyright (c) Renat Hossain. All rights reserved.
+// Licensed under the GPL3 license.
+
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as os from 'os';
