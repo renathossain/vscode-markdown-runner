@@ -22,6 +22,42 @@ function createCodeLens(codeLenses: vscode.CodeLens[], document: vscode.TextDocu
 
 // Map the buttons to the corresponding action
 const commands: { [key: string]: { title: string, command: string } } = {
+    php: {
+        title: "Run as PHP File",
+        command: "markdown.run.php"
+    },
+    perl: {
+        title: "Run as Perl File",
+        command: "markdown.run.perl"
+    },
+    r: {
+        title: "Run as R File",
+        command: "markdown.run.r"
+    },
+    dart: {
+        title: "Run as Dart File",
+        command: "markdown.run.dart"
+    },
+    groovy: {
+        title: "Run as Groovy File",
+        command: "markdown.run.groovy"
+    },
+    go: {
+        title: "Run as Go File",
+        command: "markdown.run.go"
+    },
+    rust: {
+        title: "Run as Rust File",
+        command: "markdown.run.rust"
+    },
+    haskell: {
+        title: "Run as Haskell File",
+        command: "markdown.run.haskell"
+    },
+    julia: {
+        title: "Run as Julia File",
+        command: "markdown.run.julia"
+    },  
     lua: {
         title: "Run as Lua File",
         command: "markdown.run.lua"
@@ -167,6 +203,15 @@ export function activate(context: vscode.ExtensionContext) {
         )
     );
 
+    registerCommand(context, 'markdown.run.php', 'php', 'php');
+    registerCommand(context, 'markdown.run.perl', 'pl', 'perl');
+    registerCommand(context, 'markdown.run.r', 'r', 'Rscript');
+    registerCommand(context, 'markdown.run.dart', 'dart', 'dart');
+    registerCommand(context, 'markdown.run.groovy', 'groovy', 'groovy');
+    registerCommand(context, 'markdown.run.go', 'go', 'go run');
+    // registerCommand(context, 'markdown.run.rust', 'rs', 'rust');
+    registerCommand(context, 'markdown.run.haskell', 'hs', 'runhaskell');
+    registerCommand(context, 'markdown.run.julia', 'jl', 'julia');
     registerCommand(context, 'markdown.run.lua', 'lua', 'lua');
     registerCommand(context, 'markdown.run.ruby', 'rb', 'ruby');
     registerCommand(context, 'markdown.run.javascript', 'js', 'node');
