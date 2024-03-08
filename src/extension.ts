@@ -75,18 +75,18 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
                 code = code.replace(/^[^\n]*\n/, ''); // remove code block type
             }
             const line = document.positionAt(match.index).line;
-            
-            if (commands.hasOwnProperty(codeBlockType)) {
-                createCodeLens(
-                    codeLenses, document, line, commands[codeBlockType].title,
-                    commands[codeBlockType].command, code
-                );
-            }
             const header = readFirstLine(code);
+            
             if (codeBlockType === 'bash' && header !== "#!/bin/bash") {
                 createCodeLens(
                     codeLenses, document, line, commands[""].title,
                     commands[""].command, code
+                );
+            }
+            if (commands.hasOwnProperty(codeBlockType)) {
+                createCodeLens(
+                    codeLenses, document, line, commands[codeBlockType].title,
+                    commands[codeBlockType].command, code
                 );
             }
             createCodeLens(
