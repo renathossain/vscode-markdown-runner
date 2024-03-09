@@ -236,9 +236,15 @@ function registerCommand(context: vscode.ExtensionContext, commandId: string,
     );
 }
 
+// Function to get the compiler configuration for Markdown Python Code Runner
+function getLanguageConfigurations(): { [key: string]: { language: string, extension: string, compiler: string } } | undefined {
+    const config = vscode.workspace.getConfiguration();
+    return config.get<{ [key: string]: { language: string, extension: string, compiler: string } }>('markdownPythonCodeRunner.compilerConfiguration');
+}
+
 // Main function that runs when the extension is activated
 // - Initializes and runs the code lens buttons
-// - Handles request for running Markdown Code Blocks
+// - Handles requests for running and copying Markdown Code Blocks
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.languages.registerCodeLensProvider({ language: 'markdown', scheme: 'file' },
@@ -246,27 +252,16 @@ export function activate(context: vscode.ExtensionContext) {
         )
     );
 
-    // Compiled languages
-    registerCommand(context, 'markdown.run.c', 'c', 'gcc');
-    registerCommand(context, 'markdown.run.rust', 'rs', 'rustc');
-    registerCommand(context, 'markdown.run.cpp', 'cpp', 'g++');
-    registerCommand(context, 'markdown.run.java', 'java', 'javac');
+    const languageConfigurations = getLanguageConfigurations();
+    if (languageConfigurations) {
+        for (const [key, value] of Object.entries(languageConfigurations)) {
+            const commandId = `markdown.run.${key}`;
+            registerCommand(context, commandId, value.extension, value.compiler);
+        }
+    } else {
+        console.error('Language configurations not found.');
+    }
 
-    // Non-compiled languages
-    registerCommand(context, 'markdown.run.typescript', 'ts', 'npx ts-node');
-    registerCommand(context, 'markdown.run.php', 'php', 'php');
-    registerCommand(context, 'markdown.run.perl', 'pl', 'perl');
-    registerCommand(context, 'markdown.run.r', 'r', 'Rscript');
-    registerCommand(context, 'markdown.run.dart', 'dart', 'dart');
-    registerCommand(context, 'markdown.run.groovy', 'groovy', 'groovy');
-    registerCommand(context, 'markdown.run.go', 'go', 'go run');
-    registerCommand(context, 'markdown.run.haskell', 'hs', 'runhaskell');
-    registerCommand(context, 'markdown.run.julia', 'jl', 'julia');
-    registerCommand(context, 'markdown.run.lua', 'lua', 'lua');
-    registerCommand(context, 'markdown.run.ruby', 'rb', 'ruby');
-    registerCommand(context, 'markdown.run.javascript', 'js', 'node');
-    registerCommand(context, 'markdown.run.python', 'py', 'python');
-    registerCommand(context, 'markdown.run.bash', 'sh', 'bash');
     registerCommand(context, 'markdown.run.terminal');
     registerCommand(context, 'markdown.copy');
 }
