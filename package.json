@@ -23,7 +23,7 @@
       "properties": {
         "markdownRunner.compilerConfiguration": {
           "type": "object",
-          "description": "Compiler configuration for supported languages in Markdown files",
+          "description": "Compiler configuration for supported languages in Markdown files. You can only add non-compiled languages here.",
           "default": {
             "python": {
               "name": "Python",
