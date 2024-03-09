@@ -1,5 +1,6 @@
 // Copyright (c) Renat Hossain. All rights reserved.
 // SPDX-License-Identifier: GPL-3.0
+// See LICENSE in the project root for license information.
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';
