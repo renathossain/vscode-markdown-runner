@@ -172,7 +172,7 @@ function getLanguageConfigurations(): { [key: string]: {
     const config = vscode.workspace.getConfiguration();
     return config.get<{ [key: string]: {
         name: string, extension: string, compiler: string, compiled: Boolean
-    }}>('markdownPythonCodeRunner.compilerConfiguration');
+    }}>('markdownRunner.compilerConfiguration');
 }
 
 // Main function that runs when the extension is activated
