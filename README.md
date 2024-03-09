@@ -14,6 +14,7 @@ Enables the seamless execution of code blocks in any language within Markdown fi
 Keep in mind that before running a code block:
 - Make sure the code is correct
 - Install the language required by the code block
+- Set up path environment variables to access the installed languages globally.
 
 On Arch Linux, you can run 1 command to install all languages!
 
@@ -21,7 +22,7 @@ On Arch Linux, you can run 1 command to install all languages!
 sudo pacman --needed -S php perl r dart groovy go rust ghc julia lua ruby nodejs npm python bash
 ```
 
-On other peasant operating systems, you will need to research what the installation process is.
+On other less excellent operating systems, you will need to research what the installation process is.
 
 ## Demo
 
