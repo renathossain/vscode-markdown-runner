@@ -46,8 +46,3 @@ This extension contributes the following settings:
 - Need to implement settings where users can specify how to run new languages or change how existing ones are run.
 - This extension was only tested on Arch Linux with VSCodium. Compatability with other setups is not guaranteed.
 
-## Release Notes
-
-### 1.0.0
-
-To be released.
