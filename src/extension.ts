@@ -1,5 +1,5 @@
 // Copyright (c) Renat Hossain. All rights reserved.
-// Licensed under the GPL3 license.
+// SPDX-License-Identifier: GPL-3.0
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';
@@ -25,78 +25,6 @@ function createCodeLens(codeLenses: vscode.CodeLens[], document: vscode.TextDocu
 
 // Map the buttons to the corresponding action
 const commands: { [key: string]: { title: string, command: string } } = {
-    cpp: {
-        title: "Compile and Run C++ File",
-        command: "markdown.run.cpp"
-    },
-    c: {
-        title: "Compile and Run C File",
-        command: "markdown.run.c"
-    },
-    java: {
-        title: "Compile and Run Java File",
-        command: "markdown.run.java"
-    },     
-    rust: {
-        title: "Compile and Run Rust File",
-        command: "markdown.run.rust"
-    },
-    typescript: {
-        title: "Run TypeScript File",
-        command: "markdown.run.typescript"
-    },
-    php: {
-        title: "Run PHP File",
-        command: "markdown.run.php"
-    },
-    perl: {
-        title: "Run Perl File",
-        command: "markdown.run.perl"
-    },
-    r: {
-        title: "Run R File",
-        command: "markdown.run.r"
-    },
-    dart: {
-        title: "Run Dart File",
-        command: "markdown.run.dart"
-    },
-    groovy: {
-        title: "Run Groovy File",
-        command: "markdown.run.groovy"
-    },
-    go: {
-        title: "Run Go File",
-        command: "markdown.run.go"
-    },
-    haskell: {
-        title: "Run Haskell File",
-        command: "markdown.run.haskell"
-    },
-    julia: {
-        title: "Run Julia File",
-        command: "markdown.run.julia"
-    },  
-    lua: {
-        title: "Run Lua File",
-        command: "markdown.run.lua"
-    },
-    ruby: {
-        title: "Run Ruby File",
-        command: "markdown.run.ruby"
-    },
-    javascript: {
-        title: "Run JavaScript File",
-        command: "markdown.run.javascript"
-    },
-    python: {
-        title: "Run Python File",
-        command: "markdown.run.python"
-    },
-    bash: {
-        title: "Run Bash File",
-        command: "markdown.run.bash"
-    },
     "": {
         title: "Run Line by Line",
         command: "markdown.run.terminal"
@@ -236,9 +164,19 @@ function registerCommand(context: vscode.ExtensionContext, commandId: string,
     );
 }
 
+// Function to get the compiler configuration for Markdown Python Code Runner
+function getLanguageConfigurations(): { [key: string]: {
+    name: string, extension: string, compiler: string, compiled: Boolean
+}} | undefined {
+    const config = vscode.workspace.getConfiguration();
+    return config.get<{ [key: string]: {
+        name: string, extension: string, compiler: string, compiled: Boolean
+    }}>('markdownPythonCodeRunner.compilerConfiguration');
+}
+
 // Main function that runs when the extension is activated
 // - Initializes and runs the code lens buttons
-// - Handles request for running Markdown Code Blocks
+// - Handles requests for running and copying Markdown Code Blocks
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.languages.registerCodeLensProvider({ language: 'markdown', scheme: 'file' },
@@ -246,27 +184,29 @@ export function activate(context: vscode.ExtensionContext) {
         )
     );
 
-    // Compiled languages
-    registerCommand(context, 'markdown.run.c', 'c', 'gcc');
-    registerCommand(context, 'markdown.run.rust', 'rs', 'rustc');
-    registerCommand(context, 'markdown.run.cpp', 'cpp', 'g++');
-    registerCommand(context, 'markdown.run.java', 'java', 'javac');
+    // Read the langauge configuration from settings file
+    // and register the commands and buttons
+    const languageConfigurations = getLanguageConfigurations();
+    if (languageConfigurations) {
+        for (const [key, value] of Object.entries(languageConfigurations)) {
+            const commandId = `markdown.run.${key}`;
+            if (value.compiled) {
+                commands[key] = {
+                    title: `Compile and Run ${value.name} File`,
+                    command: commandId
+                };
+            } else {
+                commands[key] = {
+                    title: `Run ${value.name} File`,
+                    command: commandId
+                };
+            }
+            registerCommand(context, commandId, value.extension, value.compiler);
+        }
+    } else {
+        vscode.window.showErrorMessage('Language configurations not found.');
+    }
 
-    // Non-compiled languages
-    registerCommand(context, 'markdown.run.typescript', 'ts', 'npx ts-node');
-    registerCommand(context, 'markdown.run.php', 'php', 'php');
-    registerCommand(context, 'markdown.run.perl', 'pl', 'perl');
-    registerCommand(context, 'markdown.run.r', 'r', 'Rscript');
-    registerCommand(context, 'markdown.run.dart', 'dart', 'dart');
-    registerCommand(context, 'markdown.run.groovy', 'groovy', 'groovy');
-    registerCommand(context, 'markdown.run.go', 'go', 'go run');
-    registerCommand(context, 'markdown.run.haskell', 'hs', 'runhaskell');
-    registerCommand(context, 'markdown.run.julia', 'jl', 'julia');
-    registerCommand(context, 'markdown.run.lua', 'lua', 'lua');
-    registerCommand(context, 'markdown.run.ruby', 'rb', 'ruby');
-    registerCommand(context, 'markdown.run.javascript', 'js', 'node');
-    registerCommand(context, 'markdown.run.python', 'py', 'python');
-    registerCommand(context, 'markdown.run.bash', 'sh', 'bash');
     registerCommand(context, 'markdown.run.terminal');
     registerCommand(context, 'markdown.copy');
 }
