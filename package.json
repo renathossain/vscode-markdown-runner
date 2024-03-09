@@ -26,94 +26,112 @@
           "description": "Compiler configuration for supported languages in Markdown files",
           "default": {
             "python": {
-              "language": "Python",
+              "name": "Python",
               "extension": "py",
-              "compiler": "python"
+              "compiler": "python",
+              "compiled": false
             },
             "c": {
-              "language": "C",
+              "name": "C",
               "extension": "c",
-              "compiler": "gcc"
+              "compiler": "gcc",
+              "compiled": true
             },
             "java": {
-              "language": "Java",
+              "name": "Java",
               "extension": "java",
-              "compiler": "javac"
+              "compiler": "javac",
+              "compiled": true
             },
             "cpp": {
-              "language": "C++",
+              "name": "C++",
               "extension": "cpp",
-              "compiler": "g++"
+              "compiler": "g++",
+              "compiled": true
             },
             "rust": {
-              "language": "Rust",
+              "name": "Rust",
               "extension": "rs",
-              "compiler": "rustc"
+              "compiler": "rustc",
+              "compiled": true
             },
             "typescript": {
-              "language": "TypeScript",
+              "name": "TypeScript",
               "extension": "ts",
-              "compiler": "npx ts-node"
+              "compiler": "npx ts-node",
+              "compiled": false
             },
             "php": {
-              "language": "PHP",
+              "name": "PHP",
               "extension": "php",
-              "compiler": "php"
+              "compiler": "php",
+              "compiled": false
             },
             "perl": {
-              "language": "Perl",
+              "name": "Perl",
               "extension": "pl",
-              "compiler": "perl"
+              "compiler": "perl",
+              "compiled": false
             },
             "r": {
-              "language": "R",
+              "name": "R",
               "extension": "r",
-              "compiler": "Rscript"
+              "compiler": "Rscript",
+              "compiled": false
             },
             "dart": {
-              "language": "Dart",
+              "name": "Dart",
               "extension": "dart",
-              "compiler": "dart"
+              "compiler": "dart",
+              "compiled": false
             },
             "groovy": {
-              "language": "Groovy",
+              "name": "Groovy",
               "extension": "groovy",
-              "compiler": "groovy"
+              "compiler": "groovy",
+              "compiled": false
             },
             "go": {
-              "language": "Go",
+              "name": "Go",
               "extension": "go",
-              "compiler": "go run"
+              "compiler": "go run",
+              "compiled": false
             },
             "haskell": {
-              "language": "Haskell",
+              "name": "Haskell",
               "extension": "hs",
-              "compiler": "runhaskell"
+              "compiler": "runhaskell",
+              "compiled": false
             },
             "julia": {
-              "language": "Julia",
+              "name": "Julia",
               "extension": "jl",
-              "compiler": "julia"
+              "compiler": "julia",
+              "compiled": false
             },
             "lua": {
-              "language": "Lua",
+              "name": "Lua",
               "extension": "lua",
-              "compiler": "lua"
+              "compiler": "lua",
+              "compiled": false
             },
             "ruby": {
-              "language": "Ruby",
+              "name": "Ruby",
               "extension": "rb",
-              "compiler": "ruby"
+              "compiler": "ruby",
+              "compiled": false
             },
             "javascript": {
-              "language": "JavaScript",
+              "name": "JavaScript",
               "extension": "js",
-              "compiler": "node"
+              "compiler": "node",
+              "compiled": false
             },
             "bash": {
-              "language": "Bash",
+              "name": "Bash",
               "extension": "sh",
-              "compiler": "bash"
+              "compiler": "bash",
+              "compiled": false
             }
           }
         }
