@@ -101,6 +101,16 @@ export function runCommandsInTerminal(code: string) {
     } else {
         vscode.window.createTerminal(); // Create a terminal if none exists
     }
+
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+        const testBlock = '```' + 'python' + '\n\n```\n';
+        const position = new vscode.Position(0, 0);
+        editor.edit(editBuilder => {
+            editBuilder.insert(position, testBlock);
+        });
+        vscode.window.showInformationMessage('Markdown code block inserted!');
+    }
 }
 
 // Java needs very special handling of executing a file
