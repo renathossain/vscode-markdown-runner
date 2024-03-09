@@ -5,7 +5,7 @@ Enables the seamless execution of code blocks in any language within Markdown fi
 ## Features
 
 - CodeLens buttons on top of each code block offer options to run or copy it. Code is saved temporarily, executed, and cleaned up afterward.
-- Supports: C, Rust, C++, Java, TypeScript, PHP, Perl, R, Dart, Groovy, Go, Haskell, Julia, Lua, Ruby, JavaScript, Python, Bash. Additional languages can be added via extension settings.
+- Supports: C, Rust, C++, Java, TypeScript, PHP, Perl, R, Dart, Groovy, Go, Haskell, Julia, Lua, Ruby, JavaScript, Python, Bash. Additional languages (non-compiled) can be added via extension settings.
 - For Bash files, choose between executing code line by line or running the entire script at once.
 - Automatically displays and updates execution results below code blocks. Can be turned off in extension settings.
 
