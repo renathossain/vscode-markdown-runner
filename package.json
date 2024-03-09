@@ -1,6 +1,6 @@
 {
   "name": "markdown-runner",
-  "displayName": "Markdown Python Code Runner",
+  "displayName": "Markdown Code Block Runner",
   "description": "Enables the seamless execution of code blocks in any language within Markdown files in VS Code",
   "version": "0.0.1",
   "engines": {

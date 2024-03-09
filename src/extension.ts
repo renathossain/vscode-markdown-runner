@@ -165,7 +165,7 @@ function registerCommand(context: vscode.ExtensionContext, commandId: string,
     );
 }
 
-// Function to get the compiler configuration for Markdown Python Code Runner
+// Function to get the compiler configuration
 function getLanguageConfigurations(): { [key: string]: {
     name: string, extension: string, compiler: string, compiled: Boolean
 }} | undefined {
