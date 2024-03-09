@@ -1,4 +1,4 @@
-# Markdown Code Block Runner
+# Markdown Code Block Runner for VS Code
 
 Enables the seamless execution of code blocks in any language within Markdown files in VS Code.
 
