@@ -18,8 +18,108 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
-    "commands": []
-  },
+    "configuration": {
+      "title": "Markdown Python Code Runner",
+      "properties": {
+        "markdownPythonCodeRunner.compilerConfiguration": {
+          "type": "object",
+          "description": "Compiler configuration for supported languages in Markdown files",
+          "default": {
+            "python": {
+              "language": "Python",
+              "extension": "py",
+              "compiler": "python"
+            },
+            "c": {
+              "language": "C",
+              "extension": "c",
+              "compiler": "gcc"
+            },
+            "java": {
+              "language": "Java",
+              "extension": "java",
+              "compiler": "javac"
+            },
+            "cpp": {
+              "language": "C++",
+              "extension": "cpp",
+              "compiler": "g++"
+            },
+            "rust": {
+              "language": "Rust",
+              "extension": "rs",
+              "compiler": "rustc"
+            },
+            "typescript": {
+              "language": "TypeScript",
+              "extension": "ts",
+              "compiler": "npx ts-node"
+            },
+            "php": {
+              "language": "PHP",
+              "extension": "php",
+              "compiler": "php"
+            },
+            "perl": {
+              "language": "Perl",
+              "extension": "pl",
+              "compiler": "perl"
+            },
+            "r": {
+              "language": "R",
+              "extension": "r",
+              "compiler": "Rscript"
+            },
+            "dart": {
+              "language": "Dart",
+              "extension": "dart",
+              "compiler": "dart"
+            },
+            "groovy": {
+              "language": "Groovy",
+              "extension": "groovy",
+              "compiler": "groovy"
+            },
+            "go": {
+              "language": "Go",
+              "extension": "go",
+              "compiler": "go run"
+            },
+            "haskell": {
+              "language": "Haskell",
+              "extension": "hs",
+              "compiler": "runhaskell"
+            },
+            "julia": {
+              "language": "Julia",
+              "extension": "jl",
+              "compiler": "julia"
+            },
+            "lua": {
+              "language": "Lua",
+              "extension": "lua",
+              "compiler": "lua"
+            },
+            "ruby": {
+              "language": "Ruby",
+              "extension": "rb",
+              "compiler": "ruby"
+            },
+            "javascript": {
+              "language": "JavaScript",
+              "extension": "js",
+              "compiler": "node"
+            },
+            "bash": {
+              "language": "Bash",
+              "extension": "sh",
+              "compiler": "bash"
+            }
+          }
+        }
+      }
+    }
+  },  
   "scripts": {
     "build": "vsce package",
     "vscode:prepublish": "npm run package",
