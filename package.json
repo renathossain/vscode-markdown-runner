@@ -1,7 +1,7 @@
 {
-  "name": "markdown-python-code-runner",
+  "name": "markdown-runner",
   "displayName": "Markdown Python Code Runner",
-  "description": "Enables seamless execution of Python code blocks within Markdown files in VS Code",
+  "description": "Enables the seamless execution of code blocks in any language within Markdown files in VS Code",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.87.0"
@@ -11,7 +11,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/renathossain/markdown-python-code-runner.git"
+    "url": "https://github.com/renathossain/vscode-markdown-runner.git"
   },
   "activationEvents": [
     "onLanguage:markdown"
@@ -19,9 +19,9 @@
   "main": "./dist/extension.js",
   "contributes": {
     "configuration": {
-      "title": "Markdown Python Code Runner",
+      "title": "Markdown Code Block Runner",
       "properties": {
-        "markdownPythonCodeRunner.compilerConfiguration": {
+        "markdownRunner.compilerConfiguration": {
           "type": "object",
           "description": "Compiler configuration for supported languages in Markdown files",
           "default": {
