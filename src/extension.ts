@@ -19,7 +19,7 @@ function createCodeLens(codeLenses: vscode.CodeLens[], document: vscode.TextDocu
     const command: vscode.Command = {
         title: title,
         command: commandString,
-        arguments: [code]
+        arguments: [line, code]
     };
     const codeLens = new vscode.CodeLens(range, command);
     codeLenses.push(codeLens);
@@ -82,7 +82,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     }
 }
 
-async function runCommandsInTerminal(code: string) {
+async function runCommandsInTerminal(line: number, code: string) {
     const childProcess = cp.exec(code);
     const editor = vscode.window.activeTextEditor;
 
@@ -90,7 +90,7 @@ async function runCommandsInTerminal(code: string) {
         if (editor) {
             editor.edit(editBuilder => {
                 editBuilder.insert(
-                    new vscode.Position(0, 0), data.toString()
+                    new vscode.Position(line + 3, 0), data.toString()
                 );
             });
         }
@@ -106,7 +106,7 @@ async function runCommandsInTerminal(code: string) {
 }
 
 // Java needs very special handling of executing a file
-function executeJavaBlock(code: string, extension: string, compiler: string) {
+function executeJavaBlock(line: number, code: string, extension: string, compiler: string) {
     vscode.window.showInputBox({
         prompt: 'Enter the name of the Java file (without extension). ' +
                 'Note: The Java standard requires the filename to be the ' + 
@@ -120,8 +120,8 @@ function executeJavaBlock(code: string, extension: string, compiler: string) {
             fs.writeFileSync(javaSourcePath, code);
             tempFilePaths.push(javaSourcePath);
 
-            runCommandsInTerminal(`${compiler} ${javaSourcePath}`);
-            runCommandsInTerminal(`java -cp ${os.tmpdir()} ${javaCompiledName}`);
+            runCommandsInTerminal(line, `${compiler} ${javaSourcePath}`);
+            runCommandsInTerminal(line, `java -cp ${os.tmpdir()} ${javaCompiledName}`);
             tempFilePaths.push(`${javaCompiledPath}.class`);
         }
     });
@@ -130,7 +130,7 @@ function executeJavaBlock(code: string, extension: string, compiler: string) {
 // - Creates a temporary file with a unique name
 // - Writes the parsed code to that file
 // - Compiles and/or Runs the temporary file
-function executeCodeBlock(code: string, extension: string, compiler: string) {
+function executeCodeBlock(line: number, code: string, extension: string, compiler: string) {
     const compiledName = `temp_${Date.now()}`;
     const compiledPath = path.join(os.tmpdir(), compiledName);
     const sourcePath = `${compiledPath}.${extension}`;
@@ -139,11 +139,11 @@ function executeCodeBlock(code: string, extension: string, compiler: string) {
     tempFilePaths.push(sourcePath);
 
     if (extension === 'c' || extension === 'cpp' || extension === 'rs') {
-        runCommandsInTerminal(`${compiler} -o ${compiledPath} ${sourcePath}`);
-        runCommandsInTerminal(compiledPath);
+        runCommandsInTerminal(line, `${compiler} -o ${compiledPath} ${sourcePath}`);
+        runCommandsInTerminal(line, compiledPath);
         tempFilePaths.push(compiledPath);
     } else {
-        runCommandsInTerminal(`${compiler} ${sourcePath}`);
+        runCommandsInTerminal(line, `${compiler} ${sourcePath}`);
     }
 }
 
@@ -151,17 +151,17 @@ function executeCodeBlock(code: string, extension: string, compiler: string) {
 function registerCommand(context: vscode.ExtensionContext, commandId: string,
     extension?: string, compiler?: string) {
     context.subscriptions.push(
-        vscode.commands.registerCommand(commandId, async (code: string) => {
+        vscode.commands.registerCommand(commandId, async (line: number, code: string) => {
             if (commandId === 'markdown.copy') {
                 await vscode.env.clipboard.writeText(code);
                 vscode.window.showInformationMessage('Code copied to clipboard.');
             } else if (commandId === 'markdown.run.terminal') {
-                await runCommandsInTerminal(code);
+                await runCommandsInTerminal(line, code);
             } else if (extension && compiler) {
                 if (commandId === 'markdown.run.java') {
-                    await executeJavaBlock(code, extension, compiler);
+                    await executeJavaBlock(line, code, extension, compiler);
                 } else {
-                    await executeCodeBlock(code, extension, compiler);
+                    await executeCodeBlock(line, code, extension, compiler);
                 }
             }
         })
