@@ -84,26 +84,25 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
 
 async function runCommandsInTerminal(code: string) {
     const childProcess = cp.exec(code);
-    
+    const editor = vscode.window.activeTextEditor;
+
+    const handleOutputData = (data: Buffer) => {
+        if (editor) {
+            editor.edit(editBuilder => {
+                editBuilder.insert(
+                    new vscode.Position(0, 0), data.toString()
+                );
+            });
+        }
+    };
+
     if (childProcess.stdout) {
-        childProcess.stdout.on('data', (data) => {
-            console.log(data.toString());
-        });
+        childProcess.stdout.on('data', handleOutputData);
     }
 
     if (childProcess.stderr) {
-        childProcess.stderr.on('data', (data) => {
-            console.error(data.toString());
-        });
+        childProcess.stderr.on('data', handleOutputData);
     }
-
-    childProcess.on('error', (error) => {
-        console.error(`Error: ${error.message}`);
-    });
-
-    childProcess.on('close', (code) => {
-        console.log(`Child process exited with code ${code}`);
-    });
 }
 
 // Java needs very special handling of executing a file
