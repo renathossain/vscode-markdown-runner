@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import * as cp from 'child_process';
 
 // Stores the paths of the temporary files created for running code
 const tempFilePaths: string[] = [];
@@ -81,36 +82,28 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     }
 }
 
-// Helper for runCommandsInTerminal
-function sendCommandsToTerminal(code: string, terminal: vscode.Terminal) {
-    terminal.show();
-    terminal.sendText(code);
-}
+async function runCommandsInTerminal(code: string) {
+    const childProcess = cp.exec(code);
+    
+    if (childProcess.stdout) {
+        childProcess.stdout.on('data', (data) => {
+            console.log(data.toString());
+        });
+    }
 
-// Run the code line by line the terminal 
-export function runCommandsInTerminal(code: string) {
-    let disposable = vscode.window.onDidOpenTerminal(terminal => {
-        disposable.dispose(); // Stop listening once a terminal is opened
-        sendCommandsToTerminal(code, terminal);
+    if (childProcess.stderr) {
+        childProcess.stderr.on('data', (data) => {
+            console.error(data.toString());
+        });
+    }
+
+    childProcess.on('error', (error) => {
+        console.error(`Error: ${error.message}`);
     });
 
-    const activeTerminal = vscode.window.activeTerminal;
-    if (activeTerminal) {
-        // If there's already an active terminal, send commands to it immediately
-        sendCommandsToTerminal(code, activeTerminal);
-    } else {
-        vscode.window.createTerminal(); // Create a terminal if none exists
-    }
-
-    const editor = vscode.window.activeTextEditor;
-    if (editor) {
-        const testBlock = '```' + 'python' + '\n\n```\n';
-        const position = new vscode.Position(0, 0);
-        editor.edit(editBuilder => {
-            editBuilder.insert(position, testBlock);
-        });
-        vscode.window.showInformationMessage('Markdown code block inserted!');
-    }
+    childProcess.on('close', (code) => {
+        console.log(`Child process exited with code ${code}`);
+    });
 }
 
 // Java needs very special handling of executing a file

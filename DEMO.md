@@ -4,8 +4,8 @@ Run the following code blocks to test out Fibonacci in different languages:
 
 ```bash
 echo "For bash files:"
-echo "1. We can run them Line by Line in the terminal."
-echo "2. We can run them all at once as a Bash file."
+echo "1. Run Line by Line in the terminal."
+echo "2. Run as a whole bash file."
 ```
 
 ```bash
