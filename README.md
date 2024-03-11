@@ -31,7 +31,7 @@ Download or copy [DEMO.md](DEMO.md) into VS Code after installing this extension
 
 ## Extension Settings
 
-- **Compiler Configuration**: Modify the settings.json file to add or modify non-compiled language configurations. To reset to default settings, delete the "markdownRunner.compilerConfiguration" field in settings.json, save, and restart VS Code:
+- **Compiler Configuration**: Modify the settings.json file to add or modify language configurations. Make sure to save the settings.json and restart VS Code afterwards. To reset to default settings, delete the "markdownRunner.compilerConfiguration" field in settings.json, save, and restart VS Code:
 
 ```json
 "markdownRunner.compilerConfiguration": {

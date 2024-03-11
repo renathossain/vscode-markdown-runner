@@ -3,7 +3,7 @@
 Run the following code blocks to test out all the features:
 
 ```bash
-ping -c 5 google.com
+ping google.com
 ```
 
 ```bash
