@@ -3,13 +3,12 @@
 Run the following code blocks to test out all the features:
 
 ```bash
-ping google.com
+ping -c 5 google.com
 ```
 
 ```bash
 hostname
 whoami
-neofetch
 ```
 
 Mistakes in code demo:
