@@ -21,7 +21,7 @@ On Arch Linux, you can install all required languages with 1 command!
 sudo pacman --needed -S php perl r dart groovy go rust ghc julia lua ruby nodejs npm python bash
 ```
 
-On other less excellent operating systems, please research the installation process.
+On other less excellent operating systems, please research the installation process. Consider using the Windows Subsystem for Linux on Windows.
 
 ## Demo
 
