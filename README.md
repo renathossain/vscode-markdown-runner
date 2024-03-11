@@ -4,7 +4,7 @@ This extension enables the seamless execution of code blocks in any programming 
 
 ## Features
 
-- CodeLens buttons on top of each code block offer options to run or copy the code. Temporary files are created for execution and cleaned up afterward.
+- CodeLens buttons on top of each code block offer options to run or copy the code. Temporary files are created for execution and are cleaned up afterward.
 - Supports a wide range of languages, including C, Rust, C++, Java, TypeScript, PHP, Perl, R, Dart, Groovy, Go, Haskell, Julia, Lua, Ruby, JavaScript, Python, Bash. Additional non-compiled languages can be added via extension settings.
 
 ## Requirements
