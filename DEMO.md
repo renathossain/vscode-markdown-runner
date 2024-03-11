@@ -1,12 +1,30 @@
 # Demo of extension's features
 
-Run the following code blocks to test out Fibonacci in different languages:
+Run the following code blocks to test out all the features:
 
 ```bash
-echo "For bash files:"
-echo "1. We can run them Line by Line in the terminal."
-echo "2. We can run them all at once as a Bash file."
+ping google.com
 ```
+
+```bash
+hostname
+whoami
+neofetch
+```
+
+Mistakes in code demo:
+
+```c
+#include <stdio.h>
+
+int main() {
+    return 0;
+}
+
+}
+```
+
+Fibonacci in different programming languages:
 
 ```bash
 #!/bin/bash
