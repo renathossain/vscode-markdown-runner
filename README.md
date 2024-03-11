@@ -1,49 +1,43 @@
 # Markdown Code Block Runner for VS Code
 
-Enables the seamless execution of code blocks in any language within Markdown files in VS Code.
+This extension enables the seamless execution of code blocks in any programming language within Markdown files in VS Code.
 
 ## Features
 
-- CodeLens buttons on top of each code block offer options to run or copy it. Code is saved temporarily, executed, and cleaned up afterward.
-- Supports: C, Rust, C++, Java, TypeScript, PHP, Perl, R, Dart, Groovy, Go, Haskell, Julia, Lua, Ruby, JavaScript, Python, Bash. Additional languages (non-compiled) can be added via extension settings.
-- For Bash files, choose between executing code line by line or running the entire script at once.
-- Automatically displays and updates execution results below code blocks. Can be turned off in extension settings.
+- CodeLens buttons on top of each code block offer options to run or copy the code. Temporary files are created for execution and cleaned up afterward.
+- Supports a wide range of languages, including C, Rust, C++, Java, TypeScript, PHP, Perl, R, Dart, Groovy, Go, Haskell, Julia, Lua, Ruby, JavaScript, Python, Bash. Additional non-compiled languages can be added via extension settings.
 
 ## Requirements
 
-Keep in mind that before running a code block:
-- Make sure the code is correct
-- Install the language required by the code block
+Before running a code block:
+
+- Ensure the code is correct.
+- Install the required language and dependencies.
 - Set up path environment variables to access the installed languages globally.
 
-On Arch Linux, you can run 1 command to install all languages!
+On Arch Linux, you can install all required languages with 1 command!
 
 ```bash
 sudo pacman --needed -S php perl r dart groovy go rust ghc julia lua ruby nodejs npm python bash
 ```
 
-On other less excellent operating systems, you will need to research what the installation process is.
+On other less excellent operating systems, please research the installation process.
 
 ## Demo
 
-Download or copy DEMO.md into VS Code after installing this extension, and test all the features out!
+Download or copy [DEMO.md](DEMO.md) into VS Code after installing this extension, and test all the features out!
 
 - Paste gifs here
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+* **Compiler Configuration**: Edit a .json file to add or modify the configuration of non-compiled languages.
 
-For example:
+## Future Development
 
-This extension contributes the following settings:
+Please note that the following features are desired for future development, but their implementation is not guaranteed:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+- Implement automatic pasting of execution results within the markdown file and provide a toggle to turn it on/off.
+- Improve user-friendliness of the "Compiler Configuration" settings, possibly by integrating them directly into the VS Code settings UI, instead of editing a .json file.
 
-## Known Issues
-
-- Need to implement automatic pasting of results within the markdown file and a toggle to turn it on/off for that in settings.
-- Need to implement settings where users can specify how to run new languages or change how existing ones are run.
-- This extension was only tested on Arch Linux with VSCodium. Compatability with other setups is not guaranteed.
-
+Your feedback and contributions are welcome in shaping the future of this extension!
