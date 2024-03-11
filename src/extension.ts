@@ -82,26 +82,31 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     }
 }
 
+const handleOutputData = (editor: vscode.TextEditor, line: number, data: Buffer): number => {
+    editor.edit(editBuilder => {
+        editBuilder.insert(
+            new vscode.Position(line, 0), data.toString()
+        );
+    });
+    return line + (data.toString().match(/\n/g) || []).length;
+};
+
 async function runCommandsInTerminal(line: number, code: string) {
     const childProcess = cp.exec(code);
     const editor = vscode.window.activeTextEditor;
 
-    const handleOutputData = (data: Buffer) => {
-        if (editor) {
-            editor.edit(editBuilder => {
-                editBuilder.insert(
-                    new vscode.Position(line + 3, 0), data.toString()
-                );
+    if (editor) {
+        if (childProcess.stdout) {
+            childProcess.stdout.on('data', (data) => {
+                line = handleOutputData(editor, line, data);
             });
         }
-    };
-
-    if (childProcess.stdout) {
-        childProcess.stdout.on('data', handleOutputData);
-    }
-
-    if (childProcess.stderr) {
-        childProcess.stderr.on('data', handleOutputData);
+        
+        if (childProcess.stderr) {
+            childProcess.stderr.on('data', (data) => {
+                line = handleOutputData(editor, line, data);
+            });
+        } 
     }
 }
 
