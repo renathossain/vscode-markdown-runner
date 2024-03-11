@@ -94,6 +94,7 @@ const handleOutputData = (editor: vscode.TextEditor, line: number, data: Buffer)
 async function runCommandsInTerminal(line: number, code: string) {
     const childProcess = cp.exec(code);
     const editor = vscode.window.activeTextEditor;
+    line += (code.match(/\n/g) || []).length + 3;
 
     if (editor) {
         if (childProcess.stdout) {
