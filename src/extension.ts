@@ -1,4 +1,4 @@
-// Copyright (c) Renat Hossain. All rights reserved.
+// Copyright (c) 2024 Renat Hossain. All rights reserved.
 // SPDX-License-Identifier: GPL-3.0
 // See LICENSE in the project root for license information.
 
@@ -136,6 +136,8 @@ function executeJavaBlock(code: string, extension: string, compiler: string) {
     });
 }
 
+// Save code to a temporary file and execute it
+// For compiled languages, a child process is created for compilation additionally
 function executeCodeBlock(code: string, extension: string, compiler: string) {
     const compiledName = `temp_${Date.now()}`;
     const compiledPath = path.join(os.tmpdir(), compiledName);
@@ -156,7 +158,7 @@ function executeCodeBlock(code: string, extension: string, compiler: string) {
     }
 }
 
-// Helper for activate function
+// Assigns what each command should do
 function registerCommand(context: vscode.ExtensionContext, commandId: string,
     extension?: string, compiler?: string) {
     context.subscriptions.push(
