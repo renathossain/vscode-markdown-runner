@@ -82,6 +82,44 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     }
 }
 
+function updateResultCodeBlock(editor: vscode.TextEditor, lineNumber: number): void {
+    const document = editor.document;
+    const lineCount = document.lineCount;
+    const resultTag = '```result';
+
+    // Check if the line contains the result tag
+    const lineText = document.lineAt(lineNumber).text.trim();
+    if (lineText === resultTag) {
+        // If the result code block exists, remove its content
+        let resultBlockStart = lineNumber;
+        let resultBlockEnd = -1;
+
+        for (let i = lineNumber + 1; i < lineCount; i++) {
+            const line = document.lineAt(i).text.trim();
+            if (line === '```') {
+                resultBlockEnd = i;
+                break;
+            }
+        }
+
+        if (resultBlockEnd !== -1) {
+            const deleteRange = new vscode.Range(
+                resultBlockStart + 1, 0,
+                resultBlockEnd - 1, document.lineAt(resultBlockEnd - 1).text.length
+            );
+            editor.edit(editBuilder => {
+                editBuilder.delete(deleteRange);
+            });
+        }
+    } else {
+        // If the result code block does not exist, create an empty one
+        const insertPosition = new vscode.Position(lineNumber - 1, 0);
+        editor.edit(editBuilder => {
+            editBuilder.insert(insertPosition, `\n${resultTag}\n\`\`\`\n`);
+        });
+    }
+}
+
 const handleOutputData = (editor: vscode.TextEditor, line: number, data: Buffer): number => {
     editor.edit(editBuilder => {
         editBuilder.insert(
@@ -94,9 +132,12 @@ const handleOutputData = (editor: vscode.TextEditor, line: number, data: Buffer)
 async function runCommandsInTerminal(line: number, code: string) {
     const childProcess = cp.spawn('bash', ['-c', code]);
     const editor = vscode.window.activeTextEditor;
-    line += 3;
+    line += 4;
 
     if (editor) {
+        updateResultCodeBlock(editor, line);
+        line += 1;
+
         if (childProcess.stdout) {
             childProcess.stdout.on('data', (data) => {
                 line = handleOutputData(editor, line, data);
