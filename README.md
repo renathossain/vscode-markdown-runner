@@ -47,3 +47,7 @@ Please note that the following features are desired for future development, but 
 - Improve user-friendliness of the "Compiler Configuration" settings, possibly by integrating them directly into the VS Code settings UI, instead of editing a .json file.
 
 Your feedback and contributions are welcome in shaping the future of this extension!
+
+# License
+
+[GPL-3.0 license](LICENSE)
