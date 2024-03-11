@@ -19,7 +19,7 @@ function createCodeLens(codeLenses: vscode.CodeLens[], document: vscode.TextDocu
     const command: vscode.Command = {
         title: title,
         command: commandString,
-        arguments: [line, code]
+        arguments: [line + (code.match(/\n/g) || []).length, code]
     };
     const codeLens = new vscode.CodeLens(range, command);
     codeLenses.push(codeLens);
@@ -94,7 +94,7 @@ const handleOutputData = (editor: vscode.TextEditor, line: number, data: Buffer)
 async function runCommandsInTerminal(line: number, code: string) {
     const childProcess = cp.exec(code);
     const editor = vscode.window.activeTextEditor;
-    line += (code.match(/\n/g) || []).length + 3;
+    line += 3;
 
     if (editor) {
         if (childProcess.stdout) {
