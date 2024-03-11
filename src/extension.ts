@@ -1,4 +1,4 @@
-// Copyright (c) Renat Hossain. All rights reserved.
+// Copyright (c) 2024 Renat Hossain. All rights reserved.
 // SPDX-License-Identifier: GPL-3.0
 // See LICENSE in the project root for license information.
 
