@@ -27,7 +27,7 @@ function createCodeLens(codeLenses: vscode.CodeLens[], document: vscode.TextDocu
 // Map the buttons to the corresponding action
 const commands: { [key: string]: { title: string, command: string } } = {
     "": {
-        title: "Run Line by Line",
+        title: "Run in Terminal",
         command: "markdown.run.terminal"
     },
     copy: {
@@ -55,13 +55,20 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
             }
             const line = document.positionAt(match.index).line;
             
-            if (codeBlockType === 'bash') {
-                createCodeLens(
-                    codeLenses, document, line, commands[""].title,
-                    commands[""].command, code
-                );
+            if (codeBlockType === "bash" || codeBlockType === "") {
+                if (!code.includes('\n')) {
+                    createCodeLens(
+                        codeLenses, document, line, commands[""].title,
+                        commands[""].command, code
+                    );
+                } else {
+                    createCodeLens(
+                        codeLenses, document, line, commands["bash"].title,
+                        commands["bash"].command, code
+                    );
+                }
             }
-            if (commands.hasOwnProperty(codeBlockType)) {
+            else if (commands.hasOwnProperty(codeBlockType)) {
                 createCodeLens(
                     codeLenses, document, line, commands[codeBlockType].title,
                     commands[codeBlockType].command, code
