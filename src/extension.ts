@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import * as cp from 'child_process';
 
 // Stores the paths of the temporary files created for running code
 const tempFilePaths: string[] = [];
@@ -88,29 +89,29 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     }
 }
 
-// Helper for runCommandsInTerminal
-function sendCommandsToTerminal(code: string, terminal: vscode.Terminal) {
+// Run the code line by line the terminal 
+export function runCommandsInTerminal(code: string) {
+    const terminal = vscode.window.activeTerminal || vscode.window.createTerminal();
     terminal.show();
     terminal.sendText(code);
 }
 
-// Run the code line by line the terminal 
-export function runCommandsInTerminal(code: string) {
-    let disposable = vscode.window.onDidOpenTerminal(terminal => {
-        disposable.dispose(); // Stop listening once a terminal is opened
-        sendCommandsToTerminal(code, terminal);
+// If successful compilation, it allows it execute the file
+// Otherwise, it throws an error message
+function compileHandler(command: string, callback: (success: boolean) => void): void {
+    cp.exec(command, (error, stdout, stderr) => {
+        if (error) {
+            // timeout is necessary because of interference with codelens
+            setTimeout(() => {
+                vscode.window.showErrorMessage(stderr, { modal: true });
+            }, 100);
+            callback(false);
+        } else {
+            callback(true);
+        }
     });
-
-    const activeTerminal = vscode.window.activeTerminal;
-    if (activeTerminal) {
-        // If there's already an active terminal, send commands to it immediately
-        sendCommandsToTerminal(code, activeTerminal);
-    } else {
-        vscode.window.createTerminal(); // Create a terminal if none exists
-    }
 }
 
-// Java needs very special handling of executing a file
 function executeJavaBlock(code: string, extension: string, compiler: string) {
     vscode.window.showInputBox({
         prompt: 'Enter the name of the Java file (without extension). ' +
@@ -125,16 +126,16 @@ function executeJavaBlock(code: string, extension: string, compiler: string) {
             fs.writeFileSync(javaSourcePath, code);
             tempFilePaths.push(javaSourcePath);
 
-            runCommandsInTerminal(`${compiler} ${javaSourcePath}`);
-            runCommandsInTerminal(`java -cp ${os.tmpdir()} ${javaCompiledName}`);
-            tempFilePaths.push(`${javaCompiledPath}.class`);
+            compileHandler(`${compiler} ${javaSourcePath}`, (success) => {
+                if (success) {
+                    runCommandsInTerminal(`java -cp ${os.tmpdir()} ${javaCompiledName}`);
+                    tempFilePaths.push(`${javaCompiledPath}.class`);
+                }
+            });
         }
     });
 }
 
-// - Creates a temporary file with a unique name
-// - Writes the parsed code to that file
-// - Compiles and/or Runs the temporary file
 function executeCodeBlock(code: string, extension: string, compiler: string) {
     const compiledName = `temp_${Date.now()}`;
     const compiledPath = path.join(os.tmpdir(), compiledName);
@@ -144,9 +145,12 @@ function executeCodeBlock(code: string, extension: string, compiler: string) {
     tempFilePaths.push(sourcePath);
 
     if (extension === 'c' || extension === 'cpp' || extension === 'rs') {
-        runCommandsInTerminal(`${compiler} -o ${compiledPath} ${sourcePath}`);
-        runCommandsInTerminal(compiledPath);
-        tempFilePaths.push(compiledPath);
+        compileHandler(`${compiler} -o ${compiledPath} ${sourcePath}`, (success) => {
+            if (success) {
+                runCommandsInTerminal(compiledPath);
+                tempFilePaths.push(compiledPath);
+            }
+        });
     } else {
         runCommandsInTerminal(`${compiler} ${sourcePath}`);
     }
