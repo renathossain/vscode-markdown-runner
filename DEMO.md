@@ -7,8 +7,8 @@ ping google.com
 ```
 
 ```bash
-hostname
-whoami
+echo "Hello"
+echo "This is a bash file."
 ```
 
 Mistakes in code demo:
