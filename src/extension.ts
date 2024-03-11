@@ -92,7 +92,7 @@ const handleOutputData = (editor: vscode.TextEditor, line: number, data: Buffer)
 };
 
 async function runCommandsInTerminal(line: number, code: string) {
-    const childProcess = cp.exec(code);
+    const childProcess = cp.spawn('bash', ['-c', code]);
     const editor = vscode.window.activeTextEditor;
     line += 3;
 
