@@ -57,17 +57,16 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
             const line = document.positionAt(match.index).line;
             
             if (codeBlockType === "bash" || codeBlockType === "") {
-                if (!code.includes('\n')) {
-                    createCodeLens(
-                        codeLenses, document, line, commands[""].title,
-                        commands[""].command, code
-                    );
-                } else {
+                if (code.includes('\n')) {
                     createCodeLens(
                         codeLenses, document, line, commands["bash"].title,
                         commands["bash"].command, code
                     );
                 }
+                createCodeLens(
+                    codeLenses, document, line, commands[""].title,
+                    commands[""].command, code
+                );
             }
             else if (commands.hasOwnProperty(codeBlockType)) {
                 createCodeLens(
