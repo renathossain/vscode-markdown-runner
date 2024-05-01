@@ -19,6 +19,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as cp from 'child_process';
+import { parseText } from './parser';
 
 // Stores the paths of the temporary files created for running code
 const tempFilePaths: string[] = [];
@@ -57,18 +58,11 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
 
     provideCodeLenses(document: vscode.TextDocument): vscode.ProviderResult<vscode.CodeLens[]> {
         const codeLenses: vscode.CodeLens[] = [];
-        const codeBlockRegex = /```([\s\S]+?)```/g;
-        let match;
 
-        while ((match = codeBlockRegex.exec(document.getText())) !== null) {
-            let code = match[1].trim();
-            let codeBlockType = match[0].split('\n')[0].trim().toLowerCase().substring(3);
-            if (codeBlockType !== "") {
-                code = code.replace(/^[^\n]*\n/, ''); // remove code block type
-            }
-            const line = document.positionAt(match.index).line;
+        for (const { line, language, code } of parseText(document)) {
+            console.log(`${line}, ${language}: ${code}`);
 
-            if (codeBlockType === "bash" || codeBlockType === "") {
+            if (language === "bash" || language === "") {
                 if (code.includes('\n')) {
                     createCodeLens(
                         codeLenses, document, line, commands["bash"].title,
@@ -80,10 +74,10 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
                     commands[""].command, code
                 );
             }
-            else if (commands.hasOwnProperty(codeBlockType)) {
+            else if (commands.hasOwnProperty(language)) {
                 createCodeLens(
-                    codeLenses, document, line, commands[codeBlockType].title,
-                    commands[codeBlockType].command, code
+                    codeLenses, document, line, commands[language].title,
+                    commands[language].command, code
                 );
             }
             createCodeLens(
