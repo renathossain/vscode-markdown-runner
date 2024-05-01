@@ -1,6 +1,18 @@
-// Copyright (c) 2024 Renat Hossain. All rights reserved.
-// SPDX-License-Identifier: GPL-3.0
-// See LICENSE in the project root for license information.
+// vscode-markdown-runner
+// Copyright (C) 2024 Renat Hossain
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';
@@ -47,7 +59,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         const codeLenses: vscode.CodeLens[] = [];
         const codeBlockRegex = /```([\s\S]+?)```/g;
         let match;
-        
+
         while ((match = codeBlockRegex.exec(document.getText())) !== null) {
             let code = match[1].trim();
             let codeBlockType = match[0].split('\n')[0].trim().toLowerCase().substring(3);
@@ -55,7 +67,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
                 code = code.replace(/^[^\n]*\n/, ''); // remove code block type
             }
             const line = document.positionAt(match.index).line;
-            
+
             if (codeBlockType === "bash" || codeBlockType === "") {
                 if (code.includes('\n')) {
                     createCodeLens(
@@ -114,8 +126,8 @@ function compileHandler(command: string, callback: (success: boolean) => void): 
 function executeJavaBlock(code: string, extension: string, compiler: string) {
     vscode.window.showInputBox({
         prompt: 'Enter the name of the Java file (without extension). ' +
-                'Note: The Java standard requires the filename to be the ' + 
-                'same as the name of the main class.',
+            'Note: The Java standard requires the filename to be the ' +
+            'same as the name of the main class.',
         placeHolder: 'MyJavaFile'
     }).then((javaCompiledName) => {
         if (javaCompiledName) {
@@ -179,13 +191,17 @@ function registerCommand(context: vscode.ExtensionContext, commandId: string,
 }
 
 // Function to get the compiler configuration
-function getLanguageConfigurations(): { [key: string]: {
-    name: string, extension: string, compiler: string, compiled: Boolean
-}} | undefined {
-    const config = vscode.workspace.getConfiguration();
-    return config.get<{ [key: string]: {
+function getLanguageConfigurations(): {
+    [key: string]: {
         name: string, extension: string, compiler: string, compiled: Boolean
-    }}>('markdownRunner.compilerConfiguration');
+    }
+} | undefined {
+    const config = vscode.workspace.getConfiguration();
+    return config.get<{
+        [key: string]: {
+            name: string, extension: string, compiler: string, compiled: Boolean
+        }
+    }>('markdownRunner.compilerConfiguration');
 }
 
 // Main function that runs when the extension is activated
