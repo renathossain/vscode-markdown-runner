@@ -26,15 +26,13 @@ const tempFilePaths: string[] = [];
 
 // - Generate the code lens with the required parameters and push it to the list
 // - Helper for provideCodeLenses
-function createCodeLens(codeLenses: vscode.CodeLens[], document: vscode.TextDocument,
-    line: number, title: string, commandString: string, code: string) {
-    const range = document.lineAt(line).range;
-    const command: vscode.Command = {
-        title: title,
-        command: commandString,
+function pushCodeLens(codeLenses: vscode.CodeLens[], language: string, code: string, range: vscode.Range) {
+    const vscodeCommand: vscode.Command = {
+        title: commands[language].title,
+        command: commands[language].command,
         arguments: [code]
     };
-    const codeLens = new vscode.CodeLens(range, command);
+    const codeLens = new vscode.CodeLens(range, vscodeCommand);
     codeLenses.push(codeLens);
 }
 
@@ -59,31 +57,9 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     provideCodeLenses(document: vscode.TextDocument): vscode.ProviderResult<vscode.CodeLens[]> {
         const codeLenses: vscode.CodeLens[] = [];
 
-        for (const { line, language, code } of parseText(document)) {
-            console.log(`${line}, ${language}: ${code}`);
-
-            if (language === "bash" || language === "") {
-                if (code.includes('\n')) {
-                    createCodeLens(
-                        codeLenses, document, line, commands["bash"].title,
-                        commands["bash"].command, code
-                    );
-                }
-                createCodeLens(
-                    codeLenses, document, line, commands[""].title,
-                    commands[""].command, code
-                );
-            }
-            else if (commands.hasOwnProperty(language)) {
-                createCodeLens(
-                    codeLenses, document, line, commands[language].title,
-                    commands[language].command, code
-                );
-            }
-            createCodeLens(
-                codeLenses, document, line, commands["copy"].title,
-                commands["copy"].command, code
-            );
+        for (const { language, code, range } of parseText(document)) {
+            pushCodeLens(codeLenses, language, code, range);
+            pushCodeLens(codeLenses, "copy", code, range);
         }
 
         return codeLenses;
