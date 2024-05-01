@@ -30,7 +30,8 @@ type LanguageConfiguration = {
 };
 
 // Reads and returns the language configurations from `settings.json` file
-export function getLanguageConfigurations(): LanguageConfiguration | undefined {
+export function getLanguageConfigurations(): LanguageConfiguration {
     const config = vscode.workspace.getConfiguration();
-    return config.get<LanguageConfiguration>('markdownRunner.compilerConfiguration');
+    const languageConfigurations = config.get<LanguageConfiguration>('markdownRunner.compilerConfiguration');
+    return languageConfigurations || {};
 }

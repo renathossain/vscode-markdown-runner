@@ -19,63 +19,14 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as cp from 'child_process';
-import { parseText } from './parser';
+import { ButtonCodeLensProvider } from './codeLens';
+import { getLanguageConfigurations } from './compilerConfig';
 
 // Stores the paths of the temporary files created for running code
 const tempFilePaths: string[] = [];
 
-// - Generate the code lens with the required parameters and push it to the list
-// - Helper for provideCodeLenses
-function pushCodeLens(codeLenses: vscode.CodeLens[], language: string, code: string, range: vscode.Range) {
-    const vscodeCommand: vscode.Command = {
-        title: commands[language].title,
-        command: commands[language].command,
-        arguments: [code]
-    };
-    const codeLens = new vscode.CodeLens(range, vscodeCommand);
-    codeLenses.push(codeLens);
-}
-
-// Map the buttons to the corresponding action
-const commands: { [key: string]: { title: string, command: string } } = {
-    "": {
-        title: "Run in Terminal",
-        command: "markdown.run.terminal"
-    },
-    copy: {
-        title: "Copy",
-        command: "markdown.copy"
-    }
-};
-
-// - Parses all code blocks -> (line number, code)
-// - Render the `Run Code Block` and `Copy` buttons at the correct line number
-// - Give each button the correct title and action based on the code block type
-export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
-    onDidChangeCodeLenses?: vscode.Event<void>;
-
-    provideCodeLenses(document: vscode.TextDocument): vscode.ProviderResult<vscode.CodeLens[]> {
-        const codeLenses: vscode.CodeLens[] = [];
-
-        for (const { language, code, range } of parseText(document)) {
-            // Check that parsed langauge is valid before creating code lens
-            if (commands.hasOwnProperty(language)) {
-                pushCodeLens(codeLenses, language, code, range);
-            }
-            // For bash files, also give `run in terminal` (line by line) option
-            if (language === "bash") {
-                pushCodeLens(codeLenses, "", code, range);
-            }
-            pushCodeLens(codeLenses, "copy", code, range);
-        }
-
-        return codeLenses;
-    }
-
-    resolveCodeLens?(): vscode.ProviderResult<vscode.CodeLens> {
-        return null;
-    }
-}
+// Stores the language configurations
+export const languageConfigurations = getLanguageConfigurations();
 
 // Run the code line by line the terminal 
 export function runCommandsInTerminal(code: string) {
@@ -167,20 +118,6 @@ function registerCommand(context: vscode.ExtensionContext, commandId: string,
     );
 }
 
-// Function to get the compiler configuration
-function getLanguageConfigurations(): {
-    [key: string]: {
-        name: string, extension: string, compiler: string, compiled: Boolean
-    }
-} | undefined {
-    const config = vscode.workspace.getConfiguration();
-    return config.get<{
-        [key: string]: {
-            name: string, extension: string, compiler: string, compiled: Boolean
-        }
-    }>('markdownRunner.compilerConfiguration');
-}
-
 // Main function that runs when the extension is activated
 // - Initializes and runs the code lens buttons
 // - Handles requests for running and copying Markdown Code Blocks
@@ -197,17 +134,6 @@ export function activate(context: vscode.ExtensionContext) {
     if (languageConfigurations) {
         for (const [key, value] of Object.entries(languageConfigurations)) {
             const commandId = `markdown.run.${key}`;
-            if (value.compiled) {
-                commands[key] = {
-                    title: `Compile and Run ${value.name} File`,
-                    command: commandId
-                };
-            } else {
-                commands[key] = {
-                    title: `Run ${value.name} File`,
-                    command: commandId
-                };
-            }
             registerCommand(context, commandId, value.extension, value.compiler);
         }
     } else {
