@@ -33,8 +33,8 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
             if (languageConfigurations.hasOwnProperty(language)) {
                 pushCodeLens(codeLenses, language, code, range);
             }
-            // For bash files, also give `run in terminal` (line by line) option
-            if (language === "bash" && languageConfigurations.hasOwnProperty("")) {
+            // For bash and untyped code blocks, give `run in terminal` (line by line) option
+            if (language === "bash" || language === "") {
                 pushCodeLens(codeLenses, "", code, range);
             }
             // Always provide button to copy code
