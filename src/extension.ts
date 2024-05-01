@@ -58,7 +58,14 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         const codeLenses: vscode.CodeLens[] = [];
 
         for (const { language, code, range } of parseText(document)) {
-            pushCodeLens(codeLenses, language, code, range);
+            // Check that parsed langauge is valid before creating code lens
+            if (commands.hasOwnProperty(language)) {
+                pushCodeLens(codeLenses, language, code, range);
+            }
+            // For bash files, also give `run in terminal` (line by line) option
+            if (language === "bash") {
+                pushCodeLens(codeLenses, "", code, range);
+            }
             pushCodeLens(codeLenses, "copy", code, range);
         }
 
