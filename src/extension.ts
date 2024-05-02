@@ -16,22 +16,27 @@
 
 // ******************************ARCHITECTURE******************************
 //
-//                               extension.ts
-//                              /     |      \
-//                             /      |       \
-//                            /       |        \
-//                 codeLens.ts   codeRunner.ts  compilerConfig.ts
-//                       |
-//                       |
-//                   parser.ts
+//                             extension.ts
+//                                  |
+//             +------------+-------+-----+-----------------+       
+//             |            |             |                 |
+//       codeLinks.ts  codeLens.ts   codeRunner.ts  compilerConfig.ts
+//             |            |
+//             +-----+------+
+//                   |
+//               parser.ts
 //
 // - `extension.ts`: Responsible for activating the extension and orchestrating
-//   the loading of language configurations using `compilerConfig.ts`. Passes
+//   the loading of language configuration using `compilerConfig.ts`. Passes
 //   the configuration to `codeLens.ts` and `codeRunner.ts`.
 //
-// - `codeLens.ts`: Uses the language configuration to generate appropriate
-//   code lens buttons for each code block in the editor. Utilizes `parser.ts`
-//   to parse code blocks and determine their language and content.
+// - `codeLens.ts`: Uses `parser.ts` to parse code blocks and determine
+//   their language and content, then generate appropriate code lens buttons for
+//   each code block in the editor. It only generates the buttons for languages
+//   specified in the language configuration.
+//
+// - `codeLinks.ts`: Uses `parser.ts` to parse inline code snippets, then turn them
+//   into links that the user can 'Ctrl + Left Click' to run them. 
 //
 // - `codeRunner.ts`: Uses the language configuration to provide the correct
 //   file extension and compiler to execute code blocks.
@@ -43,12 +48,10 @@
 //   and content, assisting `codeLens.ts` in generating code lens buttons.
 //
 // - Data Flow:
-//   - `extension.ts` loads language configurations from `compilerConfig.ts`.
-//   - `extension.ts` passes the configurations to `codeLens.ts` and `codeRunner.ts`.
-//   - `codeLens.ts` uses configurations to generate code lens buttons,
-//     and `parser.ts` assists in parsing the language and code.
-//   - `codeRunner.ts` uses language configurations and language and code from
-//     code lens to execute code blocks with the correct settings.
+// `compilerConfig.ts` ---> `extension.ts` +-+-> `codeLens.ts` +-+-> codeRunner.ts
+//                             `parser.ts` +-+-> `codeLens.ts` +-+
+//
+// ************************************************************************
 
 import * as vscode from 'vscode';
 import { ButtonCodeLensProvider, provideCommand } from './codeLens';
@@ -95,7 +98,7 @@ export function activate(context: vscode.ExtensionContext) {
         )
     );
 
-    // Register the commands, which the code lens buttons will activate
+    // Register the commands used by the "subscriptions" above
     for (const language of Object.keys(languageConfigurations)) {
         registerCommand(context, language);
     }
