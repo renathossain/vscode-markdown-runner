@@ -54,6 +54,7 @@ import * as vscode from 'vscode';
 import { ButtonCodeLensProvider, provideCommand } from './codeLens';
 import { getLanguageConfigurations } from './compilerConfig';
 import { cleanTempFiles, runCommandsInTerminal, executeJavaBlock, executeCodeBlock } from './codeRunner';
+import { CodeSnippetLinkProvider } from './codeLinks';
 
 // Read and store the language configurations as a global variable
 export const languageConfigurations = getLanguageConfigurations();
@@ -80,10 +81,17 @@ function registerCommand(context: vscode.ExtensionContext, language: string) {
 
 // Main function that runs when the extension is activated
 export function activate(context: vscode.ExtensionContext) {
-    // Initializes the code lens buttons
+    // Initializes the CodeLens buttons for code blocks
     context.subscriptions.push(
         vscode.languages.registerCodeLensProvider({ language: 'markdown', scheme: 'file' },
             new ButtonCodeLensProvider()
+        )
+    );
+
+    // Initializes the DocumentLinks for inline code (code snippets)
+    context.subscriptions.push(
+        vscode.languages.registerDocumentLinkProvider({ language: 'markdown', scheme: 'file' },
+            new CodeSnippetLinkProvider()
         )
     );
 
