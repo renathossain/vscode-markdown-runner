@@ -67,6 +67,8 @@ function registerCommand(context: vscode.ExtensionContext, language: string) {
                 vscode.window.showInformationMessage('Code copied to clipboard.');
             } else if (language === '') {
                 await runCommandsInTerminal(code);
+            } else if (language === 'inline') {
+                vscode.window.showInformationMessage('Running selected code...');
             } else if (language === 'java') {
                 await executeJavaBlock(code);
             } else {
@@ -91,6 +93,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
     registerCommand(context, '');
     registerCommand(context, 'copy');
+    registerCommand(context, 'inline');
 }
 
 // Deletes the temporary files that were generated during the extension's usage
