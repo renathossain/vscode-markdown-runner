@@ -2,6 +2,10 @@
 
 Run the following code blocks to test out all the features:
 
+Run code snippets and bash files in the terminal:
+
+`ping google.com`
+
 ```bash
 ping google.com
 ```
@@ -20,6 +24,24 @@ int main() {
     return 0;
 }
 
+}
+```
+
+Test case with ``` in the middle of the code:
+
+```rust
+fn main () {
+    println!("{}", square(5));
+}
+/// This function returns the square of x
+/// #Examples
+/// ```
+/// let y = 5;
+/// let square = square(y);
+/// assert_eq!(25, square);
+/// ```
+fn square(x: i32) -> i32 {
+    return x * x;
 }
 ```
 
