@@ -42,14 +42,14 @@ export function* parseCodeBlocks(document: vscode.TextDocument): Generator<{ lan
         const language = match[1].trim().toLowerCase(); // First capturing group of (.*?)\n(.*?)
         const code = match[2]; // Second capturing group of (.*?)\n(.*?)
         const line = document.positionAt(match.index).line; // Line number of match in document
-        const range = document.lineAt(line).range; // Location where codelens are rendered (above the code block)
+        const range = document.lineAt(line).range; // Location to place the CodeLens
         yield { language, code, range };
     }
 }
 
 // Parses out any inline code (code within ` delimiters)
 // This is a generator function that yields the code of each code block
-export function* parseInlineCode(document: vscode.TextDocument): Generator<{ code: string }> {
+export function* parseInlineCode(document: vscode.TextDocument): Generator<{ code: string, range: vscode.Range }> {
     // Explanation of regex:
     // [^`\n] means match all any character that is not ` or \n (negated class)
     // ([^`\n]+?) capturing group will then match one or more of that class
@@ -68,6 +68,9 @@ export function* parseInlineCode(document: vscode.TextDocument): Generator<{ cod
     while ((match = regex.exec(document.getText())) !== null) {
         // match[0] captures the entire code block (we dont need it)
         const code = match[1]; // First capturing group ([^`\n]+?)
-        yield { code };
+        const startPos = document.positionAt(match.index);
+        const endPos = document.positionAt(match.index + match[0].length);
+        const range = new vscode.Range(startPos, endPos); // Used to properly place the link
+        yield { code, range };
     }
 }
