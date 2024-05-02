@@ -34,11 +34,11 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
                 pushCodeLens(codeLenses, language, code, range);
             }
             // For bash and untyped code blocks, give `run in terminal` (line by line) option
-            if (language === "bash" || language === "") {
-                pushCodeLens(codeLenses, "", code, range);
+            if (language === 'bash' || language === '') {
+                pushCodeLens(codeLenses, '', code, range);
             }
             // Always provide button to copy code
-            pushCodeLens(codeLenses, "copy", code, range);
+            pushCodeLens(codeLenses, 'copy', code, range);
         }
 
         return codeLenses;
@@ -61,10 +61,10 @@ function pushCodeLens(codeLenses: vscode.CodeLens[], language: string, code: str
 }
 
 function provideTitle(language: string): string {
-    if (language === "copy") {
-        return "Copy";
-    } else if (language === "") {
-        return "Run in Terminal";
+    if (language === 'copy') {
+        return 'Copy';
+    } else if (language === '') {
+        return 'Run in Terminal';
     }
     const config = languageConfigurations[language];
     if (config.compiled) {
@@ -74,11 +74,11 @@ function provideTitle(language: string): string {
     }
 }
 
-function provideCommand(language: string): string {
-    if (language === "copy") {
-        return "markdown.copy";
-    } else if (language === "") {
-        return "markdown.run.terminal";
+export function provideCommand(language: string): string {
+    if (language === 'copy') {
+        return 'markdown.copy';
+    } else if (language === '') {
+        return 'markdown.run.terminal';
     } else {
         return `markdown.run.${language}`;
     }
