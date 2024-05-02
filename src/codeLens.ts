@@ -18,7 +18,7 @@ import * as vscode from 'vscode';
 import { parseText } from './parser';
 import { languageConfigurations } from './extension';
 
-// For each parsed code block, provide a code lens with the correct title and command:
+// For each parsed code block, provide a code lens button with the correct title and command:
 // - Run the code, if the language is supported
 // - Run Terminal commands line by line, for bash files
 // - Copy the code

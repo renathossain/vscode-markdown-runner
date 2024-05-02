@@ -14,8 +14,41 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// *********ARCHITECTURE*********
-// 
+// ******************************ARCHITECTURE******************************
+//
+//                               extension.ts
+//                              /     |      \
+//                             /      |       \
+//                            /       |        \
+//                 codeLens.ts   codeRunner.ts  compilerConfig.ts
+//                       |
+//                       |
+//                   parser.ts
+//
+// - `extension.ts`: Responsible for activating the extension and orchestrating
+//   the loading of language configurations using `compilerConfig.ts`. Passes
+//   the configuration to `codeLens.ts` and `codeRunner.ts`.
+//
+// - `codeLens.ts`: Uses the language configuration to generate appropriate
+//   code lens buttons for each code block in the editor. Utilizes `parser.ts`
+//   to parse code blocks and determine their language and content.
+//
+// - `codeRunner.ts`: Uses the language configuration to provide the correct
+//   file extension and compiler to execute code blocks.
+//
+// - `compilerConfig.ts`: Provides language configurations used by `codeLens.ts`
+//   and `codeRunner.ts`.
+//
+// - `parser.ts`: Responsible for parsing code blocks to determine their language
+//   and content, assisting `codeLens.ts` in generating code lens buttons.
+//
+// - Data Flow:
+//   - `extension.ts` loads language configurations from `compilerConfig.ts`.
+//   - `extension.ts` passes the configurations to `codeLens.ts` and `codeRunner.ts`.
+//   - `codeLens.ts` uses configurations to generate code lens buttons,
+//     and `parser.ts` assists in parsing the language and code.
+//   - `codeRunner.ts` uses language configurations and language and code from
+//     code lens to execute code blocks with the correct settings.
 
 import * as vscode from 'vscode';
 import { ButtonCodeLensProvider, provideCommand } from './codeLens';
