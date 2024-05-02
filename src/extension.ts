@@ -27,7 +27,7 @@
 //               parser.ts
 //
 // - `extension.ts`: Responsible for activating the extension and orchestrating
-//   the loading of language configuration using `compilerConfig.ts`. Passes
+//   the loading of the language configuration using `compilerConfig.ts`. Passes
 //   the configuration to `codeLens.ts` and `codeRunner.ts`.
 //
 // - `codeLens.ts`: Uses `parser.ts` to parse code blocks and determine
@@ -54,10 +54,10 @@
 // ************************************************************************
 
 import * as vscode from 'vscode';
-import { ButtonCodeLensProvider, provideCommand } from './codeLens';
 import { getLanguageConfigurations } from './compilerConfig';
-import { cleanTempFiles, runCommandsInTerminal, executeJavaBlock, executeCodeBlock } from './codeRunner';
+import { ButtonCodeLensProvider, provideCommand } from './codeLens';
 import { CodeSnippetLinkProvider } from './codeLinks';
+import { cleanTempFiles, runCommandsInTerminal, executeJavaBlock, executeCodeBlock } from './codeRunner';
 
 // Read and store the language configurations as a global variable
 export const languageConfigurations = getLanguageConfigurations();
