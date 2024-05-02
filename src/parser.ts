@@ -18,7 +18,7 @@ import * as vscode from 'vscode';
 
 // Parses out any code blocks in the text of a markdown document
 // This is a generator function that yields the line number, language and code of each code block
-export function* parseText(document: vscode.TextDocument): Generator<{ language: string, code: string, range: vscode.Range }> {
+export function* parseCodeBlocks(document: vscode.TextDocument): Generator<{ language: string, code: string, range: vscode.Range }> {
     // Explanation of regex:
     // . matches any character, so .* matches any number of any characters
     // .*? makes the behaviour lazy (matches the least amount of char to satisfy the regex)
@@ -42,5 +42,18 @@ export function* parseText(document: vscode.TextDocument): Generator<{ language:
         const line = document.positionAt(match.index).line; // Line number of match in document
         const range = document.lineAt(line).range; // Location where codelens are rendered (above the code block)
         yield { language, code, range };
+    }
+}
+
+export function* parseInlineCode(document: vscode.TextDocument): Generator<{ code: string }> {
+    // Explanation of regex:
+    const regex: RegExp = /(?<!`+)`([^`\n]*?)`(?!`+)/g;
+
+    // Loop through all matches and yield them
+    let match;
+    while ((match = regex.exec(document.getText())) !== null) {
+        // match[0] captures the entire code block (we dont need it)
+        const code = match[0];
+        yield { code };
     }
 }
