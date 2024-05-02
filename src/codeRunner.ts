@@ -51,7 +51,8 @@ export function executeJavaBlock(code: string) {
             const javaCompiledPath = path.join(os.tmpdir(), javaCompiledName);
             const javaSourcePath = `${javaCompiledPath}.${extension}`;
 
-            fs.writeFileSync(javaSourcePath, code);
+            // SECURITY: Only Owner Read and Write
+            fs.writeFileSync(javaSourcePath, code, { mode: 0o600 });
             tempFilePaths.push(javaSourcePath);
 
             compileHandler(`${compiler} ${javaSourcePath}`, (success) => {
@@ -73,7 +74,8 @@ export function executeCodeBlock(language: string, code: string) {
     const compiler = languageConfigurations[language].compiler;
     const sourcePath = `${compiledPath}.${extension}`;
 
-    fs.writeFileSync(sourcePath, code);
+    // SECURITY: Only Owner Read and Write
+    fs.writeFileSync(sourcePath, code, { mode: 0o600 });
     tempFilePaths.push(sourcePath);
 
     if (extension === 'c' || extension === 'cpp' || extension === 'rs') {

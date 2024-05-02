@@ -5,6 +5,7 @@ This extension enables the seamless execution of code blocks in any programming 
 ## Features
 
 - CodeLens buttons on top of each code block offer options to run or copy the code. Temporary files are created for execution and are cleaned up afterward.
+- Ctrl + Right Click on any Code Snippet to run it in the terminal.
 - Supports a wide range of languages, including C, Rust, C++, Java, TypeScript, PHP, Perl, R, Dart, Groovy, Go, Haskell, Julia, Lua, Ruby, JavaScript, Python, Bash. Additional non-compiled languages can be added via extension settings.
 
 ## Requirements
@@ -15,10 +16,10 @@ Before running a code block:
 - Install the required language and dependencies.
 - Set up path environment variables to access the installed languages globally.
 
-On Arch Linux, you can install all required languages with 1 command!
+On Arch Linux, you can install all supported languages with 1 command!
 
 ```bash
-sudo pacman --needed -S php perl r dart groovy go rust ghc julia lua ruby nodejs npm python bash
+sudo pacman --needed -S php perl r dart groovy go rustup ghc julia lua ruby nodejs npm python bash
 ```
 
 On other less excellent operating systems, please research the installation process. Consider using the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install) on Windows.
