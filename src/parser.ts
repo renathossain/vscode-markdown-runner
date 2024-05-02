@@ -16,7 +16,7 @@
 
 import * as vscode from 'vscode';
 
-// Parses out any code blocks in the text of a markdown document
+// Parses out any code blocks (code within ``` delimiters) in the text of a markdown document
 // This is a generator function that yields the line number, language and code of each code block
 export function* parseCodeBlocks(document: vscode.TextDocument): Generator<{ language: string, code: string, range: vscode.Range }> {
     // Explanation of regex:
@@ -45,15 +45,27 @@ export function* parseCodeBlocks(document: vscode.TextDocument): Generator<{ lan
     }
 }
 
+// Parses out any inline code (code within ` delimiters)
+// This is a generator function that yields the code of each code block
 export function* parseInlineCode(document: vscode.TextDocument): Generator<{ code: string }> {
     // Explanation of regex:
-    const regex: RegExp = /(?<!`+)`([^`\n]*?)`(?!`+)/g;
+    // [^`\n] means match all any character that is not ` or \n (negated class)
+    // ([^`\n]+?) capturing group will then match one or more of that class
+    // It will also do so lazily, and not greedily because of the ?
+    // Thus, `([^`\n]+?)` effectively matches an inline code block, with the
+    // capturing group matching the code itself (non ` or \n characters)
+    // Finally, we add some extra validation using look ahead and look behind:
+    // (?<!`+) means negative look behind of at least one `
+    // (?!`+) means negative look ahead of at least one `
+    // This means that if there are multiple consecutive ` before and/or after
+    // the code block, then we reject it.
+    const regex: RegExp = /(?<!`+)`([^`\n]+?)`(?!`+)/g;
 
     // Loop through all matches and yield them
     let match;
     while ((match = regex.exec(document.getText())) !== null) {
         // match[0] captures the entire code block (we dont need it)
-        const code = match[0];
+        const code = match[1];
         yield { code };
     }
 }
