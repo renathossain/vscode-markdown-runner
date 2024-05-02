@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import * as vscode from 'vscode';
-import { parseText } from './parser';
+import { parseCodeBlocks } from './parser';
 import { languageConfigurations } from './extension';
 
 // For each parsed code block, provide a code lens button with the correct title and command:
@@ -28,7 +28,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     provideCodeLenses(document: vscode.TextDocument): vscode.ProviderResult<vscode.CodeLens[]> {
         const codeLenses: vscode.CodeLens[] = [];
 
-        for (const { language, code, range } of parseText(document)) {
+        for (const { language, code, range } of parseCodeBlocks(document)) {
             // Check that parsed langauge is valid before creating code lens
             if (languageConfigurations.hasOwnProperty(language)) {
                 pushCodeLens(codeLenses, language, code, range);
