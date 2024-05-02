@@ -16,6 +16,8 @@
 
 import * as vscode from 'vscode';
 
+// Test out the regex here: https://regexr.com/
+
 // Parses out any code blocks (code within ``` delimiters) in the text of a markdown document
 // This is a generator function that yields the line number, language and code of each code block
 export function* parseCodeBlocks(document: vscode.TextDocument): Generator<{ language: string, code: string, range: vscode.Range }> {
