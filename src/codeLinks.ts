@@ -15,13 +15,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import * as vscode from 'vscode';
+import { parseInlineCode } from './parser';
 
 // For each parsed inline code snippet, provide a document link that:
 // - Runs the code in the terminal
 export class CodeSnippetLinkProvider implements vscode.DocumentLinkProvider {
     provideDocumentLinks(document: vscode.TextDocument, _token: vscode.CancellationToken): vscode.ProviderResult<vscode.DocumentLink[]> {
-        const range = new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 10)); // First 10 characters
-        const link = new vscode.DocumentLink(range, vscode.Uri.parse('command:markdown.run.inline'));
-        return [link];
+        const codeSnippetLinks: vscode.ProviderResult<vscode.DocumentLink[]> = [];
+
+        // Loop through all parsed inline code snippets and generate the Document Links
+        for (const { code, range } of parseInlineCode(document)) {
+            const link = new vscode.DocumentLink(range, vscode.Uri.parse('command:markdown.run.inline'));
+            codeSnippetLinks.push(link);
+        }
+
+        return codeSnippetLinks;
     }
 }

@@ -28,6 +28,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     provideCodeLenses(document: vscode.TextDocument): vscode.ProviderResult<vscode.CodeLens[]> {
         const codeLenses: vscode.CodeLens[] = [];
 
+        // Loop through all parsed code blocks and generate buttons
         for (const { language, code, range } of parseCodeBlocks(document)) {
             // Check that parsed langauge is valid before creating code lens
             if (languageConfigurations.hasOwnProperty(language)) {
