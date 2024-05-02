@@ -2,9 +2,11 @@
 
 Run the following code blocks to test out all the features:
 
-Run code snippets and bash files in the terminal:
+Run code snippets by pressing Ctrl + Left Click:
 
 `ping google.com`
+
+Run the following as a Bash File or line by line in the terminal:
 
 ```bash
 ping google.com
