@@ -65,7 +65,7 @@ export function* parseInlineCode(document: vscode.TextDocument): Generator<{ cod
     let match;
     while ((match = regex.exec(document.getText())) !== null) {
         // match[0] captures the entire code block (we dont need it)
-        const code = match[1];
+        const code = match[1]; // First capturing group ([^`\n]+?)
         yield { code };
     }
 }
