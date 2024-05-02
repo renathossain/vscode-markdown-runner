@@ -23,8 +23,6 @@ import { languageConfigurations } from './extension';
 // - Run Terminal commands line by line, for bash files
 // - Copy the code
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
-    onDidChangeCodeLenses?: vscode.Event<void>;
-
     provideCodeLenses(document: vscode.TextDocument): vscode.ProviderResult<vscode.CodeLens[]> {
         const codeLenses: vscode.CodeLens[] = [];
 
@@ -43,10 +41,6 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         }
 
         return codeLenses;
-    }
-
-    resolveCodeLens?(): vscode.ProviderResult<vscode.CodeLens> {
-        return null;
     }
 }
 

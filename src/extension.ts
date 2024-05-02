@@ -69,7 +69,7 @@ function registerCommand(context: vscode.ExtensionContext, language: string) {
             } else if (language === '') {
                 await runCommandsInTerminal(code);
             } else if (language === 'inline') {
-                vscode.window.showInformationMessage('Running selected code...');
+                await runCommandsInTerminal(code);
             } else if (language === 'java') {
                 await executeJavaBlock(code);
             } else {

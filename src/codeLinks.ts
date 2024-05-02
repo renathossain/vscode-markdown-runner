@@ -20,12 +20,18 @@ import { parseInlineCode } from './parser';
 // For each parsed inline code snippet, provide a document link that:
 // - Runs the code in the terminal
 export class CodeSnippetLinkProvider implements vscode.DocumentLinkProvider {
-    provideDocumentLinks(document: vscode.TextDocument, _token: vscode.CancellationToken): vscode.ProviderResult<vscode.DocumentLink[]> {
-        const codeSnippetLinks: vscode.ProviderResult<vscode.DocumentLink[]> = [];
+    provideDocumentLinks(document: vscode.TextDocument): vscode.ProviderResult<vscode.DocumentLink[]> {
+        const codeSnippetLinks: vscode.DocumentLink[] = [];
 
         // Loop through all parsed inline code snippets and generate the Document Links
         for (const { code, range } of parseInlineCode(document)) {
-            const link = new vscode.DocumentLink(range, vscode.Uri.parse('command:markdown.run.inline'));
+            const vscodeCommand: vscode.Command = {
+                title: 'Run Code Snippet',
+                command: 'markdown.run.inline',
+                arguments: [code]
+            };
+            const command = `command:${vscodeCommand.command}?${encodeURIComponent(JSON.stringify(vscodeCommand.arguments))}`;
+            const link = new vscode.DocumentLink(range, vscode.Uri.parse(command));
             codeSnippetLinks.push(link);
         }
 
