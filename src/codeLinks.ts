@@ -30,7 +30,8 @@ export class CodeSnippetLinkProvider implements vscode.DocumentLinkProvider {
                 command: 'markdown.run.inline',
                 arguments: [code]
             };
-            const command = `command:${vscodeCommand.command}?${encodeURIComponent(JSON.stringify(vscodeCommand.arguments))}`;
+            const uriString = encodeURIComponent(JSON.stringify(vscodeCommand.arguments));
+            const command = `command:${vscodeCommand.command}?${uriString}`;
             const link = new vscode.DocumentLink(range, vscode.Uri.parse(command));
             codeSnippetLinks.push(link);
         }
