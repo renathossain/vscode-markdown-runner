@@ -1,6 +1,6 @@
 {
   "name": "markdown-runner",
-  "displayName": "Markdown Code Block Runner",
+  "displayName": "Markdown Code Runner",
   "description": "Enables the seamless execution of code blocks in any language within Markdown files in VS Code",
   "publisher": "renathossain",
   "icon": "Icon.png",
