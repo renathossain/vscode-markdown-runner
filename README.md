@@ -28,7 +28,7 @@ On other less excellent operating systems, please research the installation proc
 
 Download or copy [DEMO.md](DEMO.md) into VS Code after installing this extension, and test all the features out!
 
-![DEMO](DEMO.gif)
+<p><img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/DEMO.gif" alt="DEMO">
 
 ## Extension Settings
 
