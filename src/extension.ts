@@ -48,8 +48,8 @@
 //   and content, assisting `codeLens.ts` in generating code lens buttons.
 //
 // - Data Flow:
-// `compilerConfig.ts` ---> `extension.ts` +-+-> `codeLens.ts` +-+-> codeRunner.ts
-//                             `parser.ts` +-+-> `codeLens.ts` +-+
+// `compilerConfig.ts` ---> `extension.ts` +-+->  `codeLens.ts` +-+-> codeRunner.ts
+//                             `parser.ts` +-+-> `codeLinks.ts` +-+
 //
 // ************************************************************************
 
