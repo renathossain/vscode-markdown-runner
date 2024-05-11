@@ -74,6 +74,18 @@ export function executeCodeBlock(language: string, code: string) {
     const compiler = languageConfigurations[language].compiler;
     const sourcePath = `${compiledPath}.${extension}`;
 
+    // Read and store the Python Path configuration boolean
+    const config = vscode.workspace.getConfiguration();
+    const pythonPathEnabled = config.get<boolean>('markdownRunner.pythonPath');
+
+    // Inject the markdown file's path into the code
+    const editor = vscode.window.activeTextEditor;
+    if (pythonPathEnabled && editor && language === 'python') {
+        const documentUri = editor.document.uri;
+        const documentDirectory = path.dirname(documentUri.fsPath);
+        code = `import sys\nsys.path.insert(0, '${documentDirectory}')\n` + code;
+    }
+
     // SECURITY: Only Owner Read and Write
     fs.writeFileSync(sourcePath, code, { mode: 0o600 });
     tempFilePaths.push(sourcePath);
