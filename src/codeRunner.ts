@@ -19,7 +19,8 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as cp from 'child_process';
-import { languageConfigurations } from './extension';
+import { getLanguageConfig } from './compilerConfig';
+import { provideCommand } from './codeLens';
 
 // Stores the paths of the temporary files created for running code
 // which are cleaned up at the end
@@ -36,6 +37,26 @@ export function cleanTempFiles() {
     });
 }
 
+// Create the commands and assign what they do
+export function registerCommand(context: vscode.ExtensionContext, language: string) {
+    context.subscriptions.push(
+        vscode.commands.registerCommand(provideCommand(language), async (code: string) => {
+            if (language === 'copy') {
+                await vscode.env.clipboard.writeText(code);
+                vscode.window.showInformationMessage('Code copied to clipboard.');
+            } else if (language === '') {
+                await runCommandsInTerminal(code);
+            } else if (language === 'inline') {
+                await runCommandsInTerminal(code);
+            } else if (language === 'java') {
+                await executeJavaBlock(code);
+            } else {
+                await executeCodeBlock(language, code);
+            }
+        })
+    );
+}
+
 // For Java code blocks, special handling is needed
 // The user is prompted to enter the name of the Java file to match the name of the main class
 export function executeJavaBlock(code: string) {
@@ -46,8 +67,8 @@ export function executeJavaBlock(code: string) {
         placeHolder: 'MyJavaFile'
     }).then((javaCompiledName) => {
         if (javaCompiledName) {
-            const extension = languageConfigurations['java'].extension;
-            const compiler = languageConfigurations['java'].compiler;
+            const extension = getLanguageConfig('java', 'extension');
+            const compiler = getLanguageConfig('java', 'compiler');
             const javaCompiledPath = path.join(os.tmpdir(), javaCompiledName);
             const javaSourcePath = `${javaCompiledPath}.${extension}`;
 
@@ -70,8 +91,8 @@ export function executeJavaBlock(code: string) {
 export function executeCodeBlock(language: string, code: string) {
     const compiledName = `temp_${Date.now()}`;
     const compiledPath = path.join(os.tmpdir(), compiledName);
-    const extension = languageConfigurations[language].extension;
-    const compiler = languageConfigurations[language].compiler;
+    const extension = getLanguageConfig(language, 'extension');
+    const compiler = getLanguageConfig(language, 'compiler');
     const sourcePath = `${compiledPath}.${extension}`;
 
     // Read and store the Python Path configuration boolean
