@@ -12,6 +12,7 @@ This extension enables the seamless execution of code blocks in any programming 
 
 Before running a code block:
 
+- Ensure "Compiler Configuration" settings are correct.
 - Ensure the code is correct.
 - Install the required language and dependencies.
 - Set up path environment variables to access the installed languages globally.
@@ -32,7 +33,16 @@ Download or copy [DEMO.md](DEMO.md) into VS Code after installing this extension
 
 ## Extension Settings
 
-- **Compiler Configuration**: Modify the settings.json file to add or modify language configurations. Make sure to save the settings.json and restart VS Code afterwards. To reset to default settings, delete the entire "markdownRunner.compilerConfiguration" field and all of its contents in settings.json, save, and restart VS Code:
+### Compiler Configuration
+
+- Add or modify the entries representing compiler configurations and restart VS Code afterwards. Each entry consists of an array defining the properties for a specific programming language. The array elements represent: [Language Name, File Extension, Compiler Command/Path, Compiled (true/false)]. You can only add non-compiled languages here.
+
+```json
+// Example
+["Python", "py", "python", false]
+```
+
+- If there are issues, reset each entry to their default value using the reset icon ↻ and restart VS Code. Alternatively, remove the following from the VS Code `settings.json` file and restart VS Code:
 
 ```json
 "markdownRunner.compilerConfiguration": {
@@ -45,7 +55,6 @@ Download or copy [DEMO.md](DEMO.md) into VS Code after installing this extension
 Please note that the following features are desired for future development, but their implementation is not guaranteed:
 
 - Implement automatic pasting of execution results within the markdown file and provide a toggle to turn it on/off.
-- Improve user-friendliness of the "Compiler Configuration" settings, possibly by integrating them directly into the VS Code settings UI, instead of editing a .json file.
 
 Your feedback and contributions are welcome in shaping the future of this extension!
 
