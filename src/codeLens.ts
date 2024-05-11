@@ -16,7 +16,7 @@
 
 import * as vscode from 'vscode';
 import { parseCodeBlocks } from './parser';
-import { languageConfigurations } from './extension';
+import { getLanguageConfig } from './compilerConfig';
 
 // For each parsed code block, provide a code lens button with the correct title and command:
 // - Run the code, if the language is supported
@@ -29,7 +29,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         // Loop through all parsed code blocks and generate buttons
         for (const { language, code, range } of parseCodeBlocks(document)) {
             // Check that parsed langauge is valid before creating code lens
-            if (languageConfigurations.hasOwnProperty(language)) {
+            if (getLanguageConfig(language, 'name') !== undefined) {
                 pushCodeLens(codeLenses, language, code, range);
             }
             // For bash and untyped code blocks, give `run in terminal` (line by line) option
@@ -60,12 +60,10 @@ function provideTitle(language: string): string {
         return 'Copy';
     } else if (language === '') {
         return 'Run in Terminal';
-    }
-    const config = languageConfigurations[language];
-    if (config.compiled) {
-        return `Compile and Run ${config.name} File`;
+    } else if (getLanguageConfig(language, 'compiled')) {
+        return `Compile and Run ${getLanguageConfig(language, 'name')} File`;
     } else {
-        return `Run ${config.name} File`;
+        return `Run ${getLanguageConfig(language, 'name')} File`;
     }
 }
 

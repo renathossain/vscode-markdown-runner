@@ -19,39 +19,30 @@ import * as vscode from 'vscode';
 // Language configurations hold the info necessary for
 // executing code blocks and providing codelens buttons
 // Instead of hardcoding the language configurations,
-// the user can modify the defaults in the `settings.json` file
-type LanguageConfiguration = {
-    [key: string]: {
-        name: string;
-        extension: string;
-        compiler: string;
-        compiled: boolean;
-    };
-};
+// the user can modify the defaults in the extension settings.
 
-// Reads and returns the language configurations from `settings.json` file
-export function getLanguageConfigurations(): LanguageConfiguration {
+// Return the raw language configuration
+export function languageMap() {
     const config = vscode.workspace.getConfiguration();
     const languageConfigurations = config.get<any>('markdownRunner.compilerConfiguration');
+    return languageConfigurations || {};
+}
 
-    const parsedConfig: LanguageConfiguration = {};
-
-    // Check if language configurations exist
-    if (languageConfigurations) {
-        // Loop through each language configuration
-        Object.keys(languageConfigurations).forEach((language: string) => {
-            const configValue = languageConfigurations[language];
-            // Parse the string to JSON array, considering the quotes
-            const configArray = JSON.parse(configValue.replace(/'/g, '"'));
-            // Append each language configuration to the dictionary
-            parsedConfig[language] = {
-                name: configArray[0],
-                extension: configArray[1],
-                compiler: configArray[2],
-                compiled: configArray[3]
-            };
-        });
+// Return the language configuration for a specific language
+export function getLanguageConfig(language: string, configuration: string) {
+    const languageConfig = languageMap();
+    if (languageConfig.hasOwnProperty(language)) {
+        const configValue = languageConfig[language];
+        const configArray = JSON.parse(configValue.replace(/'/g, '"'));
+        if (configuration === 'name') {
+            return configArray[0];
+        } else if (configuration === 'extension') {
+            return configArray[1];
+        } else if (configuration === 'compiler') {
+            return configArray[2];
+        } else if (configuration === 'compiled') {
+            return configArray[3];
+        }
     }
-
-    return parsedConfig;
+    return undefined;
 }

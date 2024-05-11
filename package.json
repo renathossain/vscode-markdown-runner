@@ -4,7 +4,7 @@
   "description": "Enables the seamless execution of code blocks in any language within Markdown files in VS Code",
   "publisher": "renathossain",
   "icon": "Icon.png",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "engines": {
     "vscode": "^1.87.0"
   },
@@ -49,6 +49,11 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "markdownRunner.pythonPath": {
+          "type": "boolean",
+          "description": "Enabling this setting adds the directory of the markdown file to Python's sys.path, allowing you to import modules from the same directory.",
+          "default": true
         }
       }
     }
