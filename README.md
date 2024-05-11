@@ -23,7 +23,7 @@ On Arch Linux, you can install all supported languages with 1 command!
 sudo pacman --needed -S php perl r dart groovy go rustup ghc julia lua ruby nodejs npm python bash
 ```
 
-On other less excellent operating systems, please research the installation process. Consider using the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install) on Windows.
+Please research the language installation process on other operating systems. Consider using the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install) on Windows.
 
 ## Demo
 
@@ -35,7 +35,7 @@ Download or copy [DEMO.md](DEMO.md) into VS Code after installing this extension
 
 ### Compiler Configuration
 
-- Add or modify the entries representing compiler configurations and restart VS Code afterwards. Each entry consists of an array defining the properties for a specific programming language. The array elements represent: [Language Name, File Extension, Compiler Command/Path, Compiled (true/false)]. You can only add non-compiled languages here.
+- Add or modify the entries representing compiler configurations. Each entry consists of an array defining the properties for a specific programming language. The array elements represent: [Language Name, File Extension, Compiler Command/Path, Compiled (true/false)]. You can only add non-compiled languages here.
 
 ```json
 // Example
@@ -49,6 +49,10 @@ Download or copy [DEMO.md](DEMO.md) into VS Code after installing this extension
     // settings for each language
 }
 ```
+
+### Python Path
+
+Enabling this setting adds the directory of the markdown file to Python's sys.path, allowing you to import modules from the same directory.
 
 ## Future Development
 
