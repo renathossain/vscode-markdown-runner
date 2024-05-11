@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.2.0
+
+- Added feature that adds the directory of the markdown file to Python's sys.path, allowing you to import modules from the same directory.
+- Extension settings now apply without restarting VS Code.
+
 ## 1.1.0
 
 - Enhanced user-friendliness of "Compiler Configuration" settings by integrating them into the VS Code Extension Settings UI. Users can now directly edit, add, or reset configurations for each language without the need to modify a .json file.
