@@ -27,114 +27,27 @@
           "type": "object",
           "description": "Compiler configuration for supported languages in Markdown files. You can only add non-compiled languages here.",
           "default": {
-            "python": {
-              "name": "Python",
-              "extension": "py",
-              "compiler": "python",
-              "compiled": false
-            },
-            "c": {
-              "name": "C",
-              "extension": "c",
-              "compiler": "gcc",
-              "compiled": true
-            },
-            "java": {
-              "name": "Java",
-              "extension": "java",
-              "compiler": "javac",
-              "compiled": true
-            },
-            "cpp": {
-              "name": "C++",
-              "extension": "cpp",
-              "compiler": "g++",
-              "compiled": true
-            },
-            "rust": {
-              "name": "Rust",
-              "extension": "rs",
-              "compiler": "rustc",
-              "compiled": true
-            },
-            "typescript": {
-              "name": "TypeScript",
-              "extension": "ts",
-              "compiler": "npx ts-node",
-              "compiled": false
-            },
-            "php": {
-              "name": "PHP",
-              "extension": "php",
-              "compiler": "php",
-              "compiled": false
-            },
-            "perl": {
-              "name": "Perl",
-              "extension": "pl",
-              "compiler": "perl",
-              "compiled": false
-            },
-            "r": {
-              "name": "R",
-              "extension": "r",
-              "compiler": "Rscript",
-              "compiled": false
-            },
-            "dart": {
-              "name": "Dart",
-              "extension": "dart",
-              "compiler": "dart",
-              "compiled": false
-            },
-            "groovy": {
-              "name": "Groovy",
-              "extension": "groovy",
-              "compiler": "groovy",
-              "compiled": false
-            },
-            "go": {
-              "name": "Go",
-              "extension": "go",
-              "compiler": "go run",
-              "compiled": false
-            },
-            "haskell": {
-              "name": "Haskell",
-              "extension": "hs",
-              "compiler": "runhaskell",
-              "compiled": false
-            },
-            "julia": {
-              "name": "Julia",
-              "extension": "jl",
-              "compiler": "julia",
-              "compiled": false
-            },
-            "lua": {
-              "name": "Lua",
-              "extension": "lua",
-              "compiler": "lua",
-              "compiled": false
-            },
-            "ruby": {
-              "name": "Ruby",
-              "extension": "rb",
-              "compiler": "ruby",
-              "compiled": false
-            },
-            "javascript": {
-              "name": "JavaScript",
-              "extension": "js",
-              "compiler": "node",
-              "compiled": false
-            },
-            "bash": {
-              "name": "Bash",
-              "extension": "sh",
-              "compiler": "bash",
-              "compiled": false
-            }
+            "python": "[\"Python\", \"py\", \"python\", false]",
+            "c": "[\"C\", \"c\", \"gcc\", true]",
+            "java": "[\"Java\", \"java\", \"javac\", true]",
+            "cpp": "[\"C++\", \"cpp\", \"g++\", true]",
+            "rust": "[\"Rust\", \"rs\", \"rustc\", true]",
+            "typescript": "[\"TypeScript\", \"ts\", \"npx ts-node\", false]",
+            "php": "[\"PHP\", \"php\", \"php\", false]",
+            "perl": "[\"Perl\", \"pl\", \"perl\", false]",
+            "r": "[\"R\", \"r\", \"Rscript\", false]",
+            "dart": "[\"Dart\", \"dart\", \"dart\", false]",
+            "groovy": "[\"Groovy\", \"groovy\", \"groovy\", false]",
+            "go": "[\"Go\", \"go\", \"go run\", false]",
+            "haskell": "[\"Haskell\", \"hs\", \"runhaskell\", false]",
+            "julia": "[\"Julia\", \"jl\", \"julia\", false]",
+            "lua": "[\"Lua\", \"lua\", \"lua\", false]",
+            "ruby": "[\"Ruby\", \"rb\", \"ruby\", false]",
+            "javascript": "[\"JavaScript\", \"js\", \"node\", false]",
+            "bash": "[\"Bash\", \"sh\", \"bash\", false]"
+          },
+          "additionalProperties": {
+            "type": "string"
           }
         }
       }
