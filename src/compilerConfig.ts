@@ -32,6 +32,26 @@ type LanguageConfiguration = {
 // Reads and returns the language configurations from `settings.json` file
 export function getLanguageConfigurations(): LanguageConfiguration {
     const config = vscode.workspace.getConfiguration();
-    const languageConfigurations = config.get<LanguageConfiguration>('markdownRunner.compilerConfiguration');
-    return languageConfigurations || {};
+    const languageConfigurations = config.get<any>('markdownRunner.compilerConfiguration');
+
+    const parsedConfig: LanguageConfiguration = {};
+
+    // Check if language configurations exist
+    if (languageConfigurations) {
+        // Loop through each language configuration
+        Object.keys(languageConfigurations).forEach((language: string) => {
+            const configValue = languageConfigurations[language];
+            // Parse the string to JSON array, considering the quotes
+            const configArray = JSON.parse(configValue.replace(/'/g, '"'));
+            // Append each language configuration to the dictionary
+            parsedConfig[language] = {
+                name: configArray[0],
+                extension: configArray[1],
+                compiler: configArray[2],
+                compiled: configArray[3]
+            };
+        });
+    }
+
+    return parsedConfig;
 }

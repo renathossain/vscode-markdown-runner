@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.1.0
+
+- Enhanced user-friendliness of "Compiler Configuration" settings by integrating them into the VS Code Extension Settings UI. Users can now directly edit, add, or reset configurations for each language without the need to modify a .json file.
+
 ## 1.0.0
 
 - Initial release of Markdown Code Block Runner for VS Code extension.
