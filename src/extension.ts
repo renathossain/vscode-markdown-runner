@@ -16,71 +16,48 @@
 
 // ******************************ARCHITECTURE******************************
 //
-//                             extension.ts
-//                                  |
-//             +------------+-------+-----+-----------------+       
-//             |            |             |                 |
-//       codeLinks.ts  codeLens.ts   codeRunner.ts  compilerConfig.ts
-//             |            |
-//             +-----+------+
-//                   |
-//               parser.ts
+//                               extension.ts
+//                                    |
+//                       +------------+-------------+      
+//                       |            |             |
+//                 codeLinks.ts  codeLens.ts   codeRunner.ts  
+//                       |          |  |            |
+//                       +-----+----+  +-----+------+
+//                             |             |
+//                         parser.ts  compilerConfig.ts
 //
 // - `extension.ts`: Responsible for activating the extension and orchestrating
-//   the loading of the language configuration using `compilerConfig.ts`. Passes
-//   the configuration to `codeLens.ts` and `codeRunner.ts`.
-//
-// - `codeLens.ts`: Uses `parser.ts` to parse code blocks and determine
-//   their language and content, then generate appropriate code lens buttons for
-//   each code block in the editor. It only generates the buttons for languages
-//   specified in the language configuration.
+//   the loading of the codeLinks, codeLens and registering the commands that
+//   perform actions such as executing or copying code blocks.
 //
 // - `codeLinks.ts`: Uses `parser.ts` to parse inline code snippets, then turn them
 //   into links that the user can 'Ctrl + Left Click' to run them. 
 //
-// - `codeRunner.ts`: Uses the language configuration to provide the correct
-//   file extension and compiler to execute code blocks.
+// - `codeLens.ts`: Uses `parser.ts` to parse code blocks and determine
+//   their language and content, then generate appropriate code lens buttons for
+//   each code block in the editor. It only generates the buttons for languages
+//   specified in the language configuration provided by `compilerConfig.ts`.
+//
+// - `codeRunner.ts`: Uses `compilerConfig.ts` to provide the correct file
+//   extension and compiler to execute code blocks.
 //
 // - `compilerConfig.ts`: Provides language configurations used by `codeLens.ts`
 //   and `codeRunner.ts`.
 //
 // - `parser.ts`: Responsible for parsing code blocks to determine their language
-//   and content, assisting `codeLens.ts` in generating code lens buttons.
+//   and content used by `codeLinks.ts` and `codeLens.ts`.
 //
 // - Data Flow:
-// `compilerConfig.ts` ---> `extension.ts` +-+->  `codeLens.ts` +-+-> codeRunner.ts
-//                             `parser.ts` +-+-> `codeLinks.ts` +-+
+// `compilerConfig.ts` +-+-> `codeLinks.ts` +-+-> `extension.ts` +-+-> codeRunner.ts
+// `parser.ts`         +-+-> `codeLens.ts`  +-+
 //
 // ************************************************************************
 
 import * as vscode from 'vscode';
-import { getLanguageConfigurations } from './compilerConfig';
-import { ButtonCodeLensProvider, provideCommand } from './codeLens';
 import { CodeSnippetLinkProvider } from './codeLinks';
-import { cleanTempFiles, runCommandsInTerminal, executeJavaBlock, executeCodeBlock } from './codeRunner';
-
-// Read and store the language configurations as a global variable
-export const languageConfigurations = getLanguageConfigurations();
-
-// Create the commands and assign what they do
-function registerCommand(context: vscode.ExtensionContext, language: string) {
-    context.subscriptions.push(
-        vscode.commands.registerCommand(provideCommand(language), async (code: string) => {
-            if (language === 'copy') {
-                await vscode.env.clipboard.writeText(code);
-                vscode.window.showInformationMessage('Code copied to clipboard.');
-            } else if (language === '') {
-                await runCommandsInTerminal(code);
-            } else if (language === 'inline') {
-                await runCommandsInTerminal(code);
-            } else if (language === 'java') {
-                await executeJavaBlock(code);
-            } else {
-                await executeCodeBlock(language, code);
-            }
-        })
-    );
-}
+import { ButtonCodeLensProvider } from './codeLens';
+import { cleanTempFiles, registerCommand } from './codeRunner';
+import { languageMap } from './compilerConfig';
 
 // Main function that runs when the extension is activated
 export function activate(context: vscode.ExtensionContext) {
@@ -99,7 +76,7 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     // Register the commands used by the "subscriptions" above
-    for (const language of Object.keys(languageConfigurations)) {
+    for (const language of Object.keys(languageMap())) {
         registerCommand(context, language);
     }
     registerCommand(context, '');
