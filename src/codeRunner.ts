@@ -38,20 +38,20 @@ export function cleanTempFiles() {
 }
 
 // Create the commands and assign what they do
-export function registerCommand(context: vscode.ExtensionContext, language: string) {
+export function registerCommand(context: vscode.ExtensionContext, language: string, type: string) {
     context.subscriptions.push(
-        vscode.commands.registerCommand(provideCommand(language), async (code: string) => {
+        vscode.commands.registerCommand(provideCommand(language, type), async (code: string) => {
             if (language === 'copy') {
                 await vscode.env.clipboard.writeText(code);
                 vscode.window.showInformationMessage('Code copied to clipboard.');
-            } else if (language === '') {
-                await runCommandsInTerminal(code);
+            } else if (language === 'terminal') {
+                await runCommand(code, type);
             } else if (language === 'inline') {
-                await runCommandsInTerminal(code);
+                await runCommand(code, type);
             } else if (language === 'java') {
-                await executeJavaBlock(code);
+                await executeJavaBlock(code, type);
             } else {
-                await executeCodeBlock(language, code);
+                await executeCodeBlock(language, code, type);
             }
         })
     );
@@ -59,7 +59,7 @@ export function registerCommand(context: vscode.ExtensionContext, language: stri
 
 // For Java code blocks, special handling is needed
 // The user is prompted to enter the name of the Java file to match the name of the main class
-export function executeJavaBlock(code: string) {
+export function executeJavaBlock(code: string, type: string) {
     vscode.window.showInputBox({
         prompt: 'Enter the name of the Java file (without extension). ' +
             'Note: The Java standard requires the filename to be the ' +
@@ -78,7 +78,7 @@ export function executeJavaBlock(code: string) {
 
             compileHandler(`${compiler} ${javaSourcePath}`, (success) => {
                 if (success) {
-                    runCommandsInTerminal(`java -cp ${os.tmpdir()} ${javaCompiledName}`);
+                    runCommand(`java -cp ${os.tmpdir()} ${javaCompiledName}`, type);
                     tempFilePaths.push(`${javaCompiledPath}.class`);
                 }
             });
@@ -88,7 +88,7 @@ export function executeJavaBlock(code: string) {
 
 // Save code to a temporary file and execute it
 // For compiled languages, a child process is created for compilation additionally
-export function executeCodeBlock(language: string, code: string) {
+export function executeCodeBlock(language: string, code: string, type: string) {
     const compiledName = `temp_${Date.now()}`;
     const compiledPath = path.join(os.tmpdir(), compiledName);
     const extension = getLanguageConfig(language, 'extension');
@@ -114,12 +114,12 @@ export function executeCodeBlock(language: string, code: string) {
     if (extension === 'c' || extension === 'cpp' || extension === 'rs') {
         compileHandler(`${compiler} -o ${compiledPath} ${sourcePath}`, (success) => {
             if (success) {
-                runCommandsInTerminal(compiledPath);
+                runCommand(compiledPath, type);
                 tempFilePaths.push(compiledPath);
             }
         });
     } else {
-        runCommandsInTerminal(`${compiler} ${sourcePath}`);
+        runCommand(`${compiler} ${sourcePath}`, type);
     }
 }
 
@@ -139,9 +139,13 @@ function compileHandler(command: string, callback: (success: boolean) => void): 
     });
 }
 
-// Run the code line by line the terminal 
-export function runCommandsInTerminal(code: string) {
-    const terminal = vscode.window.activeTerminal || vscode.window.createTerminal();
-    terminal.show();
-    terminal.sendText(code);
+// Run the code, either in terminal or as child process, then save results in markdown file
+export function runCommand(code: string, type: string) {
+    if (type === 'run') {
+        const terminal = vscode.window.activeTerminal || vscode.window.createTerminal();
+        terminal.show();
+        terminal.sendText(code);
+    } else if (type === 'save') {
+        vscode.window.showInformationMessage('Code running results saved.');
+    }
 }

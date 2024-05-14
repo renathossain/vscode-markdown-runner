@@ -27,17 +27,20 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         const codeLenses: vscode.CodeLens[] = [];
 
         // Loop through all parsed code blocks and generate buttons
-        for (const { language, code, range } of parseCodeBlocks(document)) {
+        for (let { language, code, range } of parseCodeBlocks(document)) {
+            // Treat untitled blocks as bash files
+            language = language === '' ? 'bash' : language;
             // Check that parsed langauge is valid before creating code lens
             if (getLanguageConfig(language, 'name') !== undefined) {
-                pushCodeLens(codeLenses, language, code, range);
+                pushCodeLens(codeLenses, language, code, range, 'run'); // Runs in terminal
+                pushCodeLens(codeLenses, language, code, range, 'save'); // Saves output to the markdown file
             }
             // For bash and untyped code blocks, give `run in terminal` (line by line) option
-            if (language === 'bash' || language === '') {
-                pushCodeLens(codeLenses, '', code, range);
+            if (language === 'bash') {
+                pushCodeLens(codeLenses, 'terminal', code, range, 'run');
             }
             // Always provide button to copy code
-            pushCodeLens(codeLenses, 'copy', code, range);
+            pushCodeLens(codeLenses, 'copy', code, range, '');
         }
 
         return codeLenses;
@@ -45,34 +48,36 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
 }
 
 // Generate the code lens with the required parameters and push it to the list
-function pushCodeLens(codeLenses: vscode.CodeLens[], language: string, code: string, range: vscode.Range) {
+function pushCodeLens(codeLenses: vscode.CodeLens[], language: string, code: string, range: vscode.Range, type: string) {
     const vscodeCommand: vscode.Command = {
-        title: provideTitle(language),
-        command: provideCommand(language),
+        title: provideTitle(language, type),
+        command: provideCommand(language, type),
         arguments: [code]
     };
     const codeLens = new vscode.CodeLens(range, vscodeCommand);
     codeLenses.push(codeLens);
 }
 
-function provideTitle(language: string): string {
+function provideTitle(language: string, type: string): string {
     if (language === 'copy') {
         return 'Copy';
-    } else if (language === '') {
+    } else if (language === 'terminal') {
         return 'Run in Terminal';
+    } else if (type === 'save') {
+        return `Run & Save Output`;
     } else if (getLanguageConfig(language, 'compiled')) {
-        return `Compile and Run ${getLanguageConfig(language, 'name')} File`;
+        return `Compile and Run ${getLanguageConfig(language, 'name')} Block`;
     } else {
-        return `Run ${getLanguageConfig(language, 'name')} File`;
+        return `Run ${getLanguageConfig(language, 'name')} Block`;
     }
 }
 
-export function provideCommand(language: string): string {
+export function provideCommand(language: string, type: string): string {
     if (language === 'copy') {
         return 'markdown.copy';
-    } else if (language === '') {
+    } else if (language === 'terminal') {
         return 'markdown.run.terminal';
     } else {
-        return `markdown.run.${language}`;
+        return `markdown.${type}.${language}`;
     }
 }

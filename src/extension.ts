@@ -77,11 +77,13 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Register the commands used by the "subscriptions" above
     for (const language of Object.keys(languageMap())) {
-        registerCommand(context, language);
+        registerCommand(context, language, 'run');
+        registerCommand(context, language, 'save');
     }
-    registerCommand(context, '');
-    registerCommand(context, 'copy');
-    registerCommand(context, 'inline');
+
+    registerCommand(context, 'inline', 'run');
+    registerCommand(context, 'terminal', 'run');
+    registerCommand(context, 'copy', '');
 }
 
 // Deletes the temporary files that were generated during the extension's usage
