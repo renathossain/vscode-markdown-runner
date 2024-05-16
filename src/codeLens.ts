@@ -66,7 +66,7 @@ function provideTitle(language: string, type: string): string {
     } else if (type === 'save') {
         return `Run & Save Output`;
     } else if (getLanguageConfig(language, 'compiled')) {
-        return `Compile and Run ${getLanguageConfig(language, 'name')} Block`;
+        return `Compile & Run ${getLanguageConfig(language, 'name')} Block`;
     } else {
         return `Run ${getLanguageConfig(language, 'name')} Block`;
     }
