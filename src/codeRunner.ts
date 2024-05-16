@@ -148,6 +148,18 @@ export function runCommand(code: string, type: string) {
         terminal.show();
         terminal.sendText(code);
     } else if (type === 'save') {
-        vscode.window.showInformationMessage('Code running results saved.');
+        runOnMarkdown(code);
     }
+}
+
+// Run command on the markdown file itself
+function runOnMarkdown(code: string) {
+    const runner = cp.spawn(code, [], { shell: true });
+    runner.stdout.on('data', (data) => {
+        console.log(`stdout: ${data}`);
+    });
+
+    runner.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
+    });
 }
