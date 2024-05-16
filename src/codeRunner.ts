@@ -111,7 +111,8 @@ export function executeCodeBlock(language: string, code: string, type: string) {
     fs.writeFileSync(sourcePath, code, { mode: 0o600 });
     tempFilePaths.push(sourcePath);
 
-    if (extension === 'c' || extension === 'cpp' || extension === 'rs') {
+    if (language === 'c' || language === 'cpp' || language === 'rust') {
+        // If a compiled language, then compile it 
         compileHandler(`${compiler} -o ${compiledPath} ${sourcePath}`, (success) => {
             if (success) {
                 runCommand(compiledPath, type);
@@ -119,6 +120,7 @@ export function executeCodeBlock(language: string, code: string, type: string) {
             }
         });
     } else {
+        // If not a compiled language, then run it
         runCommand(`${compiler} ${sourcePath}`, type);
     }
 }
