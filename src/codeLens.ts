@@ -27,9 +27,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         const codeLenses: vscode.CodeLens[] = [];
 
         // Loop through all parsed code blocks and generate buttons
-        for (let { language, code, range } of parseCodeBlocks(document)) {
-            // Treat untitled blocks as bash files
-            language = language === '' ? 'bash' : language;
+        for (const { language, code, range } of parseCodeBlocks(document)) {
             // Check that parsed langauge is valid before creating code lens
             if (getLanguageConfig(language, 'name') !== undefined) {
                 pushCodeLens(codeLenses, language, code, range, 'run'); // Runs in terminal
