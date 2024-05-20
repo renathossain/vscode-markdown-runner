@@ -20,7 +20,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as cp from 'child_process';
 import { getLanguageConfig } from './compilerConfig';
-import { provideCommand } from './codeLens';
+import { Action } from './codeLens';
 
 // Stores the paths of the temporary files created for running code
 // which are cleaned up at the end
@@ -38,28 +38,43 @@ export function cleanTempFiles() {
 }
 
 // Create the commands and assign what they do
-export function registerCommand(context: vscode.ExtensionContext, language: string, type: string) {
-    context.subscriptions.push(
-        vscode.commands.registerCommand(provideCommand(language, type), async (code: string) => {
-            if (language === 'copy') {
-                await vscode.env.clipboard.writeText(code);
-                vscode.window.showInformationMessage('Code copied to clipboard.');
-            } else if (language === 'terminal') {
-                await runCommand(code, type);
-            } else if (language === 'inline') {
-                await runCommand(code, type);
-            } else if (language === 'java') {
-                await executeJavaBlock(code, type);
+export function registerCommands(context: vscode.ExtensionContext) {
+    const blockFunc = async (language: string, code: string, range: vscode.Range, action: Action) => {
+        if (action === Action.COPY_CODEBLOCK_CONTENTS) {
+            await vscode.env.clipboard.writeText(code);
+            await vscode.window.showInformationMessage('Code copied to clipboard.');
+        } else if (action === Action.RUN_IN_TERMINAL) {
+            await runInTerminal(code);
+        } else {
+            let command;
+            if (language === 'java') {
+                command = await executeJavaBlock(code);
             } else {
-                await executeCodeBlock(language, code, type);
+                command = await executeCodeBlock(language, code);
             }
-        })
+            if (action === Action.RUN_TEMPORARY_FILE) {
+                await runInTerminal(command);
+            } else if (action === Action.RUN_ON_MARKDOWN_FILE) {
+                await runOnMarkdown(command);
+            }
+        }
+    };
+    const inlineFunc = async (code: string) => {
+        await runInTerminal(code);
+    };
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('markdown.block', blockFunc)
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('markdown.inline', inlineFunc)
     );
 }
 
 // For Java code blocks, special handling is needed
 // The user is prompted to enter the name of the Java file to match the name of the main class
-export function executeJavaBlock(code: string, type: string) {
+// Return command string to be run in terminal or on markdown file as needed
+export function executeJavaBlock(code: string): string {
     vscode.window.showInputBox({
         prompt: 'Enter the name of the Java file (without extension). ' +
             'Note: The Java standard requires the filename to be the ' +
@@ -78,17 +93,19 @@ export function executeJavaBlock(code: string, type: string) {
 
             compileHandler(`${compiler} ${javaSourcePath}`, (success) => {
                 if (success) {
-                    runCommand(`java -cp ${os.tmpdir()} ${javaCompiledName}`, type);
                     tempFilePaths.push(`${javaCompiledPath}.class`);
+                    return `java -cp ${os.tmpdir()} ${javaCompiledName}`;
                 }
             });
         }
     });
+    return '';
 }
 
 // Save code to a temporary file and execute it
 // For compiled languages, a child process is created for compilation additionally
-export function executeCodeBlock(language: string, code: string, type: string) {
+// Return command string to be run in terminal or on markdown file as needed
+export function executeCodeBlock(language: string, code: string): string {
     const compiledName = `temp_${Date.now()}`;
     const compiledPath = path.join(os.tmpdir(), compiledName);
     const extension = getLanguageConfig(language, 'extension');
@@ -115,14 +132,14 @@ export function executeCodeBlock(language: string, code: string, type: string) {
         // If a compiled language, then compile it 
         compileHandler(`${compiler} -o ${compiledPath} ${sourcePath}`, (success) => {
             if (success) {
-                runCommand(compiledPath, type);
                 tempFilePaths.push(compiledPath);
+                return compiledPath;
             }
         });
-    } else {
-        // If not a compiled language, then run it
-        runCommand(`${compiler} ${sourcePath}`, type);
     }
+
+    // If not a compiled language, then run it
+    return `${compiler} ${sourcePath}`;
 }
 
 // If successful compilation, it allows `executeCodeBlock` to execute the file
@@ -141,18 +158,14 @@ function compileHandler(command: string, callback: (success: boolean) => void): 
     });
 }
 
-// Run the code, either in terminal or as child process, then save results in markdown file
-export function runCommand(code: string, type: string) {
-    if (type === 'run') {
-        const terminal = vscode.window.activeTerminal || vscode.window.createTerminal();
-        terminal.show();
-        terminal.sendText(code);
-    } else if (type === 'save') {
-        runOnMarkdown(code);
-    }
+// Run command in the terminal
+export function runInTerminal(code: string) {
+    const terminal = vscode.window.activeTerminal || vscode.window.createTerminal();
+    terminal.show();
+    terminal.sendText(code);
 }
 
-// Run command on the markdown file itself
+// Run command on the markdown file
 function runOnMarkdown(code: string) {
     const runner = cp.spawn(code, [], { shell: true });
     runner.stdout.on('data', (data) => {

@@ -56,34 +56,20 @@
 import * as vscode from 'vscode';
 import { CodeSnippetLinkProvider } from './codeLinks';
 import { ButtonCodeLensProvider } from './codeLens';
-import { cleanTempFiles, registerCommand } from './codeRunner';
-import { languageMap } from './compilerConfig';
+import { cleanTempFiles, registerCommands } from './codeRunner';
+
+// Function to Register VS Code API UI elements
+function registerProvider(context: vscode.ExtensionContext, language: string, scheme: string, provider: any) {
+    context.subscriptions.push(
+        vscode.languages.registerCodeLensProvider({ language, scheme }, new provider())
+    );
+}
 
 // Main function that runs when the extension is activated
 export function activate(context: vscode.ExtensionContext) {
-    // Initializes the CodeLens buttons for code blocks
-    context.subscriptions.push(
-        vscode.languages.registerCodeLensProvider({ language: 'markdown', scheme: 'file' },
-            new ButtonCodeLensProvider()
-        )
-    );
-
-    // Initializes the DocumentLinks for inline code (code snippets)
-    context.subscriptions.push(
-        vscode.languages.registerDocumentLinkProvider({ language: 'markdown', scheme: 'file' },
-            new CodeSnippetLinkProvider()
-        )
-    );
-
-    // Register the commands used by the "subscriptions" above
-    for (const language of Object.keys(languageMap())) {
-        registerCommand(context, language, 'run');
-        registerCommand(context, language, 'save');
-    }
-
-    registerCommand(context, 'inline', 'run');
-    registerCommand(context, 'terminal', 'run');
-    registerCommand(context, 'copy', '');
+    registerProvider(context, 'markdown', 'file', ButtonCodeLensProvider); // Buttons for code blocks
+    registerProvider(context, 'markdown', 'file', CodeSnippetLinkProvider); // Links for inline code snippets
+    registerCommands(context);
 }
 
 // Deletes the temporary files that were generated during the extension's usage
