@@ -18,27 +18,32 @@ import * as vscode from 'vscode';
 import { parseCodeBlocks } from './parser';
 import { getLanguageConfig } from './compilerConfig';
 
-// For each parsed code block, provide a code lens button with the correct title and command:
-// - Run the code, if the language is supported
-// - Run Terminal commands or Bash file line by line
-// - Copy the code
+// Supported features for a code block
+export enum Action {
+    RUN_TEMPORARY_FILE,
+    RUN_IN_TERMINAL,
+    RUN_ON_MARKDOWN_FILE,
+    COPY_CODEBLOCK_CONTENTS
+}
+
+// CodeLens buttons provider for parsed code blocks
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     provideCodeLenses(document: vscode.TextDocument): vscode.ProviderResult<vscode.CodeLens[]> {
         const codeLenses: vscode.CodeLens[] = [];
 
         // Loop through all parsed code blocks and generate buttons
         for (const { language, code, range } of parseCodeBlocks(document)) {
-            // Check that parsed langauge is valid before creating code lens
+            // For all supported languages, provide options to run the code block
             if (getLanguageConfig(language, 'name') !== undefined) {
-                pushCodeLens(codeLenses, language, code, range, 'run'); // Runs in terminal
-                pushCodeLens(codeLenses, language, code, range, 'save'); // Saves output to the markdown file
+                pushCodeLens(codeLenses, language, code, range, Action.RUN_TEMPORARY_FILE);
+                pushCodeLens(codeLenses, language, code, range, Action.RUN_ON_MARKDOWN_FILE);
             }
-            // For bash and untyped code blocks, give `run in terminal` (line by line) option
+            // For bash code blocks, provide `run in terminal (line by line)` option
             if (language === 'bash') {
-                pushCodeLens(codeLenses, 'terminal', code, range, 'run');
+                pushCodeLens(codeLenses, 'terminal', code, range, Action.RUN_IN_TERMINAL);
             }
             // Always provide button to copy code
-            pushCodeLens(codeLenses, 'copy', code, range, '');
+            pushCodeLens(codeLenses, 'copy', code, range, Action.COPY_CODEBLOCK_CONTENTS);
         }
 
         return codeLenses;
@@ -46,36 +51,26 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
 }
 
 // Generate the code lens with the required parameters and push it to the list
-function pushCodeLens(codeLenses: vscode.CodeLens[], language: string, code: string, range: vscode.Range, type: string) {
+function pushCodeLens(codeLenses: vscode.CodeLens[], language: string, code: string, range: vscode.Range, action: Action) {
     const vscodeCommand: vscode.Command = {
-        title: provideTitle(language, type),
-        command: provideCommand(language, type),
-        arguments: [code]
+        title: provideTitle(language, action),
+        command: 'markdown.block',
+        arguments: [language, code, range, action]
     };
     const codeLens = new vscode.CodeLens(range, vscodeCommand);
     codeLenses.push(codeLens);
 }
 
-function provideTitle(language: string, type: string): string {
-    if (language === 'copy') {
+function provideTitle(language: string, action: Action): string {
+    if (action === Action.COPY_CODEBLOCK_CONTENTS) {
         return 'Copy';
-    } else if (language === 'terminal') {
+    } else if (action === Action.RUN_IN_TERMINAL) {
         return 'Run in Terminal';
-    } else if (type === 'save') {
-        return `Run & Save Output`;
+    } else if (action === Action.RUN_ON_MARKDOWN_FILE) {
+        return `Run on Markdown`;
     } else if (getLanguageConfig(language, 'compiled')) {
         return `Compile & Run ${getLanguageConfig(language, 'name')} Block`;
     } else {
         return `Run ${getLanguageConfig(language, 'name')} Block`;
-    }
-}
-
-export function provideCommand(language: string, type: string): string {
-    if (language === 'copy') {
-        return 'markdown.copy';
-    } else if (language === 'terminal') {
-        return 'markdown.run.terminal';
-    } else {
-        return `markdown.${type}.${language}`;
     }
 }
