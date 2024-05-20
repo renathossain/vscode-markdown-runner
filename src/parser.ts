@@ -39,7 +39,8 @@ export function* parseCodeBlocks(document: vscode.TextDocument): Generator<{ lan
     let match;
     while ((match = regex.exec(document.getText())) !== null) {
         // match[0] captures the entire code block (we dont need it)
-        const language = match[1].trim().toLowerCase(); // First capturing group of (.*?)\n(.*?)
+        const parsedLang = match[1].trim().toLowerCase(); // First capturing group of (.*?)\n(.*?)
+        const language = parsedLang === '' ? 'bash' : parsedLang; // Treat untitled blocks as bash files
         const code = match[2]; // Second capturing group of (.*?)\n(.*?)
         const line = document.positionAt(match.index).line; // Line number of match in document
         const range = document.lineAt(line).range; // Location to place the CodeLens
