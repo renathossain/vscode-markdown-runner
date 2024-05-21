@@ -22,6 +22,9 @@ import * as cp from 'child_process';
 import { getLanguageConfig } from './compilerConfig';
 import { Action } from './codeLens';
 
+// Child process that is used for running command on markdown
+let globalRunner: cp.ChildProcess | undefined;
+
 // Stores the paths of the temporary files created for running code
 // which are cleaned up at the end
 const tempFilePaths: string[] = [];
@@ -38,18 +41,20 @@ export function cleanTempFiles() {
 export function registerCommands(context: vscode.ExtensionContext) {
     const blockFunc = async (language: string, code: string, endPosition: vscode.Position, action: Action) => {
         if (action === Action.COPY_CODEBLOCK_CONTENTS) {
-            await vscode.env.clipboard.writeText(code);
-            await vscode.window.showInformationMessage('Code copied to clipboard.');
+            vscode.env.clipboard.writeText(code);
+            vscode.window.showInformationMessage('Code copied to clipboard.');
         } else if (action === Action.RUN_IN_TERMINAL) {
-            await runInTerminal(code);
+            runInTerminal(code);
         } else if (action === Action.RUN_TEMPORARY_FILE) {
-            await runInTerminal(await getRunCommand(language, code));
+            runInTerminal(await getRunCommand(language, code));
         } else if (action === Action.RUN_ON_MARKDOWN_FILE) {
-            await runOnMarkdown(await getRunCommand(language, code), endPosition);
+            runOnMarkdown(await getRunCommand(language, code), endPosition);
+        } else if (action === Action.STOP_GLOBAL_RUNNER) {
+            stopGlobalRunner();
         }
     };
-    const inlineFunc = async (code: string) => {
-        await runInTerminal(code);
+    const inlineFunc = (code: string) => {
+        runInTerminal(code);
     };
 
     context.subscriptions.push(
@@ -156,14 +161,17 @@ export function runInTerminal(code: string) {
 
 // Run command on the markdown file
 function runOnMarkdown(code: string, startPosition: vscode.Position) {
-    const runner = cp.spawn(code, [], { shell: true });
+    if (globalRunner) { stopGlobalRunner(); }
+    globalRunner = cp.spawn(code, [], { shell: true });
 
     let lineCount = 0; // Initialize line count to 0
-    runner.stdout.on('data', (data: Buffer) => {
-        const output = data.toString();
-        insertTextAtPosition(output, startPosition.translate(lineCount, 0));
-        lineCount += output.split('\n').length - 1; // Update line count
-    });
+    if (globalRunner && globalRunner.stdout) {
+        globalRunner.stdout.on('data', (data: Buffer) => {
+            const output = data.toString();
+            insertTextAtPosition(output, startPosition.translate(lineCount, 0));
+            lineCount += output.split('\n').length - 1; // Update line count
+        });
+    }
 }
 
 // Helper for runOnMarkdown
@@ -172,7 +180,16 @@ function insertTextAtPosition(text: string, position: vscode.Position) {
         editBuilder.insert(position, text);
     }).then(success => {
         if (success) {
-            vscode.window.activeTextEditor?.document.save(); // Saving the document to ensure undoability
+            vscode.window.activeTextEditor?.document.save();
         }
     });
+}
+
+// Function to stop the global child process
+function stopGlobalRunner() {
+    if (globalRunner) {
+        // Read terminal signal info: https://man7.org/linux/man-pages/man7/signal.7.html
+        globalRunner.kill('SIGINT');
+        globalRunner = undefined;
+    }
 }
