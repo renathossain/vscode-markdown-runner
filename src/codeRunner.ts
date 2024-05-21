@@ -29,11 +29,8 @@ const tempFilePaths: string[] = [];
 // Called by `deactivate` to cleanup all temporary files
 export function cleanTempFiles() {
     tempFilePaths.forEach(filePath => {
-        try {
-            fs.unlinkSync(filePath);
-        } catch (error) {
-            vscode.window.showErrorMessage(`Error deleting file ${filePath}:`);
-        }
+        try { fs.unlinkSync(filePath); }
+        catch (error) { vscode.window.showErrorMessage(`Error deleting file ${filePath}:`); }
     });
 }
 
