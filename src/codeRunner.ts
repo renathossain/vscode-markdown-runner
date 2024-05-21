@@ -36,18 +36,16 @@ export function cleanTempFiles() {
 
 // Create the commands and assign what they do
 export function registerCommands(context: vscode.ExtensionContext) {
-    const blockFunc = async (language: string, code: string, range: vscode.Range, action: Action) => {
+    const blockFunc = async (language: string, code: string, endPosition: vscode.Position, action: Action) => {
         if (action === Action.COPY_CODEBLOCK_CONTENTS) {
             await vscode.env.clipboard.writeText(code);
             await vscode.window.showInformationMessage('Code copied to clipboard.');
         } else if (action === Action.RUN_IN_TERMINAL) {
             await runInTerminal(code);
         } else if (action === Action.RUN_TEMPORARY_FILE) {
-            const command = await getRunCommand(language, code);
-            await runInTerminal(command);
+            await runInTerminal(await getRunCommand(language, code));
         } else if (action === Action.RUN_ON_MARKDOWN_FILE) {
-            const command = await getRunCommand(language, code);
-            await runOnMarkdown(command);
+            await runOnMarkdown(await getRunCommand(language, code), endPosition);
         }
     };
     const inlineFunc = async (code: string) => {
@@ -157,10 +155,12 @@ export function runInTerminal(code: string) {
 }
 
 // Run command on the markdown file
-function runOnMarkdown(code: string) {
+function runOnMarkdown(code: string, endPosition: vscode.Position) {
     const runner = cp.spawn(code, [], { shell: true });
     runner.stdout.on('data', (data) => {
-        console.log(`stdout: ${data}`);
+        vscode.window.activeTextEditor?.edit(editBuilder => {
+            editBuilder.insert(endPosition, data);
+        });
     });
 
     runner.stderr.on('data', (data) => {
