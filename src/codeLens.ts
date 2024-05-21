@@ -23,6 +23,7 @@ export enum Action {
     RUN_TEMPORARY_FILE,
     RUN_IN_TERMINAL,
     RUN_ON_MARKDOWN_FILE,
+    STOP_GLOBAL_RUNNER,
     COPY_CODEBLOCK_CONTENTS
 }
 
@@ -37,6 +38,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
             if (getLanguageConfig(language, 'name') !== undefined) {
                 pushCodeLens(codeLenses, language, code, range, endPosition, Action.RUN_TEMPORARY_FILE);
                 pushCodeLens(codeLenses, language, code, range, endPosition, Action.RUN_ON_MARKDOWN_FILE);
+                pushCodeLens(codeLenses, language, code, range, endPosition, Action.STOP_GLOBAL_RUNNER);
             }
             // For bash code blocks, provide `run in terminal (line by line)` option
             if (language === 'bash') {
@@ -61,6 +63,7 @@ function pushCodeLens(codeLenses: vscode.CodeLens[], language: string, code: str
     codeLenses.push(codeLens);
 }
 
+// Generate correct title for each button
 function provideTitle(language: string, action: Action): string {
     if (action === Action.COPY_CODEBLOCK_CONTENTS) {
         return 'Copy';
@@ -68,6 +71,8 @@ function provideTitle(language: string, action: Action): string {
         return 'Run in Terminal';
     } else if (action === Action.RUN_ON_MARKDOWN_FILE) {
         return `Run on Markdown`;
+    } else if (action === Action.STOP_GLOBAL_RUNNER) {
+        return `Stop Process`;
     } else if (getLanguageConfig(language, 'compiled')) {
         return `Compile & Run ${getLanguageConfig(language, 'name')} Block`;
     } else {
