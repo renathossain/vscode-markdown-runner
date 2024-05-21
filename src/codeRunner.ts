@@ -155,24 +155,24 @@ export function runInTerminal(code: string) {
 }
 
 // Run command on the markdown file
-function runOnMarkdown(code: string, endPosition: vscode.Position) {
+function runOnMarkdown(code: string, startPosition: vscode.Position) {
     const runner = cp.spawn(code, [], { shell: true });
 
-    let output = '';
+    let lineCount = 0; // Initialize line count to 0
     runner.stdout.on('data', (data: Buffer) => {
-        output += data.toString();
+        const output = data.toString();
+        insertTextAtPosition(output, startPosition.translate(lineCount, 0));
+        lineCount += output.split('\n').length - 1; // Update line count
     });
+}
 
-    runner.on('close', () => {
-        if (vscode.window.activeTextEditor?.document.uri) {
-            const edit = new vscode.WorkspaceEdit();
-            edit.insert(vscode.window.activeTextEditor.document.uri, endPosition, output);
-
-            vscode.workspace.applyEdit(edit).then(success => {
-                if (success) {
-                    vscode.window.activeTextEditor?.document.save();
-                }
-            });
+// Helper for runOnMarkdown
+function insertTextAtPosition(text: string, position: vscode.Position) {
+    vscode.window.activeTextEditor?.edit(editBuilder => {
+        editBuilder.insert(position, text);
+    }).then(success => {
+        if (success) {
+            vscode.window.activeTextEditor?.document.save(); // Saving the document to ensure undoability
         }
     });
 }
