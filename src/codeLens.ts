@@ -32,18 +32,18 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         const codeLenses: vscode.CodeLens[] = [];
 
         // Loop through all parsed code blocks and generate buttons
-        for (const { language, code, range } of parseCodeBlocks(document)) {
+        for (const { language, code, range, endPosition } of parseCodeBlocks(document)) {
             // For all supported languages, provide options to run the code block
             if (getLanguageConfig(language, 'name') !== undefined) {
-                pushCodeLens(codeLenses, language, code, range, Action.RUN_TEMPORARY_FILE);
-                pushCodeLens(codeLenses, language, code, range, Action.RUN_ON_MARKDOWN_FILE);
+                pushCodeLens(codeLenses, language, code, range, endPosition, Action.RUN_TEMPORARY_FILE);
+                pushCodeLens(codeLenses, language, code, range, endPosition, Action.RUN_ON_MARKDOWN_FILE);
             }
             // For bash code blocks, provide `run in terminal (line by line)` option
             if (language === 'bash') {
-                pushCodeLens(codeLenses, 'terminal', code, range, Action.RUN_IN_TERMINAL);
+                pushCodeLens(codeLenses, 'terminal', code, range, endPosition, Action.RUN_IN_TERMINAL);
             }
             // Always provide button to copy code
-            pushCodeLens(codeLenses, 'copy', code, range, Action.COPY_CODEBLOCK_CONTENTS);
+            pushCodeLens(codeLenses, 'copy', code, range, endPosition, Action.COPY_CODEBLOCK_CONTENTS);
         }
 
         return codeLenses;
@@ -51,11 +51,11 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
 }
 
 // Generate the code lens with the required parameters and push it to the list
-function pushCodeLens(codeLenses: vscode.CodeLens[], language: string, code: string, range: vscode.Range, action: Action) {
+function pushCodeLens(codeLenses: vscode.CodeLens[], language: string, code: string, range: vscode.Range, endPosition: vscode.Position, action: Action) {
     const vscodeCommand: vscode.Command = {
         title: provideTitle(language, action),
         command: 'markdown.block',
-        arguments: [language, code, range, action]
+        arguments: [language, code, endPosition, action]
     };
     const codeLens = new vscode.CodeLens(range, vscodeCommand);
     codeLenses.push(codeLens);
