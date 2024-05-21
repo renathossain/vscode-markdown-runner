@@ -45,7 +45,7 @@ export function* parseCodeBlocks(document: vscode.TextDocument): Generator<{ lan
         const start = document.positionAt(match.index); // Line number of match in document
         const end = document.positionAt(match.index + match[0].length);
         const range = document.lineAt(start.line).range; // Location to place the CodeLens
-        const endPosition = new vscode.Position(end.line + 1, 0);
+        const endPosition = new vscode.Position(end.line + 1, 0); // Location for putting execution results
         yield { language, code, range, endPosition };
     }
 }
