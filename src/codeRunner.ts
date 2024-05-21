@@ -45,18 +45,12 @@ export function registerCommands(context: vscode.ExtensionContext) {
             await vscode.window.showInformationMessage('Code copied to clipboard.');
         } else if (action === Action.RUN_IN_TERMINAL) {
             await runInTerminal(code);
-        } else {
-            let command;
-            if (language === 'java') {
-                command = await executeJavaBlock(code);
-            } else {
-                command = await executeCodeBlock(language, code);
-            }
-            if (action === Action.RUN_TEMPORARY_FILE) {
-                await runInTerminal(command);
-            } else if (action === Action.RUN_ON_MARKDOWN_FILE) {
-                await runOnMarkdown(command);
-            }
+        } else if (action === Action.RUN_TEMPORARY_FILE) {
+            const command = await getRunCommand(language, code);
+            await runInTerminal(command);
+        } else if (action === Action.RUN_ON_MARKDOWN_FILE) {
+            const command = await getRunCommand(language, code);
+            await runOnMarkdown(command);
         }
     };
     const inlineFunc = async (code: string) => {
@@ -71,52 +65,29 @@ export function registerCommands(context: vscode.ExtensionContext) {
     );
 }
 
-// For Java code blocks, special handling is needed
-// The user is prompted to enter the name of the Java file to match the name of the main class
-// Return command string to be run in terminal or on markdown file as needed
-export function executeJavaBlock(code: string): string {
-    vscode.window.showInputBox({
-        prompt: 'Enter the name of the Java file (without extension). ' +
-            'Note: The Java standard requires the filename to be the ' +
-            'same as the name of the main class.',
-        placeHolder: 'MyJavaFile'
-    }).then((javaCompiledName) => {
-        if (javaCompiledName) {
-            const extension = getLanguageConfig('java', 'extension');
-            const compiler = getLanguageConfig('java', 'compiler');
-            const javaCompiledPath = path.join(os.tmpdir(), javaCompiledName);
-            const javaSourcePath = `${javaCompiledPath}.${extension}`;
-
-            // SECURITY: Only Owner Read and Write
-            fs.writeFileSync(javaSourcePath, code, { mode: 0o600 });
-            tempFilePaths.push(javaSourcePath);
-
-            compileHandler(`${compiler} ${javaSourcePath}`, (success) => {
-                if (success) {
-                    tempFilePaths.push(`${javaCompiledPath}.class`);
-                    return `java -cp ${os.tmpdir()} ${javaCompiledName}`;
-                }
-            });
-        }
-    });
-    return '';
+// For Java code blocks, the user needs to specify a filename
+function getBaseName(language: string): Promise<string> {
+    if (language === 'java') {
+        return new Promise<string>((resolve) => {
+            vscode.window.showInputBox({
+                prompt: 'Enter the name of the Java file (without extension). ' +
+                    'Note: The Java standard requires the filename to be the ' +
+                    'same as the name of the main class.',
+                placeHolder: 'MyJavaFile'
+            }).then((baseName) => { resolve(baseName || ''); });
+        });
+    } else {
+        return Promise.resolve(`temp_${Date.now()}`);
+    }
 }
 
-// Save code to a temporary file and execute it
-// For compiled languages, a child process is created for compilation additionally
-// Return command string to be run in terminal or on markdown file as needed
-export function executeCodeBlock(language: string, code: string): string {
-    const compiledName = `temp_${Date.now()}`;
-    const compiledPath = path.join(os.tmpdir(), compiledName);
-    const extension = getLanguageConfig(language, 'extension');
-    const compiler = getLanguageConfig(language, 'compiler');
-    const sourcePath = `${compiledPath}.${extension}`;
-
-    // Read and store the Python Path configuration boolean
+// Inject the Python Path Code into Python Files
+function injectPythonPath(language: string, code: string): string {
+    // Read the Python Path configuration boolean
     const config = vscode.workspace.getConfiguration();
     const pythonPathEnabled = config.get<boolean>('markdownRunner.pythonPath');
 
-    // Inject the markdown file's path into the code
+    // If the boolean is true, inject the markdown file's path into the code
     const editor = vscode.window.activeTextEditor;
     if (pythonPathEnabled && editor && language === 'python') {
         const documentUri = editor.document.uri;
@@ -124,37 +95,60 @@ export function executeCodeBlock(language: string, code: string): string {
         code = `import sys\nsys.path.insert(0, r'${documentDirectory}')\n` + code;
     }
 
-    // SECURITY: Only Owner Read and Write
-    fs.writeFileSync(sourcePath, code, { mode: 0o600 });
-    tempFilePaths.push(sourcePath);
+    return code;
+}
 
+// Save code to a temporary file and execute it
+// For compiled languages, a child process is created for compilation additionally
+// Return command string to be run in terminal or on markdown file as needed
+export async function getRunCommand(language: string, code: string): Promise<string> {
+    const baseName = await getBaseName(language);
+    if (!baseName) { return ''; }
+    const extension = getLanguageConfig(language, 'extension');
+    const compiler = getLanguageConfig(language, 'compiler');
+    code = injectPythonPath(language, code);
+    const basePath = path.join(os.tmpdir(), baseName);
+    const uncompiledPath = `${basePath}.${extension}`;
+
+    // Write code to a file, SECURITY: Only Owner Read and Write
+    fs.writeFileSync(uncompiledPath, code, { mode: 0o600 });
+    tempFilePaths.push(uncompiledPath);
+
+    // Compilation for C, C++ and Rust
     if (language === 'c' || language === 'cpp' || language === 'rust') {
-        // If a compiled language, then compile it 
-        compileHandler(`${compiler} -o ${compiledPath} ${sourcePath}`, (success) => {
-            if (success) {
-                tempFilePaths.push(compiledPath);
-                return compiledPath;
-            }
-        });
+        if (await compileHandler(`${compiler} -o ${basePath} ${uncompiledPath}`)) {
+            tempFilePaths.push(basePath);
+            return basePath;
+        }
+    }
+
+    // Compilation for Java
+    if (language === 'java') {
+        if (await compileHandler(`${compiler} ${uncompiledPath}`)) {
+            tempFilePaths.push(`${basePath}.class`);
+            return `java -cp ${os.tmpdir()} ${baseName}`;
+        }
     }
 
     // If not a compiled language, then run it
-    return `${compiler} ${sourcePath}`;
+    return `${compiler} ${uncompiledPath}`;
 }
 
 // If successful compilation, it allows `executeCodeBlock` to execute the file
 // Otherwise, it throws an error message
-function compileHandler(command: string, callback: (success: boolean) => void): void {
-    cp.exec(command, (error, stdout, stderr) => {
-        if (error) {
-            // timeout is necessary because of interference with codelens
-            setTimeout(() => {
-                vscode.window.showErrorMessage(stderr, { modal: true });
-            }, 100);
-            callback(false);
-        } else {
-            callback(true);
-        }
+function compileHandler(command: string): Promise<boolean> {
+    return new Promise((resolve) => {
+        cp.exec(command, (error, stdout, stderr) => {
+            if (error) {
+                // timeout is necessary because of interference with codelens
+                setTimeout(() => {
+                    vscode.window.showErrorMessage(stderr, { modal: true });
+                }, 100);
+                resolve(false);
+            } else {
+                resolve(true);
+            }
+        });
     });
 }
 
