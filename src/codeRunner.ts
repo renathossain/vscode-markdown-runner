@@ -157,13 +157,22 @@ export function runInTerminal(code: string) {
 // Run command on the markdown file
 function runOnMarkdown(code: string, endPosition: vscode.Position) {
     const runner = cp.spawn(code, [], { shell: true });
-    runner.stdout.on('data', (data) => {
-        vscode.window.activeTextEditor?.edit(editBuilder => {
-            editBuilder.insert(endPosition, data);
-        });
+
+    let output = '';
+    runner.stdout.on('data', (data: Buffer) => {
+        output += data.toString();
     });
 
-    runner.stderr.on('data', (data) => {
-        console.error(`stderr: ${data}`);
+    runner.on('close', () => {
+        if (vscode.window.activeTextEditor?.document.uri) {
+            const edit = new vscode.WorkspaceEdit();
+            edit.insert(vscode.window.activeTextEditor.document.uri, endPosition, output);
+
+            vscode.workspace.applyEdit(edit).then(success => {
+                if (success) {
+                    vscode.window.activeTextEditor?.document.save();
+                }
+            });
+        }
     });
 }
