@@ -51,12 +51,20 @@ export function registerCommands(context: vscode.ExtensionContext) {
     const inlineFunc = (code: string) => {
         runInTerminal(code);
     };
+    const stopProcessFunc = (pid: number | undefined) => {
+        if (pid) {
+            process.kill(pid, 'SIGINT');
+        }
+    };
 
     context.subscriptions.push(
         vscode.commands.registerCommand('markdown.block', blockFunc)
     );
     context.subscriptions.push(
         vscode.commands.registerCommand('markdown.inline', inlineFunc)
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('markdown.stopProcess', stopProcessFunc)
     );
 }
 
@@ -156,9 +164,14 @@ export function runInTerminal(code: string) {
 
 // Run command on the markdown file
 function runOnMarkdown(code: string, startPosition: vscode.Position) {
-    const runner = cp.spawn(code, [], { shell: true });
+    const runner = cp.spawn('sh', ['-c', code], { detached: true });
     const stopButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
-    stopButton.command = 'markdown.stopProcess';
+    const vscodeCommand: vscode.Command = {
+        title: 'Kill Run on Markdown Process',
+        command: 'markdown.stopProcess',
+        arguments: [runner.pid]
+    };
+    stopButton.command = vscodeCommand;
     stopButton.text = "$(primitive-square) Stop";
     stopButton.show();
     let lineCount = 0; // Initialize line count to 0
