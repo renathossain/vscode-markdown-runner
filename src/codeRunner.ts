@@ -22,9 +22,6 @@ import * as cp from 'child_process';
 import { getLanguageConfig } from './compilerConfig';
 import { Action } from './codeLens';
 
-// Child process that is used for running command on markdown
-let globalRunner: cp.ChildProcess | undefined;
-
 // Stores the paths of the temporary files created for running code
 // which are cleaned up at the end
 const tempFilePaths: string[] = [];
@@ -49,8 +46,6 @@ export function registerCommands(context: vscode.ExtensionContext) {
             runInTerminal(await getRunCommand(language, code));
         } else if (action === Action.RUN_ON_MARKDOWN_FILE) {
             runOnMarkdown(await getRunCommand(language, code), endPosition);
-        } else if (action === Action.STOP_GLOBAL_RUNNER) {
-            stopGlobalRunner();
         }
     };
     const inlineFunc = (code: string) => {
@@ -161,17 +156,20 @@ export function runInTerminal(code: string) {
 
 // Run command on the markdown file
 function runOnMarkdown(code: string, startPosition: vscode.Position) {
-    if (globalRunner) { stopGlobalRunner(); }
-    globalRunner = cp.spawn(code, [], { shell: true });
-
+    const runner = cp.spawn(code, [], { shell: true });
+    const stopButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+    stopButton.command = 'markdown.stopProcess';
+    stopButton.text = "$(primitive-square) Stop";
+    stopButton.show();
     let lineCount = 0; // Initialize line count to 0
-    if (globalRunner && globalRunner.stdout) {
-        globalRunner.stdout.on('data', (data: Buffer) => {
-            const output = data.toString();
-            insertTextAtPosition(output, startPosition.translate(lineCount, 0));
-            lineCount += output.split('\n').length - 1; // Update line count
-        });
-    }
+    runner.stdout.on('data', (data: Buffer) => {
+        const output = data.toString();
+        insertTextAtPosition(output, startPosition.translate(lineCount, 0));
+        lineCount += output.split('\n').length - 1; // Update line count
+    });
+    runner.on('close', () => {
+        stopButton.hide(); // Hide the stop button when the process finishes
+    });
 }
 
 // Helper for runOnMarkdown
@@ -180,16 +178,7 @@ function insertTextAtPosition(text: string, position: vscode.Position) {
         editBuilder.insert(position, text);
     }).then(success => {
         if (success) {
-            vscode.window.activeTextEditor?.document.save();
+            vscode.window.activeTextEditor?.document.save(); // Saving the document to ensure undoability
         }
     });
-}
-
-// Function to stop the global child process
-function stopGlobalRunner() {
-    if (globalRunner) {
-        // Read terminal signal info: https://man7.org/linux/man-pages/man7/signal.7.html
-        globalRunner.kill('SIGINT');
-        globalRunner = undefined;
-    }
 }
