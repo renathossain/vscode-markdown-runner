@@ -47,6 +47,15 @@ fn square(x: i32) -> i32 {
 }
 ```
 
+Test case Python import helper:
+
+```python
+from demo_helpers.fibonacci import f
+
+print("Python Fibonacci:")
+print([f(i) for i in range(10)])
+```
+
 Fibonacci in different programming languages:
 
 ```bash
