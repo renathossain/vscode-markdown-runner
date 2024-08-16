@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.3.0
+
+- **Bug Fix:** Resolved an issue in `coderunner.ts` on line 107 where the code incorrectly used `${document...`. This was updated to `r'${document...` to ensure it is a raw string literal.
+- **Security:** Updated npm packages to address and fix security vulnerabilities.
+
 ## 1.2.0
 
 - Added feature that adds the directory of the markdown file to Python's sys.path, allowing you to import modules from the same directory.

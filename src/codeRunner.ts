@@ -104,7 +104,7 @@ export function executeCodeBlock(language: string, code: string) {
     if (pythonPathEnabled && editor && language === 'python') {
         const documentUri = editor.document.uri;
         const documentDirectory = path.dirname(documentUri.fsPath);
-        code = `import sys\nsys.path.insert(0, '${documentDirectory}')\n` + code;
+        code = `import sys\nsys.path.insert(0, r'${documentDirectory}')\n` + code;
     }
 
     // SECURITY: Only Owner Read and Write
