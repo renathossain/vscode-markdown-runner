@@ -48,12 +48,11 @@ export function registerCommands(context: vscode.ExtensionContext) {
             runOnMarkdown(await getRunCommand(language, code), endPosition);
         }
     };
-    const inlineFunc = (code: string) => {
-        runInTerminal(code);
-    };
+
     const stopProcessFunc = (pid: number | undefined) => {
         if (pid) {
-            process.kill(pid, 'SIGINT');
+            vscode.window.showInformationMessage(`PID: ${pid}`);
+            process.kill(pid + 1, 'SIGINT');
         }
     };
 
@@ -61,7 +60,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('markdown.block', blockFunc)
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.inline', inlineFunc)
+        vscode.commands.registerCommand('markdown.inline', runInTerminal)
     );
     context.subscriptions.push(
         vscode.commands.registerCommand('markdown.stopProcess', stopProcessFunc)
