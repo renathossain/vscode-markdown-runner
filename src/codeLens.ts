@@ -23,8 +23,12 @@ export enum Action {
     RUN_TEMPORARY_FILE,
     RUN_IN_TERMINAL,
     RUN_ON_MARKDOWN_FILE,
-    COPY_CODEBLOCK_CONTENTS
+    COPY_CODEBLOCK_CONTENTS,
+    STOP_MARKDOWN_RUN,
 }
+
+// PIDs associated with Run on Markdown child processes
+export const runOnMarkdownProcesses: { pid: number; range: vscode.Range }[] = [];
 
 // CodeLens buttons provider for parsed code blocks
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
@@ -46,6 +50,16 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
             pushCodeLens(codeLenses, 'copy', code, range, endPosition, Action.COPY_CODEBLOCK_CONTENTS);
         }
 
+        for (const { pid, range } of runOnMarkdownProcesses ) {
+            const vscodeCommand: vscode.Command = {
+                title: `Stop Process`,
+                command: 'markdown.stopProcess',
+                arguments: [pid, Action.STOP_MARKDOWN_RUN]
+            };
+            const codeLens = new vscode.CodeLens(range, vscodeCommand);
+            codeLenses.push(codeLens);
+        }
+
         return codeLenses;
     }
 }
@@ -54,7 +68,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
 function pushCodeLens(codeLenses: vscode.CodeLens[], language: string, code: string, range: vscode.Range, endPosition: vscode.Position, action: Action) {
     const vscodeCommand: vscode.Command = {
         title: provideTitle(language, action),
-        command: 'markdown.block',
+        command: 'markdown.codeLens',
         arguments: [language, code, endPosition, action]
     };
     const codeLens = new vscode.CodeLens(range, vscodeCommand);
@@ -64,9 +78,9 @@ function pushCodeLens(codeLenses: vscode.CodeLens[], language: string, code: str
 // Generate correct title for each button
 function provideTitle(language: string, action: Action): string {
     if (action === Action.COPY_CODEBLOCK_CONTENTS) {
-        return 'Copy';
+        return `Copy`;
     } else if (action === Action.RUN_IN_TERMINAL) {
-        return 'Run in Terminal';
+        return `Run in Terminal`;
     } else if (action === Action.RUN_ON_MARKDOWN_FILE) {
         return `Run on Markdown`;
     } else if (getLanguageConfig(language, 'compiled')) {

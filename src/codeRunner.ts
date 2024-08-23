@@ -22,6 +22,7 @@ import * as cp from 'child_process';
 import treeKill from 'tree-kill';
 import { getLanguageConfig } from './compilerConfig';
 import { Action } from './codeLens';
+import { runOnMarkdownProcesses } from './codeLens';
 
 // Stores the paths of the temporary files created for running code
 // which are cleaned up at the end
@@ -50,17 +51,15 @@ export function registerCommands(context: vscode.ExtensionContext) {
         }
     };
 
-    const stopProcessFunc = (runner: cp.ChildProcessWithoutNullStreams) => {
-        if (runner.pid) {
-            treeKill(runner.pid, 'SIGINT');
-        }
+    const stopProcessFunc = (pid: number) => {
+        treeKill(pid, 'SIGINT');
     };
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.block', blockFunc)
+        vscode.commands.registerCommand('markdown.codeLens', blockFunc)
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.inline', runInTerminal)
+        vscode.commands.registerCommand('markdown.documentLinks', runInTerminal)
     );
     context.subscriptions.push(
         vscode.commands.registerCommand('markdown.stopProcess', stopProcessFunc)
@@ -165,14 +164,12 @@ export function runInTerminal(code: string) {
 function runOnMarkdown(code: string, startPosition: vscode.Position) {
     const runner = cp.spawn('sh', ['-c', code], { detached: true });
 
-    const stopButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
-    stopButton.command = {
-        title: 'Kill Run on Markdown Process',
-        command: 'markdown.stopProcess',
-        arguments: [runner]
-    };
-    stopButton.text = "$(primitive-square) Stop";
-    stopButton.show();
+    // Convert the vscode.Position to vscode.Range
+    const endPosition = startPosition.translate(0, code.length); // Assuming the range is from startPosition to the end of the code block
+    const range = new vscode.Range(startPosition, endPosition);
+
+    // Push PID and range to the list
+    runOnMarkdownProcesses.push({ pid: runner.pid!, range });
 
     let lineCount = 0; // Initialize line count to 0
     runner.stdout.on('data', (data: Buffer) => {
@@ -181,7 +178,12 @@ function runOnMarkdown(code: string, startPosition: vscode.Position) {
         lineCount += output.split('\n').length - 1; // Update line count
     });
     runner.on('close', () => {
-        stopButton.hide(); // Hide the stop button when the process finishes
+        // Find the index of the entry to remove
+        const index = runOnMarkdownProcesses.findIndex(entry => entry.pid === runner.pid);
+        if (index !== -1) {
+            // Remove the entry at the found index
+            runOnMarkdownProcesses.splice(index, 1);
+        }
     });
 }
 
