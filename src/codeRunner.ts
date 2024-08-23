@@ -19,6 +19,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as cp from 'child_process';
+import treeKill from 'tree-kill';
 import { getLanguageConfig } from './compilerConfig';
 import { Action } from './codeLens';
 
@@ -49,10 +50,9 @@ export function registerCommands(context: vscode.ExtensionContext) {
         }
     };
 
-    const stopProcessFunc = (pid: number | undefined) => {
-        if (pid) {
-            vscode.window.showInformationMessage(`PID: ${pid}`);
-            process.kill(pid + 1, 'SIGINT');
+    const stopProcessFunc = (runner: cp.ChildProcessWithoutNullStreams) => {
+        if (runner.pid) {
+            treeKill(runner.pid, 'SIGINT');
         }
     };
 
@@ -164,15 +164,16 @@ export function runInTerminal(code: string) {
 // Run command on the markdown file
 function runOnMarkdown(code: string, startPosition: vscode.Position) {
     const runner = cp.spawn('sh', ['-c', code], { detached: true });
+
     const stopButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
-    const vscodeCommand: vscode.Command = {
+    stopButton.command = {
         title: 'Kill Run on Markdown Process',
         command: 'markdown.stopProcess',
-        arguments: [runner.pid]
+        arguments: [runner]
     };
-    stopButton.command = vscodeCommand;
     stopButton.text = "$(primitive-square) Stop";
     stopButton.show();
+
     let lineCount = 0; // Initialize line count to 0
     runner.stdout.on('data', (data: Buffer) => {
         const output = data.toString();
@@ -190,7 +191,8 @@ function insertTextAtPosition(text: string, position: vscode.Position) {
         editBuilder.insert(position, text);
     }).then(success => {
         if (success) {
-            vscode.window.activeTextEditor?.document.save(); // Saving the document to ensure undoability
+             // Save the document to ensure undoability
+            vscode.window.activeTextEditor?.document.save();
         }
     });
 }
