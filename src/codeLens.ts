@@ -46,6 +46,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         // Generate buttons to stop run on markdown processes
         for (const { pid, range } of runOnMarkdownProcesses ) {
             pushCodeLens(codeLenses, range, `Stop Process`, `markdown.stopProcess`, [pid]);
+            pushCodeLens(codeLenses, range, `Kill Process`, `markdown.killProcess`, [pid]);
         }
 
         return codeLenses;

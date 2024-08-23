@@ -38,7 +38,9 @@ export function cleanTempFiles() {
 // Create the commands and assign what they do
 export function registerCommands(context: vscode.ExtensionContext) {
     const commands: [string, (...args: any[]) => void][] = [
-        ['markdown.runFile', async (language: string, code: string) => runInTerminal(await getRunCommand(language, code))],
+        ['markdown.runFile', async (language: string, code: string) => {
+            runInTerminal(await getRunCommand(language, code));
+        }],
         ['markdown.runOnMarkdown', async (language: string, code: string, endPosition: vscode.Position) => {
             runOnMarkdown(await getRunCommand(language, code), endPosition);
         }],
@@ -47,7 +49,8 @@ export function registerCommands(context: vscode.ExtensionContext) {
             vscode.env.clipboard.writeText(code);
             vscode.window.showInformationMessage('Code copied to clipboard.');
         }],
-        ['markdown.stopProcess', (pid: number) => treeKill(pid, 'SIGINT')]
+        ['markdown.stopProcess', (pid: number) => treeKill(pid, 'SIGINT')],
+        ['markdown.killProcess', (pid: number) => treeKill(pid, 'SIGKILL')]
     ];
   
     commands.forEach(([command, callback]) => {
