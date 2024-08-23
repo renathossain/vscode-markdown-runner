@@ -154,12 +154,13 @@ function runOnMarkdown(code: string, startPosition: vscode.Position) {
     const runner = cp.spawn('sh', ['-c', code], { detached: true });
 
     // Convert the vscode.Position to vscode.Range
-    const endPosition = startPosition.translate(0, code.length); // Assuming the range is from startPosition to the end of the code block
+    const endPosition = startPosition.translate(0, code.length);
     const range = new vscode.Range(startPosition, endPosition);
 
     // Push PID and range to the list
     runOnMarkdownProcesses.push({ pid: runner.pid!, range });
 
+    // Write running results on markdown file
     let lineCount = 0; // Initialize line count to 0
     runner.stdout.on('data', (data: Buffer) => {
         const output = data.toString();

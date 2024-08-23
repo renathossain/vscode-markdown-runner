@@ -28,19 +28,19 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
 
         // Loop through all parsed code blocks and generate buttons
         for (const { language, code, range, endPosition } of parseCodeBlocks(document)) {
-            const langName = getLanguageConfig(language, 'name');
+            const langName = getLanguageConfig(language, `name`);
 
             // For all supported languages, provide options to run the code block
-            if (getLanguageConfig(language, 'name') !== undefined) {
+            if (langName !== undefined) {
                 pushCodeLens(codeLenses, range, `Run ${langName} Block`, `markdown.runFile`, [language, code]);
                 pushCodeLens(codeLenses, range, `Run on Markdown`, `markdown.runOnMarkdown`, [language, code, endPosition]);
             }
             // For bash code blocks, provide `run in terminal (line by line)` option
-            if (language === 'bash') {
+            if (language === `bash`) {
                 pushCodeLens(codeLenses, range, `Run in Terminal`, `markdown.runInTerminal`, [code]);
             }
             // Always provide button to copy code
-            pushCodeLens(codeLenses, range, 'Copy', `markdown.copy`, [code]);
+            pushCodeLens(codeLenses, range, `Copy`, `markdown.copy`, [code]);
         }
 
         // Generate buttons to stop run on markdown processes

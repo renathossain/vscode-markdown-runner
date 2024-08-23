@@ -40,8 +40,6 @@ export function getLanguageConfig(language: string, configuration: string) {
             return configArray[1];
         } else if (configuration === 'compiler') {
             return configArray[2];
-        } else if (configuration === 'compiled') {
-            return configArray[3];
         }
     }
     return undefined;
