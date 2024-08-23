@@ -37,38 +37,22 @@ export function cleanTempFiles() {
 
 // Create the commands and assign what they do
 export function registerCommands(context: vscode.ExtensionContext) {
-    context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.runFile', async (language: string, code: string) => {
-            runInTerminal(await getRunCommand(language, code));
-        })
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.runOnMarkdown', async (language: string, code: string, endPosition: vscode.Position) => {
+    const commands: [string, (...args: any[]) => void][] = [
+        ['markdown.runFile', async (language: string, code: string) => runInTerminal(await getRunCommand(language, code))],
+        ['markdown.runOnMarkdown', async (language: string, code: string, endPosition: vscode.Position) => {
             runOnMarkdown(await getRunCommand(language, code), endPosition);
-        })
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.runInTerminal', runInTerminal)
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.copy', (code: string) => {
+        }],
+        ['markdown.runInTerminal', runInTerminal],
+        ['markdown.copy', (code: string) => {
             vscode.env.clipboard.writeText(code);
             vscode.window.showInformationMessage('Code copied to clipboard.');
-        })
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.documentLinks', runInTerminal)
-    );
-    
-    context.subscriptions.push(
-        vscode.commands.registerCommand('markdown.stopProcess', (pid: number) => {
-            treeKill(pid, 'SIGINT');
-        })
-    );
+        }],
+        ['markdown.stopProcess', (pid: number) => treeKill(pid, 'SIGINT')]
+    ];
+  
+    commands.forEach(([command, callback]) => {
+        context.subscriptions.push(vscode.commands.registerCommand(command, callback));
+    });
 }
 
 // For Java code blocks, the user needs to specify a filename
