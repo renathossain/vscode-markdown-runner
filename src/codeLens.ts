@@ -18,15 +18,6 @@ import * as vscode from 'vscode';
 import { parseCodeBlocks } from './parser';
 import { getLanguageConfig } from './compilerConfig';
 
-// Supported features for a code block
-export enum Action {
-    RUN_TEMPORARY_FILE,
-    RUN_IN_TERMINAL,
-    RUN_ON_MARKDOWN_FILE,
-    COPY_CODEBLOCK_CONTENTS,
-    STOP_MARKDOWN_RUN,
-}
-
 // PIDs associated with Run on Markdown child processes
 export const runOnMarkdownProcesses: { pid: number; range: vscode.Range }[] = [];
 
@@ -37,27 +28,24 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
 
         // Loop through all parsed code blocks and generate buttons
         for (const { language, code, range, endPosition } of parseCodeBlocks(document)) {
+            const langName = getLanguageConfig(language, 'name');
+
             // For all supported languages, provide options to run the code block
             if (getLanguageConfig(language, 'name') !== undefined) {
-                pushCodeLens(codeLenses, language, code, range, endPosition, Action.RUN_TEMPORARY_FILE);
-                pushCodeLens(codeLenses, language, code, range, endPosition, Action.RUN_ON_MARKDOWN_FILE);
+                pushCodeLens(codeLenses, range, `Run ${langName} Block`, `markdown.runFile`, [language, code]);
+                pushCodeLens(codeLenses, range, `Run on Markdown`, `markdown.runOnMarkdown`, [language, code, endPosition]);
             }
             // For bash code blocks, provide `run in terminal (line by line)` option
             if (language === 'bash') {
-                pushCodeLens(codeLenses, 'terminal', code, range, endPosition, Action.RUN_IN_TERMINAL);
+                pushCodeLens(codeLenses, range, `Run in Terminal`, `markdown.runInTerminal`, [code]);
             }
             // Always provide button to copy code
-            pushCodeLens(codeLenses, 'copy', code, range, endPosition, Action.COPY_CODEBLOCK_CONTENTS);
+            pushCodeLens(codeLenses, range, 'Copy', `markdown.copy`, [code]);
         }
 
+        // Generate buttons to stop run on markdown processes
         for (const { pid, range } of runOnMarkdownProcesses ) {
-            const vscodeCommand: vscode.Command = {
-                title: `Stop Process`,
-                command: 'markdown.stopProcess',
-                arguments: [pid, Action.STOP_MARKDOWN_RUN]
-            };
-            const codeLens = new vscode.CodeLens(range, vscodeCommand);
-            codeLenses.push(codeLens);
+            pushCodeLens(codeLenses, range, `Stop Process`, `markdown.stopProcess`, [pid]);
         }
 
         return codeLenses;
@@ -65,27 +53,12 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
 }
 
 // Generate the code lens with the required parameters and push it to the list
-function pushCodeLens(codeLenses: vscode.CodeLens[], language: string, code: string, range: vscode.Range, endPosition: vscode.Position, action: Action) {
+function pushCodeLens(codeLenses: vscode.CodeLens[], range: vscode.Range, title: string, command: string, commandArgs: any[]) {
     const vscodeCommand: vscode.Command = {
-        title: provideTitle(language, action),
-        command: 'markdown.codeLens',
-        arguments: [language, code, endPosition, action]
+        title: title,
+        command: command,
+        arguments: commandArgs,
     };
     const codeLens = new vscode.CodeLens(range, vscodeCommand);
     codeLenses.push(codeLens);
-}
-
-// Generate correct title for each button
-function provideTitle(language: string, action: Action): string {
-    if (action === Action.COPY_CODEBLOCK_CONTENTS) {
-        return `Copy`;
-    } else if (action === Action.RUN_IN_TERMINAL) {
-        return `Run in Terminal`;
-    } else if (action === Action.RUN_ON_MARKDOWN_FILE) {
-        return `Run on Markdown`;
-    } else if (getLanguageConfig(language, 'compiled')) {
-        return `Compile & Run ${getLanguageConfig(language, 'name')} Block`;
-    } else {
-        return `Run ${getLanguageConfig(language, 'name')} Block`;
-    }
 }
