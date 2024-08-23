@@ -109,6 +109,8 @@ export async function getRunCommand(language: string, code: string): Promise<str
         if (await compileHandler(`${compiler} -o ${basePath} ${uncompiledPath}`)) {
             tempFilePaths.push(basePath);
             return basePath;
+        } else {
+            return '';
         }
     }
 
@@ -117,6 +119,8 @@ export async function getRunCommand(language: string, code: string): Promise<str
         if (await compileHandler(`${compiler} ${uncompiledPath}`)) {
             tempFilePaths.push(`${basePath}.class`);
             return `java -cp ${os.tmpdir()} ${baseName}`;
+        } else {
+            return '';
         }
     }
 
@@ -144,6 +148,7 @@ function compileHandler(command: string): Promise<boolean> {
 
 // Run command in the terminal
 export function runInTerminal(code: string) {
+    if (code === '') { return; }
     const terminal = vscode.window.activeTerminal || vscode.window.createTerminal();
     terminal.show();
     terminal.sendText(code);
