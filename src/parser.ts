@@ -18,6 +18,18 @@ import * as vscode from 'vscode';
 
 // Test out the regex here: https://regexr.com/
 
+// Helper Function
+function parseBlock(document: vscode.TextDocument, match: RegExpExecArray, regex: RegExp) {
+    // match[0] captures the entire code block (we dont need it)
+    const parsedLang = match[1].trim().toLowerCase(); // First capturing group of (.*?)\n(.*?)
+    const language = parsedLang === '' ? 'bash' : parsedLang; // Treat untitled blocks as bash files
+    const code = match[2]; // Second capturing group of (.*?)\n(.*?)
+    const start = document.positionAt(match.index); // Start position of the match in the document
+    const end = document.positionAt(regex.lastIndex); // End position after the match
+    const range = new vscode.Range(start, end);
+    return { language, code, range };
+}
+
 // Parses out any code blocks (code within ``` delimiters) in the text of a markdown document
 // This is a generator function that yields the line number, language and code of each code block
 export function* parseCodeBlocks(document: vscode.TextDocument): Generator<{ language: string, code: string, range: vscode.Range }> {
@@ -38,15 +50,29 @@ export function* parseCodeBlocks(document: vscode.TextDocument): Generator<{ lan
     // Loop through all matches and yield them
     let match;
     while ((match = regex.exec(document.getText())) !== null) {
-        // match[0] captures the entire code block (we dont need it)
-        const parsedLang = match[1].trim().toLowerCase(); // First capturing group of (.*?)\n(.*?)
-        const language = parsedLang === '' ? 'bash' : parsedLang; // Treat untitled blocks as bash files
-        const code = match[2]; // Second capturing group of (.*?)\n(.*?)
-        const start = document.positionAt(match.index); // Start position of the match in the document
-        const end = document.positionAt(regex.lastIndex); // End position after the match
-        const range = new vscode.Range(start, end);
-        yield { language, code, range };
+        yield parseBlock(document, match, regex);
     }
+}
+
+// Used for `Run on Markdown`
+export function parseFirstResultBlock(document: vscode.TextDocument, startLine: number) {
+    const regex: RegExp = /^```(.*?)\n(.*?)^```/gms;
+    
+    // Obtain the sliced document
+    const fullText = document.getText();
+    const startPos = document.lineAt(startLine).range.start;
+    const startOffset = document.offsetAt(startPos);
+    const slicedText = fullText.slice(startOffset);
+
+    // Find first match within the sliced document
+    const match = regex.exec(slicedText);
+    if (!match) { return null; }
+
+    // Parse and validate the data
+    const { language, code, range } = parseBlock(document, match, regex);
+    if (language !== `result`) { return null; }
+
+    return { language, code, range };
 }
 
 // Parses out any inline code (code within ` delimiters)
