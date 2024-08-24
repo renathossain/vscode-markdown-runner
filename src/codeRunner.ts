@@ -22,7 +22,7 @@ import * as cp from 'child_process';
 import treeKill from 'tree-kill';
 import AsyncLock from 'async-lock';
 import { getLanguageConfig } from './compilerConfig';
-import { runOnMarkdownProcesses } from './codeLens';
+import { codeLensChildProcesses } from './codeLens';
 
 // Stores the paths of the temporary files created for running code
 // which are cleaned up at the end
@@ -159,15 +159,14 @@ export function runInTerminal(code: string) {
 }
 
 // Run command on the markdown file
-async function runOnMarkdown(code: string, startPosition: vscode.Position) {
+function runOnMarkdown(code: string, startPosition: vscode.Position) {
+    // Start child process
     const runner = cp.spawn('sh', ['-c', code], { detached: true });
 
-    // Convert the vscode.Position to vscode.Range
+    // Create Code Lens to stop or kill the process 
     const endPosition = startPosition.translate(0, code.length);
     const range = new vscode.Range(startPosition, endPosition);
-
-    // Push PID and range to the list
-    runOnMarkdownProcesses.push({ pid: runner.pid!, range });
+    codeLensChildProcesses.push({ pid: runner.pid!, range });
 
     // Initialize current position to be written to
     let currentPosition = startPosition;
@@ -177,41 +176,38 @@ async function runOnMarkdown(code: string, startPosition: vscode.Position) {
 
     // Write running results on markdown file
     runner.stdout.on('data', async (data: Buffer) => {
-        // Obtain an active editor
         const editor = vscode.window.activeTextEditor;
-
         if (editor) {
             // Throttle write attempts
             await lock.acquire('key', async () => {
                 // Critical section code here
                 const output = data.toString();
-
-                await editor.edit((editBuilder) => {
-                    editBuilder.insert(currentPosition, output);
-                }).then(success => {
-                    if (success) {
-                        // Save the document to ensure undoability
-                        vscode.window.activeTextEditor?.document.save();
-                    } else {
-                        console.log(`Error writing data`);
-                    }
-                });
-    
+                await insertText(editor, currentPosition, output);
                 const outputLines = output.split('\n');
                 const lastLineLength = outputLines[outputLines.length - 1].length;
                 currentPosition = currentPosition.translate(outputLines.length - 1, lastLineLength); 
-    
-                console.log(output);
             });
         }
     });
 
     runner.on('close', () => {
         // Find the index of the entry to remove
-        const index = runOnMarkdownProcesses.findIndex(entry => entry.pid === runner.pid);
+        const index = codeLensChildProcesses.findIndex(entry => entry.pid === runner.pid);
         if (index !== -1) {
             // Remove the entry at the found index
-            runOnMarkdownProcesses.splice(index, 1);
+            codeLensChildProcesses.splice(index, 1);
+        }
+    });
+}
+
+// Helper function to runOnMarkdown
+async function insertText(editor: vscode.TextEditor, currentPosition: vscode.Position, output: string) {
+    await editor.edit((editBuilder) => {
+        editBuilder.insert(currentPosition, output);
+    }).then(success => {
+        if (success) {
+            // Save the document to ensure undoability
+            vscode.window.activeTextEditor?.document.save();
         }
     });
 }
