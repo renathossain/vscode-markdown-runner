@@ -55,7 +55,7 @@ export function* parseCodeBlocks(document: vscode.TextDocument): Generator<{ lan
 }
 
 // Used for `Run on Markdown`
-export function parseFirstResultBlock(document: vscode.TextDocument, startLine: number) {
+export function findResultBlock(document: vscode.TextDocument, startLine: number) {
     const regex: RegExp = /^```(.*?)\n(.*?)^```/gms;
     
     // Obtain the sliced document
@@ -69,10 +69,20 @@ export function parseFirstResultBlock(document: vscode.TextDocument, startLine: 
     if (!match) { return null; }
 
     // Parse and validate the data
-    const { language, code, range } = parseBlock(document, match, regex);
+    const { language, code } = parseBlock(document, match, regex);
     if (language !== `result`) { return null; }
 
-    return { language, code, range };
+    // The match must start a line away from startLine
+    const matchIndex = match.index;
+    const preMatchText = slicedText.slice(0, matchIndex);
+    const relativeLineNumber = preMatchText.split('\n').length - 1;
+    if (relativeLineNumber !== 1) { return null; }
+
+    // Calculate and return final range
+    const foundStartLine = startLine + relativeLineNumber + 1;
+    const codeLineCount = code.split('\n').length;
+    const foundEndLine = foundStartLine + codeLineCount - 1;
+    return new vscode.Range(foundStartLine, 0, foundEndLine, 0);
 }
 
 // Parses out any inline code (code within ` delimiters)
