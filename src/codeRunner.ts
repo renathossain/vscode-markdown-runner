@@ -23,7 +23,7 @@ import treeKill from 'tree-kill';
 import AsyncLock from 'async-lock';
 import { getLanguageConfig } from './compilerConfig';
 import { codeLensChildProcesses } from './codeLens';
-import { parseFirstResultBlock } from './parser';
+import { findResultBlock } from './parser';
 
 // Stores the paths of the temporary files created for running code
 // which are cleaned up at the end
@@ -44,7 +44,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
             runInTerminal(await getRunCommand(language, code));
         }],
         ['markdown.runOnMarkdown', async (language: string, code: string, range: vscode.Range) => {
-            runOnMarkdown(await getRunCommand(language, code), range);
+            await runOnMarkdown(await getRunCommand(language, code), range);
         }],
         ['markdown.runInTerminal', runInTerminal],
         ['markdown.copy', (code: string) => {
@@ -160,53 +160,66 @@ export function runInTerminal(code: string) {
 }
 
 // Run command on the markdown file
-function runOnMarkdown(code: string, range: vscode.Range) {
+async function runOnMarkdown(code: string, range: vscode.Range) {
     // Start child process
     const runner = cp.spawn('sh', ['-c', code], { detached: true });
 
     // Create Code Lens to stop or kill the process
-    let currentPosition = new vscode.Position(range.end.line + 1, 0);
+    let currentPosition = new vscode.Position(range.end.line + 2, 0);
     const childRange = new vscode.Range(currentPosition, currentPosition);
     codeLensChildProcesses.push({ pid: runner.pid!, range: childRange });
+
+    // Output results one line below the process `stop` and `kill` controls
+    currentPosition = currentPosition.translate(1, 0);
+
+    // Remove Code Lens once finished with process
+    runner.on('close', () => {
+        const index = codeLensChildProcesses.findIndex(entry => entry.pid === runner.pid);
+        if (index !== -1) {
+            codeLensChildProcesses.splice(index, 1);
+        }
+    });
 
     // Create lock
     const lock = new AsyncLock();
 
-    const activeEditor = vscode.window.activeTextEditor;
-    if (activeEditor && parseFirstResultBlock(activeEditor.document, range.end.line + 1) !== null) {
-        console.log('Has result block');
+    // Obtain editor
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) { return; }
+
+    // Create result block that holds execution results
+    const deleteRange = findResultBlock(editor.document, range.end.line + 1);
+    if (deleteRange) {
+        // If result block found, clear the contents inside it
+        await lock.acquire('key', async () => {
+            // Critical section code here
+            await editor.edit((editBuilder) => {
+                editBuilder.delete(deleteRange);
+            });
+        });
+    } else {
+        // If result block not found, create it
+        insertText(editor, currentPosition, "\n```result\n```\n");
     }
 
-    // Write running results on markdown file
+    // Write child process execution results onto markdown file
     runner.stdout.on('data', async (data: Buffer) => {
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-            // Throttle write attempts
-            await lock.acquire('key', async () => {
-                // Critical section code here
-                const output = data.toString();
-                await insertText(editor, currentPosition, output);
-                const outputLines = output.split('\n');
-                const lastLineLength = outputLines[outputLines.length - 1].length;
-                currentPosition = currentPosition.translate(outputLines.length - 1, lastLineLength); 
-            });
-        }
-    });
-
-    runner.on('close', () => {
-        // Find the index of the entry to remove
-        const index = codeLensChildProcesses.findIndex(entry => entry.pid === runner.pid);
-        if (index !== -1) {
-            // Remove the entry at the found index
-            codeLensChildProcesses.splice(index, 1);
-        }
+        // Throttle write attempts
+        await lock.acquire('key', async () => {
+            // Critical section code here
+            const output = data.toString();
+            await insertText(editor, currentPosition, output);
+            const outputLines = output.split('\n');
+            const lastLineLength = outputLines[outputLines.length - 1].length;
+            currentPosition = currentPosition.translate(outputLines.length - 1, lastLineLength); 
+        });
     });
 }
 
 // Helper function to runOnMarkdown
-async function insertText(editor: vscode.TextEditor, currentPosition: vscode.Position, output: string) {
+async function insertText(editor: vscode.TextEditor, currentPosition: vscode.Position, insertedText: string) {
     await editor.edit((editBuilder) => {
-        editBuilder.insert(currentPosition, output);
+        editBuilder.insert(currentPosition, insertedText);
     }).then(success => {
         if (success) {
             // Save the document to ensure undoability
