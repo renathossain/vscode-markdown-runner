@@ -18,7 +18,7 @@ import * as vscode from 'vscode';
 import { parseCodeBlocks } from './parser';
 import { getLanguageConfig } from './compilerConfig';
 
-// PIDs associated with Run on Markdown child processes
+// PIDs associated with `Run on Markdown` child processes
 export const codeLensChildProcesses: { pid: number; range: vscode.Range }[] = [];
 
 // CodeLens buttons provider for parsed code blocks
@@ -43,7 +43,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
             pushCodeLens(codeLenses, range, `Copy`, `markdown.copy`, [code]);
         }
 
-        // Generate buttons to stop run on markdown processes
+        // Generate buttons to stop `Run on Markdown` processes
         for (const { pid, range } of codeLensChildProcesses ) {
             pushCodeLens(codeLenses, range, `Stop Process`, `markdown.stopProcess`, [pid]);
             pushCodeLens(codeLenses, range, `Kill Process`, `markdown.killProcess`, [pid]);

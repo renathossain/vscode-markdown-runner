@@ -58,7 +58,7 @@ export function* parseCodeBlocks(document: vscode.TextDocument): Generator<{ lan
 export function findResultBlock(document: vscode.TextDocument, startLine: number) {
     const regex: RegExp = /^```(.*?)\n(.*?)^```/gms;
     
-    // Obtain the sliced document
+    // Obtain the sliced document at `startLine`
     const fullText = document.getText();
     const startPos = document.lineAt(startLine).range.start;
     const startOffset = document.offsetAt(startPos);
@@ -78,7 +78,7 @@ export function findResultBlock(document: vscode.TextDocument, startLine: number
     const relativeLineNumber = preMatchText.split('\n').length - 1;
     if (relativeLineNumber !== 1) { return null; }
 
-    // Calculate and return final range
+    // The range of the contents inside the code block to get cleared
     const foundStartLine = startLine + relativeLineNumber + 1;
     const codeLineCount = code.split('\n').length;
     const foundEndLine = foundStartLine + codeLineCount - 1;
