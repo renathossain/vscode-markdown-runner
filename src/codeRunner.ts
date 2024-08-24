@@ -157,8 +157,17 @@ export function runInTerminal(code: string) {
     terminal.sendText(code);
 }
 
+// Helper function to introduce a delay
+function delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Keep track of the last write operation timestamp
+let lastWriteTime = 0;
+const writeDelay = 100; // milliseconds
+
 // Run command on the markdown file
-function runOnMarkdown(code: string, startPosition: vscode.Position) {
+async function runOnMarkdown(code: string, startPosition: vscode.Position) {
     const runner = cp.spawn('sh', ['-c', code], { detached: true });
 
     // Convert the vscode.Position to vscode.Range
@@ -168,13 +177,43 @@ function runOnMarkdown(code: string, startPosition: vscode.Position) {
     // Push PID and range to the list
     runOnMarkdownProcesses.push({ pid: runner.pid!, range });
 
+    // Initialize current position to be written to
+    let currentPosition = startPosition;
+
     // Write running results on markdown file
-    let lineCount = 0; // Initialize line count to 0
-    runner.stdout.on('data', (data: Buffer) => {
-        const output = data.toString();
-        insertTextAtPosition(output, startPosition.translate(lineCount, 0));
-        lineCount += output.split('\n').length - 1; // Update line count
+    runner.stdout.on('data', async (data: Buffer) => {
+        // Obtain an active editor
+        const editor = vscode.window.activeTextEditor;
+
+        if (editor) {
+            const output = data.toString();
+
+            // Throttle write attempts
+            const now = Date.now();
+            if (now - lastWriteTime < writeDelay) {
+                await delay(writeDelay - (now - lastWriteTime));
+            }
+            lastWriteTime = Date.now();
+
+            editor.edit((editBuilder) => {
+                editBuilder.insert(currentPosition, output);
+            }).then(success => {
+                if (success) {
+                    // Save the document to ensure undoability
+                    vscode.window.activeTextEditor?.document.save();
+                } else {
+                    console.log(`Error writing data`);
+                }
+            });
+
+            const outputLines = output.split('\n');
+            const lastLineLength = outputLines[outputLines.length - 1].length;
+            currentPosition = currentPosition.translate(outputLines.length - 1, lastLineLength); 
+
+            console.log(output);
+        }
     });
+
     runner.on('close', () => {
         // Find the index of the entry to remove
         const index = runOnMarkdownProcesses.findIndex(entry => entry.pid === runner.pid);
@@ -185,14 +224,28 @@ function runOnMarkdown(code: string, startPosition: vscode.Position) {
     });
 }
 
-// Helper for runOnMarkdown
-function insertTextAtPosition(text: string, position: vscode.Position) {
-    vscode.window.activeTextEditor?.edit(editBuilder => {
-        editBuilder.insert(position, text);
-    }).then(success => {
-        if (success) {
-             // Save the document to ensure undoability
-            vscode.window.activeTextEditor?.document.save();
-        }
-    });
-}
+// // Helper for runOnMarkdown
+// function insertTextAtPosition(text: string, position: vscode.Position) {
+//     vscode.window.activeTextEditor?.edit(editBuilder => {
+//         editBuilder.insert(position, text);
+//     }).then(success => {
+//         if (success) {
+//              // Save the document to ensure undoability
+//             vscode.window.activeTextEditor?.document.save();
+//         }
+//     });
+// }
+
+
+    
+            // const outputLines = data.toString().split('\n');
+            // outputLines.forEach((line) => {
+            //     // Write each line and increment the position
+    
+            //     console.log(line);
+            //     currentPosition = currentPosition.translate(1, 0);
+            // });
+            // Add the last line's length to the current position
+            // currentPosition = currentPosition.translate(1, 0);
+            // const lastLineLength = outputLines[outputLines.length - 1].length;
+            // currentPosition = currentPosition.translate(0, lastLineLength); 
