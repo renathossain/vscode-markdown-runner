@@ -20,6 +20,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as cp from 'child_process';
 import treeKill from 'tree-kill';
+import AsyncLock from 'async-lock';
 import { getLanguageConfig } from './compilerConfig';
 import { runOnMarkdownProcesses } from './codeLens';
 
@@ -157,15 +158,6 @@ export function runInTerminal(code: string) {
     terminal.sendText(code);
 }
 
-// Helper function to introduce a delay
-function delay(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// Keep track of the last write operation timestamp
-let lastWriteTime = 0;
-const writeDelay = 100; // milliseconds
-
 // Run command on the markdown file
 async function runOnMarkdown(code: string, startPosition: vscode.Position) {
     const runner = cp.spawn('sh', ['-c', code], { detached: true });
@@ -180,37 +172,37 @@ async function runOnMarkdown(code: string, startPosition: vscode.Position) {
     // Initialize current position to be written to
     let currentPosition = startPosition;
 
+    // Create lock
+    const lock = new AsyncLock();
+
     // Write running results on markdown file
     runner.stdout.on('data', async (data: Buffer) => {
         // Obtain an active editor
         const editor = vscode.window.activeTextEditor;
 
         if (editor) {
-            const output = data.toString();
-
             // Throttle write attempts
-            const now = Date.now();
-            if (now - lastWriteTime < writeDelay) {
-                await delay(writeDelay - (now - lastWriteTime));
-            }
-            lastWriteTime = Date.now();
+            await lock.acquire('key', async () => {
+                // Critical section code here
+                const output = data.toString();
 
-            editor.edit((editBuilder) => {
-                editBuilder.insert(currentPosition, output);
-            }).then(success => {
-                if (success) {
-                    // Save the document to ensure undoability
-                    vscode.window.activeTextEditor?.document.save();
-                } else {
-                    console.log(`Error writing data`);
-                }
+                await editor.edit((editBuilder) => {
+                    editBuilder.insert(currentPosition, output);
+                }).then(success => {
+                    if (success) {
+                        // Save the document to ensure undoability
+                        vscode.window.activeTextEditor?.document.save();
+                    } else {
+                        console.log(`Error writing data`);
+                    }
+                });
+    
+                const outputLines = output.split('\n');
+                const lastLineLength = outputLines[outputLines.length - 1].length;
+                currentPosition = currentPosition.translate(outputLines.length - 1, lastLineLength); 
+    
+                console.log(output);
             });
-
-            const outputLines = output.split('\n');
-            const lastLineLength = outputLines[outputLines.length - 1].length;
-            currentPosition = currentPosition.translate(outputLines.length - 1, lastLineLength); 
-
-            console.log(output);
         }
     });
 
@@ -223,29 +215,3 @@ async function runOnMarkdown(code: string, startPosition: vscode.Position) {
         }
     });
 }
-
-// // Helper for runOnMarkdown
-// function insertTextAtPosition(text: string, position: vscode.Position) {
-//     vscode.window.activeTextEditor?.edit(editBuilder => {
-//         editBuilder.insert(position, text);
-//     }).then(success => {
-//         if (success) {
-//              // Save the document to ensure undoability
-//             vscode.window.activeTextEditor?.document.save();
-//         }
-//     });
-// }
-
-
-    
-            // const outputLines = data.toString().split('\n');
-            // outputLines.forEach((line) => {
-            //     // Write each line and increment the position
-    
-            //     console.log(line);
-            //     currentPosition = currentPosition.translate(1, 0);
-            // });
-            // Add the last line's length to the current position
-            // currentPosition = currentPosition.translate(1, 0);
-            // const lastLineLength = outputLines[outputLines.length - 1].length;
-            // currentPosition = currentPosition.translate(0, lastLineLength); 
