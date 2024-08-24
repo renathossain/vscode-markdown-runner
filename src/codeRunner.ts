@@ -23,6 +23,7 @@ import treeKill from 'tree-kill';
 import AsyncLock from 'async-lock';
 import { getLanguageConfig } from './compilerConfig';
 import { codeLensChildProcesses } from './codeLens';
+import { parseFirstResultBlock } from './parser';
 
 // Stores the paths of the temporary files created for running code
 // which are cleaned up at the end
@@ -170,6 +171,11 @@ function runOnMarkdown(code: string, range: vscode.Range) {
 
     // Create lock
     const lock = new AsyncLock();
+
+    const activeEditor = vscode.window.activeTextEditor;
+    if (activeEditor && parseFirstResultBlock(activeEditor.document, range.end.line + 1) !== null) {
+        console.log('Has result block');
+    }
 
     // Write running results on markdown file
     runner.stdout.on('data', async (data: Buffer) => {
