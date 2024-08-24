@@ -42,8 +42,8 @@ export function registerCommands(context: vscode.ExtensionContext) {
         ['markdown.runFile', async (language: string, code: string) => {
             runInTerminal(await getRunCommand(language, code));
         }],
-        ['markdown.runOnMarkdown', async (language: string, code: string, endPosition: vscode.Position) => {
-            runOnMarkdown(await getRunCommand(language, code), endPosition);
+        ['markdown.runOnMarkdown', async (language: string, code: string, range: vscode.Range) => {
+            runOnMarkdown(await getRunCommand(language, code), range);
         }],
         ['markdown.runInTerminal', runInTerminal],
         ['markdown.copy', (code: string) => {
@@ -159,17 +159,17 @@ export function runInTerminal(code: string) {
 }
 
 // Run command on the markdown file
-function runOnMarkdown(code: string, startPosition: vscode.Position) {
+function runOnMarkdown(code: string, range: vscode.Range) {
     // Start child process
     const runner = cp.spawn('sh', ['-c', code], { detached: true });
 
-    // Create Code Lens to stop or kill the process 
-    const endPosition = startPosition.translate(0, code.length);
-    const range = new vscode.Range(startPosition, endPosition);
-    codeLensChildProcesses.push({ pid: runner.pid!, range });
+    // Create Code Lens to stop or kill the process
+    const childPos = new vscode.Position(range.end.line + 1, range.end.character);
+    const childRange = new vscode.Range(childPos, childPos);
+    codeLensChildProcesses.push({ pid: runner.pid!, range: childRange });
 
     // Initialize current position to be written to
-    let currentPosition = startPosition;
+    let currentPosition = new vscode.Position(range.end.line + 1, 0);
 
     // Create lock
     const lock = new AsyncLock();

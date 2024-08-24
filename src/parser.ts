@@ -20,7 +20,7 @@ import * as vscode from 'vscode';
 
 // Parses out any code blocks (code within ``` delimiters) in the text of a markdown document
 // This is a generator function that yields the line number, language and code of each code block
-export function* parseCodeBlocks(document: vscode.TextDocument): Generator<{ language: string, code: string, range: vscode.Range, endPosition: vscode.Position }> {
+export function* parseCodeBlocks(document: vscode.TextDocument): Generator<{ language: string, code: string, range: vscode.Range }> {
     // Explanation of regex:
     // . matches any character, so .* matches any number of any characters
     // .*? makes the behaviour lazy (matches the least amount of char to satisfy the regex)
@@ -42,11 +42,10 @@ export function* parseCodeBlocks(document: vscode.TextDocument): Generator<{ lan
         const parsedLang = match[1].trim().toLowerCase(); // First capturing group of (.*?)\n(.*?)
         const language = parsedLang === '' ? 'bash' : parsedLang; // Treat untitled blocks as bash files
         const code = match[2]; // Second capturing group of (.*?)\n(.*?)
-        const start = document.positionAt(match.index); // Line number of match in document
-        const end = document.positionAt(match.index + match[0].length);
-        const range = document.lineAt(start.line).range; // Location to place the CodeLens
-        const endPosition = new vscode.Position(end.line + 1, 0); // Location for putting execution results
-        yield { language, code, range, endPosition };
+        const start = document.positionAt(match.index); // Start position of the match in the document
+        const end = document.positionAt(regex.lastIndex); // End position after the match
+        const range = new vscode.Range(start, end);
+        yield { language, code, range };
     }
 }
 
