@@ -133,13 +133,13 @@ export async function getRunCommand(language: string, code: string): Promise<str
     return `${compiler} ${uncompiledPath}`;
 }
 
-// If successful compilation, it allows `executeCodeBlock` to execute the file
-// Otherwise, it throws an error message
+// Compiles a binary using the provided command
+// Throws an error message if unsucessful
 function compileHandler(command: string): Promise<boolean> {
     return new Promise((resolve) => {
         cp.exec(command, (error, stdout, stderr) => {
             if (error) {
-                // timeout is necessary because of interference with codelens
+                // Timeout is necessary because of interference with codelens
                 setTimeout(() => {
                     vscode.window.showErrorMessage(stderr, { modal: true });
                 }, 100);
