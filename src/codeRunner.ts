@@ -164,12 +164,9 @@ function runOnMarkdown(code: string, range: vscode.Range) {
     const runner = cp.spawn('sh', ['-c', code], { detached: true });
 
     // Create Code Lens to stop or kill the process
-    const childPos = new vscode.Position(range.end.line + 1, range.end.character);
-    const childRange = new vscode.Range(childPos, childPos);
-    codeLensChildProcesses.push({ pid: runner.pid!, range: childRange });
-
-    // Initialize current position to be written to
     let currentPosition = new vscode.Position(range.end.line + 1, 0);
+    const childRange = new vscode.Range(currentPosition, currentPosition);
+    codeLensChildProcesses.push({ pid: runner.pid!, range: childRange });
 
     // Create lock
     const lock = new AsyncLock();
