@@ -27,13 +27,13 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         const codeLenses: vscode.CodeLens[] = [];
 
         // Loop through all parsed code blocks and generate buttons
-        for (const { language, code, range, endPosition } of parseCodeBlocks(document)) {
+        for (const { language, code, range } of parseCodeBlocks(document)) {
             const langName = getLanguageConfig(language, `name`);
 
             // For all supported languages, provide options to run the code block
             if (langName !== undefined) {
                 pushCodeLens(codeLenses, range, `Run ${langName} Block`, `markdown.runFile`, [language, code]);
-                pushCodeLens(codeLenses, range, `Run on Markdown`, `markdown.runOnMarkdown`, [language, code, endPosition]);
+                pushCodeLens(codeLenses, range, `Run on Markdown`, `markdown.runOnMarkdown`, [language, code, range]);
             }
             // For bash code blocks, provide `run in terminal (line by line)` option
             if (language === `bash`) {
