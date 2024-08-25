@@ -165,12 +165,9 @@ async function runOnMarkdown(code: string, range: vscode.Range) {
     const runner = cp.spawn('sh', ['-c', code], { detached: true });
 
     // Create Code Lens to stop or kill the process
-    let currentPosition = new vscode.Position(range.end.line + 2, 0);
-    const childRange = new vscode.Range(currentPosition, currentPosition);
+    const childLine = range.end.line + 2;
+    const childRange = new vscode.Range(childLine, 0, childLine, 0);
     codeLensChildProcesses.push({ pid: runner.pid!, range: childRange });
-
-    // Output results one line below the process `stop` and `kill` controls
-    currentPosition = currentPosition.translate(1, 0);
 
     // Remove Code Lens once finished with process
     runner.on('close', () => {
@@ -188,6 +185,7 @@ async function runOnMarkdown(code: string, range: vscode.Range) {
     if (!editor) { return; }
 
     // Create result block that holds execution results
+
     const deleteRange = findResultBlock(editor.document, range.end.line + 1);
     if (deleteRange) {
         // If result block found, clear the contents inside it
@@ -199,8 +197,11 @@ async function runOnMarkdown(code: string, range: vscode.Range) {
         });
     } else {
         // If result block not found, create it
-        insertText(editor, currentPosition, "\n```result\n```\n");
+        insertText(editor, range.end, "\n\n```result\n```");
     }
+
+    // Output results 3 lines below the parent code block
+    let currentPosition = new vscode.Position(range.end.line + 3, 0);
 
     // Write child process execution results onto markdown file
     runner.stdout.on('data', async (data: Buffer) => {

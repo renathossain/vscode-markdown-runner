@@ -57,7 +57,10 @@ export function* parseCodeBlocks(document: vscode.TextDocument): Generator<{ lan
 // Used for `Run on Markdown`
 export function findResultBlock(document: vscode.TextDocument, startLine: number) {
     const regex: RegExp = /^```(.*?)\n(.*?)^```/gms;
-    
+
+    // Check if startLine is out of bounds
+    if (startLine < 0 || startLine >= document.lineCount) { return null; }
+
     // Obtain the sliced document at `startLine`
     const fullText = document.getText();
     const startPos = document.lineAt(startLine).range.start;
