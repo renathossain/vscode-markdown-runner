@@ -118,7 +118,9 @@ export async function getRunCommand(language: string, code: string): Promise<str
     const baseName = await getBaseName(language);
     if (!baseName) { return ''; }
     const extension = getLanguageConfig(language, 'extension');
+    if (!extension) { return ''; }
     const compiler = getLanguageConfig(language, 'compiler');
+    if (!compiler) { return ''; }
     code = injectPythonPath(language, code);
     const basePath = path.join(os.tmpdir(), baseName);
     const uncompiledPath = `${basePath}.${extension}`;
