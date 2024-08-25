@@ -25,6 +25,9 @@ import { getLanguageConfig } from './compilerConfig';
 import { codeLensChildProcesses } from './codeLens';
 import { findResultBlock } from './parser';
 
+// Lock to make sure text insert or deletion happens atomically
+const textEditLock = new AsyncLock();
+
 // Safety button to kill all processes
 const killAllButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 killAllButton.command = {
@@ -181,6 +184,8 @@ export function runInTerminal(code: string) {
 
 // Run command on the markdown file
 async function runOnMarkdown(code: string, range: vscode.Range) {
+    if (code === '') { return; }
+
     // Calculate the range of Code Lens for the new child process
     const childLine = range.end.line + 2;
     const childRange = new vscode.Range(childLine, 0, childLine, 0);
@@ -205,28 +210,24 @@ async function runOnMarkdown(code: string, range: vscode.Range) {
         if (codeLensChildProcesses.length === 0) { killAllButton.hide(); }
     });
 
-    // Create lock
-    const lock = new AsyncLock();
-
     // Obtain editor
     const editor = vscode.window.activeTextEditor;
     if (!editor) { return; }
 
     // Create result block that holds execution results
-
     const deleteRange = findResultBlock(editor.document, range.end.line + 1);
-    if (deleteRange) {
-        // If result block found, clear the contents inside it
-        await lock.acquire('key', async () => {
-            // Critical section code here
+    await textEditLock.acquire('key', async () => {
+        // Critical section code here
+        if (deleteRange) {
+            // If result block found, clear the contents inside it
             await editor.edit((editBuilder) => {
                 editBuilder.delete(deleteRange);
             });
-        });
-    } else {
-        // If result block not found, create it
-        insertText(editor, range.end, "\n\n```result\n```");
-    }
+        } else {
+            // If result block not found, create it
+            await insertText(editor, range.end, "\n\n```result\n```");
+        }
+    });
 
     // Output results 3 lines below the parent code block
     let currentPosition = new vscode.Position(range.end.line + 3, 0);
@@ -234,7 +235,7 @@ async function runOnMarkdown(code: string, range: vscode.Range) {
     // Write child process execution results onto markdown file
     runner.stdout.on('data', async (data: Buffer) => {
         // Throttle write attempts
-        await lock.acquire('key', async () => {
+        await textEditLock.acquire('key', async () => {
             // Critical section code here
             const output = data.toString();
             await insertText(editor, currentPosition, output);
