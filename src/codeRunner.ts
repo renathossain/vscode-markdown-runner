@@ -25,6 +25,23 @@ import { getLanguageConfig } from './compilerConfig';
 import { codeLensChildProcesses } from './codeLens';
 import { findResultBlock } from './parser';
 
+// Safety button to kill all processes
+const killAllButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+killAllButton.command = {
+    title: 'Kill All `Run on Markdown` Processes',
+    command: 'markdown.killAllProcesses',
+    arguments: []
+};
+killAllButton.text = "$(stop-circle) Kill All Processes";
+
+// Kill All Button calls this function
+function killAllChildProcesses() {
+  codeLensChildProcesses.forEach(({ pid }, i) => {
+    treeKill(pid, 'SIGKILL');
+    codeLensChildProcesses.splice(i, 1);
+  });
+}
+
 // Stores the paths of the temporary files created for running code
 // which are cleaned up at the end
 const tempFilePaths: string[] = [];
@@ -52,7 +69,8 @@ export function registerCommands(context: vscode.ExtensionContext) {
             vscode.window.showInformationMessage('Code copied to clipboard.');
         }],
         ['markdown.stopProcess', (pid: number) => treeKill(pid, 'SIGINT')],
-        ['markdown.killProcess', (pid: number) => treeKill(pid, 'SIGKILL')]
+        ['markdown.killProcess', (pid: number) => treeKill(pid, 'SIGKILL')],
+        ['markdown.killAllProcesses', killAllChildProcesses]
     ];
   
     commands.forEach(([command, callback]) => {
@@ -174,15 +192,15 @@ async function runOnMarkdown(code: string, range: vscode.Range) {
     // Start child process
     const runner = cp.spawn('sh', ['-c', code], { detached: true });
 
-    // Create Code Lens to stop or kill the process
+    // Create buttons to stop or kill the process
     codeLensChildProcesses.push({ pid: runner.pid!, range: childRange });
+    killAllButton.show();
 
     // Remove Code Lens once finished with process
     runner.on('close', () => {
         const index = codeLensChildProcesses.findIndex(entry => entry.pid === runner.pid);
-        if (index !== -1) {
-            codeLensChildProcesses.splice(index, 1);
-        }
+        if (index !== -1) { codeLensChildProcesses.splice(index, 1); }
+        if (codeLensChildProcesses.length === 0) { killAllButton.hide(); }
     });
 
     // Create lock
