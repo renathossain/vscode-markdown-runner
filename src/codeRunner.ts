@@ -161,12 +161,20 @@ export function runInTerminal(code: string) {
 
 // Run command on the markdown file
 async function runOnMarkdown(code: string, range: vscode.Range) {
+    // Calculate the range of Code Lens for the new child process
+    const childLine = range.end.line + 2;
+    const childRange = new vscode.Range(childLine, 0, childLine, 0);
+
+    // If a process already exists at the same range, return
+    const existingProcess = codeLensChildProcesses.find(
+        (entry) => entry.range.isEqual(childRange)
+    );
+    if (existingProcess) { return; }
+
     // Start child process
     const runner = cp.spawn('sh', ['-c', code], { detached: true });
 
     // Create Code Lens to stop or kill the process
-    const childLine = range.end.line + 2;
-    const childRange = new vscode.Range(childLine, 0, childLine, 0);
     codeLensChildProcesses.push({ pid: runner.pid!, range: childRange });
 
     // Remove Code Lens once finished with process
