@@ -9,7 +9,7 @@ Run code snippets by pressing Ctrl + Left Click:
 Run the following as a Bash File or line by line in the terminal:
 
 ```bash
-ping google.com
+ping -c 10 google.com
 ```
 
 ```bash
