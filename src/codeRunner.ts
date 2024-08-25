@@ -25,9 +25,6 @@ import { getLanguageConfig } from './compilerConfig';
 import { codeLensChildProcesses } from './codeLens';
 import { findResultBlock } from './parser';
 
-// Lock to make sure text insert or deletion happens atomically
-const textEditLock = new AsyncLock();
-
 // Safety button to kill all processes
 const killAllButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 killAllButton.command = {
@@ -196,19 +193,8 @@ async function runOnMarkdown(code: string, range: vscode.Range) {
     );
     if (existingProcess) { return; }
 
-    // Start child process
-    const runner = cp.spawn('sh', ['-c', code], { detached: true });
-
-    // Create buttons to stop or kill the process
-    codeLensChildProcesses.push({ pid: runner.pid!, range: childRange });
-    killAllButton.show();
-
-    // Remove Code Lens once finished with process
-    runner.on('close', () => {
-        const index = codeLensChildProcesses.findIndex(entry => entry.pid === runner.pid);
-        if (index !== -1) { codeLensChildProcesses.splice(index, 1); }
-        if (codeLensChildProcesses.length === 0) { killAllButton.hide(); }
-    });
+    // Lock to make sure text insert or deletion happens atomically
+    const textEditLock = new AsyncLock();
 
     // Obtain editor
     const editor = vscode.window.activeTextEditor;
@@ -227,6 +213,20 @@ async function runOnMarkdown(code: string, range: vscode.Range) {
             // If result block not found, create it
             await insertText(editor, range.end, "\n\n```result\n```");
         }
+    });
+
+    // Start child process
+    const runner = cp.spawn('sh', ['-c', code], { detached: true });
+
+    // Create buttons to stop or kill the process
+    codeLensChildProcesses.push({ pid: runner.pid!, range: childRange });
+    killAllButton.show();
+
+    // Remove Code Lens once finished with process
+    runner.on('close', () => {
+        const index = codeLensChildProcesses.findIndex(entry => entry.pid === runner.pid);
+        if (index !== -1) { codeLensChildProcesses.splice(index, 1); }
+        if (codeLensChildProcesses.length === 0) { killAllButton.hide(); }
     });
 
     // Output results 3 lines below the parent code block
