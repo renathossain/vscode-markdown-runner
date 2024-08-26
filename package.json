@@ -4,7 +4,7 @@
   "description": "Enables the seamless execution of code blocks in any language within Markdown files in VS Code",
   "publisher": "renathossain",
   "icon": "Icon.png",
-  "version": "1.3.0",
+  "version": "2.0.0",
   "engines": {
     "vscode": "^1.87.0"
   },
@@ -25,26 +25,26 @@
       "properties": {
         "markdownRunner.compilerConfiguration": {
           "type": "object",
-          "description": "Compiler configuration for supported languages in Markdown files. Each entry consists of an array defining the properties for a specific programming language. The array elements represent: [Language Name, File Extension, Compiler Command/Path, Compiled (true/false)]. You can only add non-compiled languages here.",
+          "description": "Configure language compilers by specifying Item: `Code Block Tag` and associated Value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added.",
           "default": {
-            "python": "[\"Python\", \"py\", \"python\", false]",
-            "c": "[\"C\", \"c\", \"gcc\", true]",
-            "java": "[\"Java\", \"java\", \"javac\", true]",
-            "cpp": "[\"C++\", \"cpp\", \"g++\", true]",
-            "rust": "[\"Rust\", \"rs\", \"rustc\", true]",
-            "typescript": "[\"TypeScript\", \"ts\", \"npx ts-node\", false]",
-            "php": "[\"PHP\", \"php\", \"php\", false]",
-            "perl": "[\"Perl\", \"pl\", \"perl\", false]",
-            "r": "[\"R\", \"r\", \"Rscript\", false]",
-            "dart": "[\"Dart\", \"dart\", \"dart\", false]",
-            "groovy": "[\"Groovy\", \"groovy\", \"groovy\", false]",
-            "go": "[\"Go\", \"go\", \"go run\", false]",
-            "haskell": "[\"Haskell\", \"hs\", \"runhaskell\", false]",
-            "julia": "[\"Julia\", \"jl\", \"julia\", false]",
-            "lua": "[\"Lua\", \"lua\", \"lua\", false]",
-            "ruby": "[\"Ruby\", \"rb\", \"ruby\", false]",
-            "javascript": "[\"JavaScript\", \"js\", \"node\", false]",
-            "bash": "[\"Bash\", \"sh\", \"bash\", false]"
+            "python": "[\"Python\", \"py\", \"python\"]",
+            "c": "[\"C\", \"c\", \"gcc\"]",
+            "java": "[\"Java\", \"java\", \"javac\"]",
+            "cpp": "[\"C++\", \"cpp\", \"g++\"]",
+            "rust": "[\"Rust\", \"rs\", \"rustc\"]",
+            "typescript": "[\"TypeScript\", \"ts\", \"npx ts-node\"]",
+            "php": "[\"PHP\", \"php\", \"php\"]",
+            "perl": "[\"Perl\", \"pl\", \"perl\"]",
+            "r": "[\"R\", \"r\", \"Rscript\"]",
+            "dart": "[\"Dart\", \"dart\", \"dart\"]",
+            "groovy": "[\"Groovy\", \"groovy\", \"groovy\"]",
+            "go": "[\"Go\", \"go\", \"go run\"]",
+            "haskell": "[\"Haskell\", \"hs\", \"runhaskell\"]",
+            "julia": "[\"Julia\", \"jl\", \"julia\"]",
+            "lua": "[\"Lua\", \"lua\", \"lua\"]",
+            "ruby": "[\"Ruby\", \"rb\", \"ruby\"]",
+            "javascript": "[\"JavaScript\", \"js\", \"node\"]",
+            "bash": "[\"Bash\", \"sh\", \"bash\"]"
           },
           "additionalProperties": {
             "type": "string"
@@ -52,7 +52,7 @@
         },
         "markdownRunner.pythonPath": {
           "type": "boolean",
-          "description": "Enabling this setting adds the directory of the markdown file to Python's sys.path, allowing you to import modules from the same directory.",
+          "description": "Enable this to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.",
           "default": true
         }
       }
@@ -78,11 +78,16 @@
     "@typescript-eslint/parser": "^7.0.2",
     "@vscode/test-cli": "^0.0.6",
     "@vscode/test-electron": "^2.3.9",
+    "@vscode/vsce": "^2.26.0",
     "eslint": "^8.56.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
-    "@vscode/vsce": "^2.26.0",
     "webpack": "^5.90.3",
     "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@types/async-lock": "^1.4.2",
+    "async-lock": "^1.4.1",
+    "tree-kill": "^1.2.2"
   }
 }

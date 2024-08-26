@@ -1,5 +1,13 @@
 # Change Log
 
+## 2.0.0
+
+- **New Feature:** Added "Run on Markdown" button to output execution results directly within the Markdown file. When "Run on Markdown" is pressed, the result of the execution is inserted into a new code block tagged `result` directly below the original code block. This feature includes:
+  - **`Stop Process` Button:** Sends a SIGINT signal to gently interrupt the running process.
+  - **`Kill Process` Button:** Sends a SIGKILL signal to forcefully terminate the process if it becomes unresponsive.
+  - **`Kill All Processes` Button:** Appears in the bottom status bar of VS Code, allowing you to forcefully kill all processes.
+  - If a code block tagged `result` already exists below the original code, its contents are automatically cleared before inserting new execution results.
+
 ## 1.3.0
 
 - **Bug Fix:** Resolved an issue in `coderunner.ts` on line 107 where the code incorrectly used `${document...`. This was updated to `r'${document...` to ensure it is a raw string literal.

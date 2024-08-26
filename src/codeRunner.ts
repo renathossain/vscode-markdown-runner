@@ -19,8 +19,28 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as cp from 'child_process';
+import treeKill from 'tree-kill';
+import AsyncLock from 'async-lock';
 import { getLanguageConfig } from './compilerConfig';
-import { provideCommand } from './codeLens';
+import { codeLensChildProcesses } from './codeLens';
+import { findResultBlock } from './parser';
+
+// Safety button to kill all processes
+const killAllButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+killAllButton.command = {
+    title: 'Kill All `Run on Markdown` Processes',
+    command: 'markdown.killAllProcesses',
+    arguments: []
+};
+killAllButton.text = "$(stop-circle) Kill All Processes";
+
+// Kill All Button calls this function
+function killAllChildProcesses() {
+  codeLensChildProcesses.forEach(({ pid }, i) => {
+    treeKill(pid, 'SIGKILL');
+    codeLensChildProcesses.splice(i, 1);
+  });
+}
 
 // Stores the paths of the temporary files created for running code
 // which are cleaned up at the end
@@ -29,77 +49,58 @@ const tempFilePaths: string[] = [];
 // Called by `deactivate` to cleanup all temporary files
 export function cleanTempFiles() {
     tempFilePaths.forEach(filePath => {
-        try {
-            fs.unlinkSync(filePath);
-        } catch (error) {
-            vscode.window.showErrorMessage(`Error deleting file ${filePath}:`);
-        }
+        try { fs.unlinkSync(filePath); }
+        catch (error) { vscode.window.showErrorMessage(`Error deleting file ${filePath}:`); }
     });
 }
 
 // Create the commands and assign what they do
-export function registerCommand(context: vscode.ExtensionContext, language: string) {
-    context.subscriptions.push(
-        vscode.commands.registerCommand(provideCommand(language), async (code: string) => {
-            if (language === 'copy') {
-                await vscode.env.clipboard.writeText(code);
-                vscode.window.showInformationMessage('Code copied to clipboard.');
-            } else if (language === '') {
-                await runCommandsInTerminal(code);
-            } else if (language === 'inline') {
-                await runCommandsInTerminal(code);
-            } else if (language === 'java') {
-                await executeJavaBlock(code);
-            } else {
-                await executeCodeBlock(language, code);
-            }
-        })
-    );
-}
-
-// For Java code blocks, special handling is needed
-// The user is prompted to enter the name of the Java file to match the name of the main class
-export function executeJavaBlock(code: string) {
-    vscode.window.showInputBox({
-        prompt: 'Enter the name of the Java file (without extension). ' +
-            'Note: The Java standard requires the filename to be the ' +
-            'same as the name of the main class.',
-        placeHolder: 'MyJavaFile'
-    }).then((javaCompiledName) => {
-        if (javaCompiledName) {
-            const extension = getLanguageConfig('java', 'extension');
-            const compiler = getLanguageConfig('java', 'compiler');
-            const javaCompiledPath = path.join(os.tmpdir(), javaCompiledName);
-            const javaSourcePath = `${javaCompiledPath}.${extension}`;
-
-            // SECURITY: Only Owner Read and Write
-            fs.writeFileSync(javaSourcePath, code, { mode: 0o600 });
-            tempFilePaths.push(javaSourcePath);
-
-            compileHandler(`${compiler} ${javaSourcePath}`, (success) => {
-                if (success) {
-                    runCommandsInTerminal(`java -cp ${os.tmpdir()} ${javaCompiledName}`);
-                    tempFilePaths.push(`${javaCompiledPath}.class`);
-                }
-            });
-        }
+export function registerCommands(context: vscode.ExtensionContext) {
+    const commands: [string, (...args: any[]) => void][] = [
+        ['markdown.runFile', async (language: string, code: string) => {
+            runInTerminal(await getRunCommand(language, code));
+        }],
+        ['markdown.runOnMarkdown', async (language: string, code: string, range: vscode.Range) => {
+            await runOnMarkdown(await getRunCommand(language, code), range);
+        }],
+        ['markdown.runInTerminal', runInTerminal],
+        ['markdown.copy', (code: string) => {
+            vscode.env.clipboard.writeText(code);
+            vscode.window.showInformationMessage('Code copied to clipboard.');
+        }],
+        ['markdown.stopProcess', (pid: number) => treeKill(pid, 'SIGINT')],
+        ['markdown.killProcess', (pid: number) => treeKill(pid, 'SIGKILL')],
+        ['markdown.killAllProcesses', killAllChildProcesses]
+    ];
+  
+    commands.forEach(([command, callback]) => {
+        context.subscriptions.push(vscode.commands.registerCommand(command, callback));
     });
 }
 
-// Save code to a temporary file and execute it
-// For compiled languages, a child process is created for compilation additionally
-export function executeCodeBlock(language: string, code: string) {
-    const compiledName = `temp_${Date.now()}`;
-    const compiledPath = path.join(os.tmpdir(), compiledName);
-    const extension = getLanguageConfig(language, 'extension');
-    const compiler = getLanguageConfig(language, 'compiler');
-    const sourcePath = `${compiledPath}.${extension}`;
+// For Java code blocks, the user needs to specify a filename
+function getBaseName(language: string): Promise<string> {
+    if (language === 'java') {
+        return new Promise<string>((resolve) => {
+            vscode.window.showInputBox({
+                prompt: 'Enter the name of the Java file (without extension). ' +
+                    'Note: The Java standard requires the filename to be the ' +
+                    'same as the name of the main class.',
+                placeHolder: 'MyJavaFile'
+            }).then((baseName) => { resolve(baseName || ''); });
+        });
+    } else {
+        return Promise.resolve(`temp_${Date.now()}`);
+    }
+}
 
-    // Read and store the Python Path configuration boolean
+// Inject the Python Path Code into Python Files
+function injectPythonPath(language: string, code: string): string {
+    // Read the Python Path configuration boolean
     const config = vscode.workspace.getConfiguration();
     const pythonPathEnabled = config.get<boolean>('markdownRunner.pythonPath');
 
-    // Inject the markdown file's path into the code
+    // If the boolean is true, inject the markdown file's path into the code
     const editor = vscode.window.activeTextEditor;
     if (pythonPathEnabled && editor && language === 'python') {
         const documentUri = editor.document.uri;
@@ -107,41 +108,164 @@ export function executeCodeBlock(language: string, code: string) {
         code = `import sys\nsys.path.insert(0, r'${documentDirectory}')\n` + code;
     }
 
-    // SECURITY: Only Owner Read and Write
-    fs.writeFileSync(sourcePath, code, { mode: 0o600 });
-    tempFilePaths.push(sourcePath);
-
-    if (extension === 'c' || extension === 'cpp' || extension === 'rs') {
-        compileHandler(`${compiler} -o ${compiledPath} ${sourcePath}`, (success) => {
-            if (success) {
-                runCommandsInTerminal(compiledPath);
-                tempFilePaths.push(compiledPath);
-            }
-        });
-    } else {
-        runCommandsInTerminal(`${compiler} ${sourcePath}`);
-    }
+    return code;
 }
 
-// If successful compilation, it allows `executeCodeBlock` to execute the file
-// Otherwise, it throws an error message
-function compileHandler(command: string, callback: (success: boolean) => void): void {
-    cp.exec(command, (error, stdout, stderr) => {
-        if (error) {
-            // timeout is necessary because of interference with codelens
-            setTimeout(() => {
-                vscode.window.showErrorMessage(stderr, { modal: true });
-            }, 100);
-            callback(false);
+// Save code to a temporary file and execute it
+// For compiled languages, a child process is created for compilation additionally
+// Return command string to be run in terminal or on markdown file as needed
+export async function getRunCommand(language: string, code: string): Promise<string> {
+    const baseName = await getBaseName(language);
+    if (!baseName) { return ''; }
+    const extension = getLanguageConfig(language, 'extension');
+    if (!extension) { return ''; }
+    const compiler = getLanguageConfig(language, 'compiler');
+    if (!compiler) { return ''; }
+    code = injectPythonPath(language, code);
+    const basePath = path.join(os.tmpdir(), baseName);
+    const uncompiledPath = `${basePath}.${extension}`;
+
+    // Write code to a file, SECURITY: Only Owner Read and Write
+    fs.writeFileSync(uncompiledPath, code, { mode: 0o600 });
+    tempFilePaths.push(uncompiledPath);
+
+    // Compilation for C, C++ and Rust
+    if (language === 'c' || language === 'cpp' || language === 'rust') {
+        if (await compileHandler(`${compiler} -o ${basePath} ${uncompiledPath}`)) {
+            tempFilePaths.push(basePath);
+            return basePath;
         } else {
-            callback(true);
+            return '';
+        }
+    }
+
+    // Compilation for Java
+    if (language === 'java') {
+        if (await compileHandler(`${compiler} ${uncompiledPath}`)) {
+            tempFilePaths.push(`${basePath}.class`);
+            return `java -cp ${os.tmpdir()} ${baseName}`;
+        } else {
+            return '';
+        }
+    }
+
+    // If not a compiled language, then run it
+    return `${compiler} ${uncompiledPath}`;
+}
+
+// Compiles a binary using the provided command
+// Throws an error message if unsucessful
+function compileHandler(command: string): Promise<boolean> {
+    return new Promise((resolve) => {
+        cp.exec(command, (error, stdout, stderr) => {
+            if (error) {
+                // Timeout is necessary because of interference with codelens
+                setTimeout(() => {
+                    vscode.window.showErrorMessage(stderr, { modal: true });
+                }, 100);
+                resolve(false);
+            } else {
+                resolve(true);
+            }
+        });
+    });
+}
+
+// Run command in the terminal
+export function runInTerminal(code: string) {
+    if (code === '') { return; }
+    const terminal = vscode.window.activeTerminal || vscode.window.createTerminal();
+    terminal.show();
+    terminal.sendText(code);
+}
+
+// Run command on the markdown file
+async function runOnMarkdown(code: string, range: vscode.Range) {
+    if (code === '') { return; }
+
+    // Do not support multiple output streams at the same time
+    // TODO: maybe implement this in the future
+    if (codeLensChildProcesses.length > 0) { return; }
+
+    // Calculate the range of Code Lens for the new child process
+    const childLine = range.end.line + 2;
+    const childRange = new vscode.Range(childLine, 0, childLine, 0);
+
+    // If a process already exists at the same range, return
+    const existingProcess = codeLensChildProcesses.find(
+        (entry) => entry.range.isEqual(childRange)
+    );
+    if (existingProcess) { return; }
+
+    // Lock to make sure text insert or deletion happens atomically
+    const textEditLock = new AsyncLock();
+
+    // Obtain editor
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) { return; }
+
+    // Create result block that holds execution results
+    const deleteRange = findResultBlock(editor.document, range.end.line + 1);
+    await textEditLock.acquire('key', async () => {
+        // Critical section code here
+        if (deleteRange) {
+            // If result block found, clear the contents inside it
+            await editor.edit((editBuilder) => {
+                editBuilder.delete(deleteRange);
+            });
+        } else {
+            // If result block not found, create it
+            await insertText(editor, range.end, "\n\n```result\n```");
+        }
+    });
+
+    // Start child process
+    const runner = cp.spawn('sh', ['-c', code], { detached: true });
+
+    // Create buttons to stop or kill the process
+    codeLensChildProcesses.push({ pid: runner.pid!, range: childRange });
+    killAllButton.show();
+
+    // Output results 3 lines below the parent code block
+    let currentPosition = new vscode.Position(range.end.line + 3, 0);
+
+    // Write child process execution results onto markdown file
+    runner.stdout.on('data', async (data: Buffer) => {
+        // Throttle write attempts
+        await textEditLock.acquire('key', async () => {
+            // Critical section code here
+            const output = data.toString();
+            await insertText(editor, currentPosition, output);
+            const outputLines = output.split('\n');
+            const newPositionLine = currentPosition.line + outputLines.length - 1;
+            const lastLineLength = outputLines[outputLines.length - 1].length;
+            currentPosition = new vscode.Position(newPositionLine, lastLineLength);
+        });
+    });
+
+    runner.on('close', async () => {
+        // Remove process `stop` and `kill` controls once done with the process
+        const index = codeLensChildProcesses.findIndex(entry => entry.pid === runner.pid);
+        if (index !== -1) { codeLensChildProcesses.splice(index, 1); }
+        if (codeLensChildProcesses.length === 0) { killAllButton.hide(); }
+
+        // If output did not end on a newline, add it
+        if (currentPosition.character !== 0) {
+            await textEditLock.acquire('key', async () => {
+                await insertText(editor, currentPosition, '\n');
+            });
         }
     });
 }
 
-// Run the code line by line the terminal 
-export function runCommandsInTerminal(code: string) {
-    const terminal = vscode.window.activeTerminal || vscode.window.createTerminal();
-    terminal.show();
-    terminal.sendText(code);
+// Helper function to runOnMarkdown
+async function insertText(editor: vscode.TextEditor, currentPosition: vscode.Position, insertedText: string) {
+    await editor.edit((editBuilder) => {
+        editBuilder.insert(currentPosition, insertedText);
+    }).then(success => {
+        if (success) {
+            // Save the document to ensure undoability
+            vscode.window.activeTextEditor?.document.save();
+        }
+    });
 }

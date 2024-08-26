@@ -1,64 +1,62 @@
 # Markdown Code Block Runner for VS Code
 
-This extension enables the seamless execution of code blocks in any programming language within Markdown files in VS Code.
+<div>
+    <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunCodeBlock.gif" alt="Run Code Block">
+    <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunCodeSnippet.gif" alt="Run Code Snippet">
+    <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunOnMarkdown.gif" alt="Run On Markdown">
+</div>
+
+This extension allows you to execute code blocks in any programming language directly from Markdown files in VS Code.
 
 ## Features
 
-- CodeLens buttons on top of each code block offer options to run or copy the code. Temporary files are created for execution and are cleaned up afterward.
-- Ctrl + Left Click on any Code Snippet to run it in the terminal.
-- Supports a wide range of languages, including C, Rust, C++, Java, TypeScript, PHP, Perl, R, Dart, Groovy, Go, Haskell, Julia, Lua, Ruby, JavaScript, Python, Bash. Additional non-compiled languages can be added via extension settings.
+- **Execute Code Blocks**: CodeLens Buttons appear above each code block (```) for running or copying the code. Temporary files are created for execution and are cleaned up afterward.
+- **Execute Code Snippets**: Run code snippets (enclosed in `) with Ctrl + Click. Results are displayed in the terminal.
+- **Broad Language Support**: Supports a wide range of languages, including C, Rust, C++, Java, TypeScript, PHP, Perl, R, Dart, Groovy, Go, Haskell, Julia, Lua, Ruby, JavaScript, Python, Bash. Add non-compiled languages via settings.
+- **Save Execution Results**: Execute code directly within Markdown files, with the output captured in the document.
 
 ## Requirements
 
 Before running a code block:
 
-- Ensure "Compiler Configuration" settings are correct.
-- Ensure the code is correct.
-- Install the required language and dependencies.
-- Set up path environment variables to access the installed languages globally.
+- Verify "Compiler Configuration" settings are correct.
+- Ensure your code is correct.
+- Install necessary languages and dependencies.
+- Add compilers to the PATH environment variable if necessary to enable global access to installed languages.
 
-On Arch Linux, you can install all supported languages with 1 command!
+On Arch Linux, install all supported languages with:
 
 ```bash
 sudo pacman --needed -S php perl r dart groovy go rustup ghc julia lua ruby nodejs npm python bash
 ```
+For other systems, research language installation or use the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install).
 
-Please research the language installation process on other operating systems. Consider using the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install) on Windows.
+## Demo File
 
-## Demo
-
-Download or copy [DEMO.md](DEMO.md) into VS Code after installing this extension, and test all the features out!
-
-<p><img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/DEMO.gif" alt="DEMO">
+Download or copy [DEMO.md](DEMO.md) and the `demo_helpers` folder into VS Code after installing this extension, and test all the features out!
 
 ## Extension Settings
 
 ### Compiler Configuration
 
-- Add or modify the entries representing compiler configurations. Each entry consists of an array defining the properties for a specific programming language. The array elements represent: [Language Name, File Extension, Compiler Command/Path, Compiled (true/false)]. You can only add non-compiled languages here.
+- Configure language compilers by specifying Item: `Code Block Tag` and associated Value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added.
 
-```json
+```plaintext
 // Example
-["Python", "py", "python", false]
+Item: python, Value: ["Python", "py", "python"]
 ```
 
-- If there are issues, reset each entry to their default value using the reset icon ↻ and restart VS Code. Alternatively, remove the following from the VS Code `settings.json` file and restart VS Code:
-
-```json
-"markdownRunner.compilerConfiguration": {
-    // settings for each language
-}
-```
+- Reset settings using the ↻ icons or remove the `markdownRunner.compilerConfiguration` entry from VSCode's `settings.json` to restore to default if any issues occur.
 
 ### Python Path
 
-Enabling this setting adds the directory of the markdown file to Python's sys.path, allowing you to import modules from the same directory.
+Enable this to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.
 
 ## Future Development
 
-Please note that the following features are desired for future development, but their implementation is not guaranteed:
+Planned features (no guarantee):
 
-- Implement automatic pasting of execution results within the markdown file and provide a toggle to turn it on/off.
+- Support for multiple `Run on Markdown` output streams.
 
 Your feedback and contributions are welcome in shaping the future of this extension!
 

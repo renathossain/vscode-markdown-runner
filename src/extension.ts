@@ -56,8 +56,7 @@
 import * as vscode from 'vscode';
 import { CodeSnippetLinkProvider } from './codeLinks';
 import { ButtonCodeLensProvider } from './codeLens';
-import { cleanTempFiles, registerCommand } from './codeRunner';
-import { languageMap } from './compilerConfig';
+import { cleanTempFiles, registerCommands } from './codeRunner';
 
 // Main function that runs when the extension is activated
 export function activate(context: vscode.ExtensionContext) {
@@ -75,13 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
         )
     );
 
-    // Register the commands used by the "subscriptions" above
-    for (const language of Object.keys(languageMap())) {
-        registerCommand(context, language);
-    }
-    registerCommand(context, '');
-    registerCommand(context, 'copy');
-    registerCommand(context, 'inline');
+    registerCommands(context);
 }
 
 // Deletes the temporary files that were generated during the extension's usage
