@@ -222,13 +222,6 @@ async function runOnMarkdown(code: string, range: vscode.Range) {
     codeLensChildProcesses.push({ pid: runner.pid!, range: childRange });
     killAllButton.show();
 
-    // Remove Code Lens once finished with process
-    runner.on('close', () => {
-        const index = codeLensChildProcesses.findIndex(entry => entry.pid === runner.pid);
-        if (index !== -1) { codeLensChildProcesses.splice(index, 1); }
-        if (codeLensChildProcesses.length === 0) { killAllButton.hide(); }
-    });
-
     // Output results 3 lines below the parent code block
     let currentPosition = new vscode.Position(range.end.line + 3, 0);
 
@@ -240,9 +233,24 @@ async function runOnMarkdown(code: string, range: vscode.Range) {
             const output = data.toString();
             await insertText(editor, currentPosition, output);
             const outputLines = output.split('\n');
+            const newPositionLine = currentPosition.line + outputLines.length - 1;
             const lastLineLength = outputLines[outputLines.length - 1].length;
-            currentPosition = currentPosition.translate(outputLines.length - 1, lastLineLength); 
+            currentPosition = new vscode.Position(newPositionLine, lastLineLength);
         });
+    });
+
+    runner.on('close', async () => {
+        // Remove process `stop` and `kill` controls once done with the process
+        const index = codeLensChildProcesses.findIndex(entry => entry.pid === runner.pid);
+        if (index !== -1) { codeLensChildProcesses.splice(index, 1); }
+        if (codeLensChildProcesses.length === 0) { killAllButton.hide(); }
+
+        // If output did not end on a newline, add it
+        if (currentPosition.character !== 0) {
+            await textEditLock.acquire('key', async () => {
+                await insertText(editor, currentPosition, '\n');
+            });
+        }
     });
 }
 
