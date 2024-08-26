@@ -37,7 +37,7 @@ Download or copy [DEMO.md](DEMO.md) and the `demo_helpers` folder into VS Code a
 
 - Configure language compilers by specifying Item: `Code Block Tag` and associated Value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added.
 
-```json
+```plaintext
 // Example
 Item: python, Value: ["Python", "py", "python"]
 ```
