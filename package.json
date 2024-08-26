@@ -25,10 +25,10 @@
       "properties": {
         "markdownRunner.compilerConfiguration": {
           "type": "object",
-          "description": "Compiler configuration for supported languages in Markdown files. Each entry consists of an array defining the properties for a specific programming language. The array elements represent: [Language Name, File Extension, Compiler Command/Path]. You can only add non-compiled languages here.",
+          "description": "Configure language compilers by specifying Item: `Code Block Tag` and associated Value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added.",
           "default": {
             "python": "[\"Python\", \"py\", \"python\"]",
-            "c": "[\"C\", \"c\", \"gcc\", true]",
+            "c": "[\"C\", \"c\", \"gcc\"]",
             "java": "[\"Java\", \"java\", \"javac\"]",
             "cpp": "[\"C++\", \"cpp\", \"g++\"]",
             "rust": "[\"Rust\", \"rs\", \"rustc\"]",
@@ -52,7 +52,7 @@
         },
         "markdownRunner.pythonPath": {
           "type": "boolean",
-          "description": "Enabling this setting adds the directory of the markdown file to Python's sys.path, allowing you to import modules from the same directory.",
+          "description": "Enable this to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.",
           "default": true
         }
       }
