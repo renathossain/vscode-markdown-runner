@@ -1,5 +1,11 @@
 # Markdown Code Block Runner for VS Code
 
+<div>
+    <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunCodeBlock.gif" alt="Run Code Block">
+    <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunCodeSnippet.gif" alt="Run Code Snippet">
+    <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunOnMarkdown.gif" alt="Run On Markdown">
+</div>
+
 This extension allows you to execute code blocks in any programming language directly from Markdown files in VS Code.
 
 ## Features
@@ -25,11 +31,9 @@ sudo pacman --needed -S php perl r dart groovy go rustup ghc julia lua ruby node
 ```
 For other systems, research language installation or use the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install).
 
-## Demo
+## Demo File
 
 Download or copy [DEMO.md](DEMO.md) and the `demo_helpers` folder into VS Code after installing this extension, and test all the features out!
-
-<p><img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/DEMO.gif" alt="DEMO">
 
 ## Extension Settings
 
