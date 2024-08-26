@@ -183,6 +183,10 @@ export function runInTerminal(code: string) {
 async function runOnMarkdown(code: string, range: vscode.Range) {
     if (code === '') { return; }
 
+    // Do not support multiple output streams at the same time
+    // TODO: maybe implement this in the future
+    if (codeLensChildProcesses.length > 0) { return; }
+
     // Calculate the range of Code Lens for the new child process
     const childLine = range.end.line + 2;
     const childRange = new vscode.Range(childLine, 0, childLine, 0);

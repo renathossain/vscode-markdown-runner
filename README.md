@@ -4,9 +4,10 @@ This extension enables the seamless execution of code blocks in any programming 
 
 ## Features
 
-- CodeLens buttons on top of each code block offer options to run or copy the code. Temporary files are created for execution and are cleaned up afterward.
-- Ctrl + Left Click on any Code Snippet to run it in the terminal.
+- CodeLens buttons on top of each Code Block (delimited by ```) offer options to run or copy the code. Temporary files are created for execution and are cleaned up afterward.
+- Ctrl + Left Click on any Code Snippet (delimited by single `) to run it in the terminal.
 - Supports a wide range of languages, including C, Rust, C++, Java, TypeScript, PHP, Perl, R, Dart, Groovy, Go, Haskell, Julia, Lua, Ruby, JavaScript, Python, Bash. Additional non-compiled languages can be added via extension settings.
+- **New**: Now supports running code on the markdown file itself, where output is captured on the markdown file itself.
 
 ## Requirements
 
@@ -35,11 +36,11 @@ Download or copy [DEMO.md](DEMO.md) into VS Code after installing this extension
 
 ### Compiler Configuration
 
-- Add or modify the entries representing compiler configurations. Each entry consists of an array defining the properties for a specific programming language. The array elements represent: [Language Name, File Extension, Compiler Command/Path, Compiled (true/false)]. You can only add non-compiled languages here.
+- Add or modify the entries representing compiler configurations. Each entry consists of an array defining the properties for a specific programming language. The array elements represent: [Language Name, File Extension, Compiler Command/Path]. You can only add non-compiled languages here.
 
 ```json
 // Example
-["Python", "py", "python", false]
+["Python", "py", "python"]
 ```
 
 - If there are issues, reset each entry to their default value using the reset icon ↻ and restart VS Code. Alternatively, remove the following from the VS Code `settings.json` file and restart VS Code:
@@ -58,7 +59,7 @@ Enabling this setting adds the directory of the markdown file to Python's sys.pa
 
 Please note that the following features are desired for future development, but their implementation is not guaranteed:
 
-- Implement automatic pasting of execution results within the markdown file and provide a toggle to turn it on/off.
+- Implement support for multiple `Run on Markdown` output streams.
 
 Your feedback and contributions are welcome in shaping the future of this extension!
 
