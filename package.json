@@ -25,7 +25,7 @@
       "properties": {
         "markdownRunner.compilerConfiguration": {
           "type": "object",
-          "description": "Compiler configuration for supported languages in Markdown files. Each entry consists of an array defining the properties for a specific programming language. The array elements represent: [Language Name, File Extension, Compiler Command/Path, Compiled (true/false)]. You can only add non-compiled languages here.",
+          "description": "Compiler configuration for supported languages in Markdown files. Each entry consists of an array defining the properties for a specific programming language. The array elements represent: [Language Name, File Extension, Compiler Command/Path]. You can only add non-compiled languages here.",
           "default": {
             "python": "[\"Python\", \"py\", \"python\"]",
             "c": "[\"C\", \"c\", \"gcc\", true]",
