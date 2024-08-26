@@ -6,7 +6,7 @@
   - **`Stop Process` Button:** Sends a SIGINT signal to gently interrupt the running process.
   - **`Kill Process` Button:** Sends a SIGKILL signal to forcefully terminate the process if it becomes unresponsive.
   - **`Kill All Processes` Button:** Appears in the bottom status bar of VS Code, allowing you to forcefully kill all processes.
-  - If a code block tagged `result` already exists below the original code, its contents are automatically cleared before inserting the new execution results.
+  - If a code block tagged `result` already exists below the original code, its contents are automatically cleared before inserting new execution results.
 
 ## 1.3.0
 
