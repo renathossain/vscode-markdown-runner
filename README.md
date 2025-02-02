@@ -52,6 +52,40 @@ Item: python, Value: ["Python", "py", "python"]
 
 Enable this to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.
 
+### Default Codes
+
+By configuring the dictionary `defaultCodes`, you can prepend or wrap your code snippets with default code.
+
+Example `setting.json`:
+```
+{
+    "markdownRunner.defaultCodes": {
+        "cpp": "-I@ #include <bits/stdc++.h>\nusing namespace std;\nint main(){\n@\n}",
+        "bash": "var=123"
+    }
+}
+```
+Notice that the character "@" is a placeholder for other code. It can be replaced by any other character and must be adjacent to "-I" (no space between them).
+
+Execution result with the above settings: 
+````markdown
+```cpp
+cout<<456<<endl;
+```
+
+```result
+456
+```
+
+```
+echo $var
+```
+
+```result
+123
+```
+````
+
 ## Future Development
 
 Planned features (no guarantee):
