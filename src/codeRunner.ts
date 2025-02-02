@@ -111,6 +111,18 @@ function injectPythonPath(language: string, code: string): string {
     return code;
 }
 
+function injectDefaultCode(language: string, code: string): string {
+    const config = vscode.workspace.getConfiguration();
+    const defCodeConfig = config.get<any>('markdownRunner.defaultCodes');
+    const defaultCode = defCodeConfig.hasOwnProperty(language) ? defCodeConfig[language] : "";
+    const match = /^-I(.) ([\s\S]+$)/.exec(defaultCode);
+    if(match) {
+        return match[2].replace(match[1], code);
+    } else {
+        return defaultCode + "\n" + code;
+    }
+}
+
 // Save code to a temporary file and execute it
 // For compiled languages, a child process is created for compilation additionally
 // Return command string to be run in terminal or on markdown file as needed
@@ -121,7 +133,8 @@ export async function getRunCommand(language: string, code: string): Promise<str
     if (!extension) { return ''; }
     const compiler = getLanguageConfig(language, 'compiler');
     if (!compiler) { return ''; }
-    code = injectPythonPath(language, code);
+
+    code = injectDefaultCode(language, injectPythonPath(language, code));
     const basePath = path.join(os.tmpdir(), baseName);
     const uncompiledPath = `${basePath}.${extension}`;
 
