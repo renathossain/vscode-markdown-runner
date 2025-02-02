@@ -54,6 +54,14 @@
           "type": "boolean",
           "description": "Enable this to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.",
           "default": true
+        },
+        "markdownRunner.defaultCodes": {
+          "type": "object",
+          "description": "Specify default codes for specific languages. ",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {}
         }
       }
     }
