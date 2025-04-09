@@ -14,27 +14,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import * as vscode from 'vscode';
-import { parseInlineCode } from './parser';
+import * as vscode from "vscode";
+import { parseInlineCode } from "./parser";
 
 // DocumentLink Provider for parsed inline code snippets
 export class CodeSnippetLinkProvider implements vscode.DocumentLinkProvider {
-    provideDocumentLinks(document: vscode.TextDocument): vscode.ProviderResult<vscode.DocumentLink[]> {
-        const codeSnippetLinks: vscode.DocumentLink[] = [];
+  provideDocumentLinks(
+    document: vscode.TextDocument
+  ): vscode.ProviderResult<vscode.DocumentLink[]> {
+    const codeSnippetLinks: vscode.DocumentLink[] = [];
 
-        // Loop through all parsed inline code snippets and generate the Document Links
-        for (const { code, range } of parseInlineCode(document)) {
-            const vscodeCommand: vscode.Command = {
-                title: 'Run Code Snippet',
-                command: 'markdown.runInTerminal',
-                arguments: [code]
-            };
-            const uriString = encodeURIComponent(JSON.stringify(vscodeCommand.arguments));
-            const command = `command:${vscodeCommand.command}?${uriString}`;
-            const link = new vscode.DocumentLink(range, vscode.Uri.parse(command));
-            codeSnippetLinks.push(link);
-        }
-
-        return codeSnippetLinks;
+    // Loop through all parsed inline code snippets and generate the Document Links
+    for (const { code, range } of parseInlineCode(document)) {
+      const vscodeCommand: vscode.Command = {
+        title: "Run Code Snippet",
+        command: "markdown.runInTerminal",
+        arguments: [code],
+      };
+      const uriString = encodeURIComponent(
+        JSON.stringify(vscodeCommand.arguments)
+      );
+      const command = `command:${vscodeCommand.command}?${uriString}`;
+      const link = new vscode.DocumentLink(range, vscode.Uri.parse(command));
+      codeSnippetLinks.push(link);
     }
+
+    return codeSnippetLinks;
+  }
 }

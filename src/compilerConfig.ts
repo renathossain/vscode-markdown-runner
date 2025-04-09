@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
 // Language configurations hold the info necessary for
 // executing code blocks and providing codelens buttons
@@ -23,24 +23,26 @@ import * as vscode from 'vscode';
 
 // Return the raw language configuration
 export function languageMap() {
-    const config = vscode.workspace.getConfiguration();
-    const languageConfigurations = config.get<any>('markdownRunner.compilerConfiguration');
-    return languageConfigurations || {};
+  const config = vscode.workspace.getConfiguration();
+  const languageConfigurations = config.get<any>(
+    "markdownRunner.compilerConfiguration"
+  );
+  return languageConfigurations || {};
 }
 
 // Return the language configuration for a specific language
 export function getLanguageConfig(language: string, configuration: string) {
-    const languageConfig = languageMap();
-    if (languageConfig.hasOwnProperty(language)) {
-        const configValue = languageConfig[language];
-        const configArray = JSON.parse(configValue.replace(/'/g, '"'));
-        if (configuration === 'name') {
-            return configArray[0];
-        } else if (configuration === 'extension') {
-            return configArray[1];
-        } else if (configuration === 'compiler') {
-            return configArray[2];
-        }
+  const languageConfig = languageMap();
+  if (languageConfig.hasOwnProperty(language)) {
+    const configValue = languageConfig[language];
+    const configArray = JSON.parse(configValue.replace(/'/g, '"'));
+    if (configuration === "name") {
+      return configArray[0];
+    } else if (configuration === "extension") {
+      return configArray[1];
+    } else if (configuration === "compiler") {
+      return configArray[2];
     }
-    return undefined;
+  }
+  return undefined;
 }
