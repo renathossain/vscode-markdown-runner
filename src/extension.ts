@@ -18,9 +18,9 @@
 //
 //                               extension.ts
 //                                    |
-//                       +------------+-------------+      
+//                       +------------+-------------+
 //                       |            |             |
-//                 codeLinks.ts  codeLens.ts   codeRunner.ts  
+//                 codeLinks.ts  codeLens.ts   codeRunner.ts
 //                       |          |  |            |
 //                       +-----+----+  +-----+------+
 //                             |             |
@@ -31,7 +31,7 @@
 //   perform actions such as executing or copying code blocks.
 //
 // - `codeLinks.ts`: Uses `parser.ts` to parse inline code snippets, then turn them
-//   into links that the user can 'Ctrl + Left Click' to run them. 
+//   into links that the user can 'Ctrl + Left Click' to run them.
 //
 // - `codeLens.ts`: Uses `parser.ts` to parse code blocks and determine
 //   their language and content, then generate appropriate code lens buttons for
@@ -53,32 +53,34 @@
 //
 // ************************************************************************
 
-import * as vscode from 'vscode';
-import { CodeSnippetLinkProvider } from './codeLinks';
-import { ButtonCodeLensProvider } from './codeLens';
-import { cleanTempFiles, registerCommands } from './codeRunner';
+import * as vscode from "vscode";
+import { CodeSnippetLinkProvider } from "./codeLinks";
+import { ButtonCodeLensProvider } from "./codeLens";
+import { cleanTempFiles, registerCommands } from "./codeRunner";
 
 // Main function that runs when the extension is activated
 export function activate(context: vscode.ExtensionContext) {
-    // Initializes the CodeLens buttons for code blocks
-    context.subscriptions.push(
-        vscode.languages.registerCodeLensProvider({ language: 'markdown', scheme: 'file' },
-            new ButtonCodeLensProvider()
-        )
-    );
+  // Initializes the CodeLens buttons for code blocks
+  context.subscriptions.push(
+    vscode.languages.registerCodeLensProvider(
+      { language: "markdown", scheme: "file" },
+      new ButtonCodeLensProvider()
+    )
+  );
 
-    // Initializes the DocumentLinks for inline code (code snippets)
-    context.subscriptions.push(
-        vscode.languages.registerDocumentLinkProvider({ language: 'markdown', scheme: 'file' },
-            new CodeSnippetLinkProvider()
-        )
-    );
+  // Initializes the DocumentLinks for inline code (code snippets)
+  context.subscriptions.push(
+    vscode.languages.registerDocumentLinkProvider(
+      { language: "markdown", scheme: "file" },
+      new CodeSnippetLinkProvider()
+    )
+  );
 
-    registerCommands(context);
+  registerCommands(context);
 }
 
 // Deletes the temporary files that were generated during the extension's usage
 // when the extension is deactivated or VS Code is closed
 export function deactivate() {
-    cleanTempFiles();
+  cleanTempFiles();
 }
