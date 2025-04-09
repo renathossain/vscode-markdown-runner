@@ -1,5 +1,5 @@
 // vscode-markdown-runner
-// Copyright (C) 2024 Renat Hossain
+// Copyright (C) 2025 Renat Hossain
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
