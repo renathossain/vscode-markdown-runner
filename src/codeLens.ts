@@ -83,13 +83,9 @@ function pushCodeLens(
   range: vscode.Range,
   title: string,
   command: string,
-  commandArgs: unknown[]
+  args: unknown[]
 ) {
-  const vscodeCommand: vscode.Command = {
-    title: title,
-    command: command,
-    arguments: commandArgs,
-  };
-  const codeLens = new vscode.CodeLens(range, vscodeCommand);
-  codeLenses.push(codeLens);
+  codeLenses.push(
+    new vscode.CodeLens(range, { title, command, arguments: args })
+  );
 }
