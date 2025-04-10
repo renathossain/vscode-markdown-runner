@@ -57,7 +57,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import { CodeSnippetLinkProvider } from "./codeLinks";
 import { ButtonCodeLensProvider } from "./codeLens";
-import { tempFilePaths, commands } from "./codeRunner";
+import { tempFilePaths, commandHandlers } from "./handlers";
 
 // Main function that runs when extension is activated
 export function activate(context: vscode.ExtensionContext) {
@@ -80,9 +80,9 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // Register all extension commands
-  commands.forEach(({ command, callback }) => {
+  commandHandlers.forEach(({ command, handler }) => {
     context.subscriptions.push(
-      vscode.commands.registerCommand(command, callback)
+      vscode.commands.registerCommand(command, handler)
     );
   });
 }
