@@ -54,9 +54,10 @@
 // ************************************************************************
 
 import * as vscode from "vscode";
+import * as fs from "fs";
 import { CodeSnippetLinkProvider } from "./codeLinks";
 import { ButtonCodeLensProvider } from "./codeLens";
-import { cleanTempFiles, registerCommands } from "./codeRunner";
+import { tempFilePaths, commands } from "./codeRunner";
 
 // Main function that runs when extension is activated
 export function activate(context: vscode.ExtensionContext) {
@@ -78,11 +79,22 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
 
-  registerCommands(context);
+  // Register all extension commands
+  commands.forEach(({ command, callback }) => {
+    context.subscriptions.push(
+      vscode.commands.registerCommand(command, callback)
+    );
+  });
 }
 
 // Function that runs when extension is deactivated
 export function deactivate() {
   // Deletes temporary files created for code block execution
-  cleanTempFiles();
+  tempFilePaths.forEach((filePath) => {
+    try {
+      fs.unlinkSync(filePath);
+    } catch {
+      vscode.window.showErrorMessage(`Error deleting file ${filePath}:`);
+    }
+  });
 }

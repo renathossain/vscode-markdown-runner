@@ -19,7 +19,7 @@ import * as vscode from "vscode";
 // Test out the regex here: https://regexr.com/
 
 // Helper Function
-function parseBlock(
+export function parseBlock(
   document: vscode.TextDocument,
   match: RegExpExecArray,
   regex: RegExp
@@ -58,49 +58,4 @@ export function* parseCodeBlocks(
   while ((match = regex.exec(document.getText())) !== null) {
     yield parseBlock(document, match, regex);
   }
-}
-
-// Used for `Run on Markdown`
-export function findResultBlock(
-  document: vscode.TextDocument,
-  startLine: number
-) {
-  const regex: RegExp = /^```(.*?)\n(.*?)^```/gms;
-
-  // Check if startLine is out of bounds
-  if (startLine < 0 || startLine >= document.lineCount) {
-    return null;
-  }
-
-  // Obtain the sliced document at `startLine`
-  const fullText = document.getText();
-  const startPos = document.lineAt(startLine).range.start;
-  const startOffset = document.offsetAt(startPos);
-  const slicedText = fullText.slice(startOffset);
-
-  // Find first match within the sliced document
-  const match = regex.exec(slicedText);
-  if (!match) {
-    return null;
-  }
-
-  // Parse and validate the data
-  const { language, code } = parseBlock(document, match, regex);
-  if (language !== `result`) {
-    return null;
-  }
-
-  // The match must start a line away from startLine
-  const matchIndex = match.index;
-  const preMatchText = slicedText.slice(0, matchIndex);
-  const relativeLineNumber = preMatchText.split("\n").length - 1;
-  if (relativeLineNumber !== 1) {
-    return null;
-  }
-
-  // The range of the contents inside the code block to get cleared
-  const foundStartLine = startLine + relativeLineNumber + 1;
-  const codeLineCount = code.split("\n").length;
-  const foundEndLine = foundStartLine + codeLineCount - 1;
-  return new vscode.Range(foundStartLine, 0, foundEndLine, 0);
 }
