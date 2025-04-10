@@ -22,41 +22,43 @@ import * as cp from "child_process";
 import treeKill from "tree-kill";
 import AsyncLock from "async-lock";
 import { getLanguageConfig } from "./settings";
-import { childProcesses } from "./codeLens";
-import { parseBlock } from "./parser";
+import { childProcesses, parseBlock } from "./codeLens";
 
-export const tempFilePaths: string[] = [];
-export const commands = [
+// List of functions triggered by all commands
+export const commandHandlers = [
   {
     command: "markdown.runFile",
-    callback: async (language: string, code: string) => {
+    handler: async (language: string, code: string) => {
       runInTerminal(await getRunCommand(language, code));
     },
   },
   {
     command: "markdown.runOnMarkdown",
-    callback: async (language: string, code: string, range: vscode.Range) => {
+    handler: async (language: string, code: string, range: vscode.Range) => {
       await runOnMarkdown(await getRunCommand(language, code), range);
     },
   },
-  { command: "markdown.runInTerminal", callback: runInTerminal },
+  { command: "markdown.runInTerminal", handler: runInTerminal },
   {
     command: "markdown.copy",
-    callback: (code: string) => {
+    handler: (code: string) => {
       vscode.env.clipboard.writeText(code);
       vscode.window.showInformationMessage("Code copied to clipboard.");
     },
   },
   {
     command: "markdown.stopProcess",
-    callback: (pid: number) => treeKill(pid, "SIGINT"),
+    handler: (pid: number) => treeKill(pid, "SIGINT"),
   },
   {
     command: "markdown.killProcess",
-    callback: (pid: number) => treeKill(pid, "SIGKILL"),
+    handler: (pid: number) => treeKill(pid, "SIGKILL"),
   },
-  { command: "markdown.killAllProcesses", callback: killAllChildProcesses },
+  { command: "markdown.killAllProcesses", handler: killAllChildProcesses },
 ];
+
+// List of temporary files
+export const tempFilePaths: string[] = [];
 
 // For Java code blocks, the user needs to specify a filename
 function getBaseName(language: string): Promise<string> {
