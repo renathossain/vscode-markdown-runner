@@ -21,84 +21,42 @@ import * as path from "path";
 import * as cp from "child_process";
 import treeKill from "tree-kill";
 import AsyncLock from "async-lock";
-import { getLanguageConfig } from "./compilerConfig";
-import { codeLensChildProcesses } from "./codeLens";
-import { findResultBlock } from "./parser";
+import { getLanguageConfig } from "./settings";
+import { childProcesses } from "./codeLens";
+import { parseBlock } from "./parser";
 
-// Safety button to kill all processes
-const killAllButton = vscode.window.createStatusBarItem(
-  vscode.StatusBarAlignment.Left
-);
-killAllButton.command = {
-  title: "Kill All `Run on Markdown` Processes",
-  command: "markdown.killAllProcesses",
-  arguments: [],
-};
-killAllButton.text = "$(stop-circle) Kill All Processes";
-
-// Kill All Button calls this function
-function killAllChildProcesses() {
-  codeLensChildProcesses.forEach(({ pid }, i) => {
-    treeKill(pid, "SIGKILL");
-    codeLensChildProcesses.splice(i, 1);
-  });
-}
-
-// Stores the paths of the temporary files created for running code
-// which are cleaned up at the end
-const tempFilePaths: string[] = [];
-
-// Called by `deactivate` to cleanup all temporary files
-export function cleanTempFiles() {
-  tempFilePaths.forEach((filePath) => {
-    try {
-      fs.unlinkSync(filePath);
-    } catch {
-      vscode.window.showErrorMessage(`Error deleting file ${filePath}:`);
-    }
-  });
-}
-
-type CommandCallback =
-  | ((language: string, code: string) => void)
-  | ((language: string, code: string, range: vscode.Range) => void)
-  | ((code: string) => void)
-  | ((pid: number) => void);
-
-// Create the commands and assign what they do
-export function registerCommands(context: vscode.ExtensionContext) {
-  const commands: [string, CommandCallback][] = [
-    [
-      "markdown.runFile",
-      async (language: string, code: string) => {
-        runInTerminal(await getRunCommand(language, code));
-      },
-    ],
-    [
-      "markdown.runOnMarkdown",
-      async (language: string, code: string, range: vscode.Range) => {
-        await runOnMarkdown(await getRunCommand(language, code), range);
-      },
-    ],
-    ["markdown.runInTerminal", runInTerminal],
-    [
-      "markdown.copy",
-      (code: string) => {
-        vscode.env.clipboard.writeText(code);
-        vscode.window.showInformationMessage("Code copied to clipboard.");
-      },
-    ],
-    ["markdown.stopProcess", (pid: number) => treeKill(pid, "SIGINT")],
-    ["markdown.killProcess", (pid: number) => treeKill(pid, "SIGKILL")],
-    ["markdown.killAllProcesses", killAllChildProcesses],
-  ];
-
-  commands.forEach(([command, callback]) => {
-    context.subscriptions.push(
-      vscode.commands.registerCommand(command, callback)
-    );
-  });
-}
+export const tempFilePaths: string[] = [];
+export const commands = [
+  {
+    command: "markdown.runFile",
+    callback: async (language: string, code: string) => {
+      runInTerminal(await getRunCommand(language, code));
+    },
+  },
+  {
+    command: "markdown.runOnMarkdown",
+    callback: async (language: string, code: string, range: vscode.Range) => {
+      await runOnMarkdown(await getRunCommand(language, code), range);
+    },
+  },
+  { command: "markdown.runInTerminal", callback: runInTerminal },
+  {
+    command: "markdown.copy",
+    callback: (code: string) => {
+      vscode.env.clipboard.writeText(code);
+      vscode.window.showInformationMessage("Code copied to clipboard.");
+    },
+  },
+  {
+    command: "markdown.stopProcess",
+    callback: (pid: number) => treeKill(pid, "SIGINT"),
+  },
+  {
+    command: "markdown.killProcess",
+    callback: (pid: number) => treeKill(pid, "SIGKILL"),
+  },
+  { command: "markdown.killAllProcesses", callback: killAllChildProcesses },
+];
 
 // For Java code blocks, the user needs to specify a filename
 function getBaseName(language: string): Promise<string> {
@@ -130,8 +88,7 @@ function injectPythonPath(language: string, code: string): string {
   // If the boolean is true, inject the markdown file's path into the code
   const editor = vscode.window.activeTextEditor;
   if (pythonPathEnabled && editor && language === "python") {
-    const documentUri = editor.document.uri;
-    const documentDirectory = path.dirname(documentUri.fsPath);
+    const documentDirectory = path.dirname(editor.document.uri.fsPath);
     code = `import sys\nsys.path.insert(0, r'${documentDirectory}')\n` + code;
   }
 
@@ -159,15 +116,15 @@ export async function getRunCommand(
   }
   code = injectPythonPath(language, code);
   const basePath = path.join(os.tmpdir(), baseName);
-  const uncompiledPath = `${basePath}.${extension}`;
+  const sourcePath = `${basePath}.${extension}`;
 
   // Write code to a file, SECURITY: Only Owner Read and Write
-  fs.writeFileSync(uncompiledPath, code, { mode: 0o600 });
-  tempFilePaths.push(uncompiledPath);
+  fs.writeFileSync(sourcePath, code, { mode: 0o600 });
+  tempFilePaths.push(sourcePath);
 
   // Compilation for C, C++ and Rust
   if (language === "c" || language === "cpp" || language === "rust") {
-    if (await compileHandler(`${compiler} -o ${basePath} ${uncompiledPath}`)) {
+    if (await compileHandler(`${compiler} -o ${basePath} ${sourcePath}`)) {
       tempFilePaths.push(basePath);
       return basePath;
     } else {
@@ -177,7 +134,7 @@ export async function getRunCommand(
 
   // Compilation for Java
   if (language === "java") {
-    if (await compileHandler(`${compiler} ${uncompiledPath}`)) {
+    if (await compileHandler(`${compiler} ${sourcePath}`)) {
       tempFilePaths.push(`${basePath}.class`);
       return `java -cp ${os.tmpdir()} ${baseName}`;
     } else {
@@ -186,11 +143,11 @@ export async function getRunCommand(
   }
 
   // If not a compiled language, then run it
-  return `${compiler} ${uncompiledPath}`;
+  return `${compiler} ${sourcePath}`;
 }
 
 // Compiles a binary using the provided command
-// Throws an error message if unsucessful
+// Throws an error message if unsuccessful
 function compileHandler(command: string): Promise<boolean> {
   return new Promise((resolve) => {
     cp.exec(command, (error, stdout, stderr) => {
@@ -218,6 +175,51 @@ export function runInTerminal(code: string) {
   terminal.sendText(code);
 }
 
+// Used for `Run on Markdown`
+export function findResultBlock(
+  document: vscode.TextDocument,
+  startLine: number
+) {
+  const regex: RegExp = /^```(.*?)\n(.*?)^```/gms;
+
+  // Check if startLine is out of bounds
+  if (startLine < 0 || startLine >= document.lineCount) {
+    return null;
+  }
+
+  // Obtain the sliced document at `startLine`
+  const fullText = document.getText();
+  const startPos = document.lineAt(startLine).range.start;
+  const startOffset = document.offsetAt(startPos);
+  const slicedText = fullText.slice(startOffset);
+
+  // Find first match within the sliced document
+  const match = regex.exec(slicedText);
+  if (!match) {
+    return null;
+  }
+
+  // Parse and validate the data
+  const { language, code } = parseBlock(document, match, regex);
+  if (language !== `result`) {
+    return null;
+  }
+
+  // The match must start a line away from startLine
+  const matchIndex = match.index;
+  const preMatchText = slicedText.slice(0, matchIndex);
+  const relativeLineNumber = preMatchText.split("\n").length - 1;
+  if (relativeLineNumber !== 1) {
+    return null;
+  }
+
+  // The range of the contents inside the code block to get cleared
+  const foundStartLine = startLine + relativeLineNumber + 1;
+  const codeLineCount = code.split("\n").length;
+  const foundEndLine = foundStartLine + codeLineCount - 1;
+  return new vscode.Range(foundStartLine, 0, foundEndLine, 0);
+}
+
 // Run command on the markdown file
 async function runOnMarkdown(code: string, range: vscode.Range) {
   if (code === "") {
@@ -226,7 +228,7 @@ async function runOnMarkdown(code: string, range: vscode.Range) {
 
   // Do not support multiple output streams at the same time
   // TODO: maybe implement this in the future
-  if (codeLensChildProcesses.length > 0) {
+  if (childProcesses.length > 0) {
     return;
   }
 
@@ -235,7 +237,7 @@ async function runOnMarkdown(code: string, range: vscode.Range) {
   const childRange = new vscode.Range(childLine, 0, childLine, 0);
 
   // If a process already exists at the same range, return
-  const existingProcess = codeLensChildProcesses.find((entry) =>
+  const existingProcess = childProcesses.find((entry) =>
     entry.range.isEqual(childRange)
   );
   if (existingProcess) {
@@ -270,7 +272,7 @@ async function runOnMarkdown(code: string, range: vscode.Range) {
   const runner = cp.spawn("sh", ["-c", code], { detached: true });
 
   // Create buttons to stop or kill the process
-  codeLensChildProcesses.push({ pid: runner.pid!, range: childRange });
+  childProcesses.push({ pid: runner.pid!, range: childRange });
   killAllButton.show();
 
   // Output results 3 lines below the parent code block
@@ -292,13 +294,11 @@ async function runOnMarkdown(code: string, range: vscode.Range) {
 
   runner.on("close", async () => {
     // Remove process `stop` and `kill` controls once done with the process
-    const index = codeLensChildProcesses.findIndex(
-      (entry) => entry.pid === runner.pid
-    );
+    const index = childProcesses.findIndex((entry) => entry.pid === runner.pid);
     if (index !== -1) {
-      codeLensChildProcesses.splice(index, 1);
+      childProcesses.splice(index, 1);
     }
-    if (codeLensChildProcesses.length === 0) {
+    if (childProcesses.length === 0) {
       killAllButton.hide();
     }
 
@@ -327,4 +327,23 @@ async function insertText(
         vscode.window.activeTextEditor?.document.save();
       }
     });
+}
+
+// Safety button to kill all processes
+const killAllButton = vscode.window.createStatusBarItem(
+  vscode.StatusBarAlignment.Left
+);
+killAllButton.command = {
+  title: "Kill All `Run on Markdown` Processes",
+  command: "markdown.killAllProcesses",
+  arguments: [],
+};
+killAllButton.text = "$(stop-circle) Kill All Processes";
+
+// Kill All Button calls this function
+function killAllChildProcesses() {
+  childProcesses.forEach(({ pid }, i) => {
+    treeKill(pid, "SIGKILL");
+    childProcesses.splice(i, 1);
+  });
 }
