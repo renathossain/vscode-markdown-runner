@@ -17,10 +17,10 @@
 import * as vscode from "vscode";
 
 // Parses inline code (code within ` delimiters)
-// This is a generator function that yields code and its location
+// This is a generator function that yields code and its range
 export function* parseInlineCode(
   document: vscode.TextDocument
-): Generator<{ code: string; location: vscode.Range }> {
+): Generator<{ code: string; range: vscode.Range }> {
   // Explanation of regex:
   // [^`\n] means match all any character that is not ` or \n (negated class)
   // ([^`\n]+?) capturing group will then match one or more of that class
@@ -37,12 +37,11 @@ export function* parseInlineCode(
   // Loop through all matches and yield them
   let match;
   while ((match = regex.exec(document.getText())) !== null) {
-    // match[0] captures the entire code block (we do not need it)
     const code = match[1]; // First capturing group ([^`\n]+?)
-    const startPos = document.positionAt(match.index);
-    const endPos = document.positionAt(match.index + match[0].length);
-    const location = new vscode.Range(startPos, endPos);
-    yield { code, location };
+    const start = document.positionAt(match.index);
+    const end = document.positionAt(match.index + match[0].length);
+    const range = new vscode.Range(start, end);
+    yield { code, range };
   }
 }
 
@@ -54,10 +53,10 @@ export class InlineCodeLinkProvider implements vscode.DocumentLinkProvider {
     const inlineCodeLinks: vscode.DocumentLink[] = [];
 
     // For each parsed inline code, generate a Document Link
-    for (const { code, location } of parseInlineCode(document)) {
+    for (const { code, range } of parseInlineCode(document)) {
       const codeString = encodeURIComponent(JSON.stringify([code]));
       const command = `command:markdown.runInTerminal?${codeString}`;
-      const link = new vscode.DocumentLink(location, vscode.Uri.parse(command));
+      const link = new vscode.DocumentLink(range, vscode.Uri.parse(command));
       inlineCodeLinks.push(link);
     }
 

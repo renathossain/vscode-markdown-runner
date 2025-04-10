@@ -19,6 +19,9 @@ import * as cp from "child_process";
 import AsyncLock from "async-lock";
 import { childProcesses, parseBlock, blockRegex } from "../codeLens";
 
+// Lock to make sure text insert or deletion happens atomically
+const textEditLock = new AsyncLock();
+
 // Safety button to kill all processes
 const killAllButton = vscode.window.createStatusBarItem(
   vscode.StatusBarAlignment.Left
@@ -91,28 +94,8 @@ async function insertText(
 // Run command on the markdown file
 export async function runOnMarkdown(code: string, range: vscode.Range) {
   // TODO: implement multiple output streams at the same time
-  if (code === "" || childProcesses.length > 0) {
-    return;
-  }
-
-  // Calculate the range of Code Lens for the new child process
-  const childLine = range.end.line + 2;
-  const childRange = new vscode.Range(childLine, 0, childLine, 0);
-
-  // If a process already exists at the same range, return
-  const existingProcess = childProcesses.find((entry) =>
-    entry.range.isEqual(childRange)
-  );
-  if (existingProcess) {
-    return;
-  }
-
-  // Lock to make sure text insert or deletion happens atomically
-  const textEditLock = new AsyncLock();
-
-  // Obtain editor
   const editor = vscode.window.activeTextEditor;
-  if (!editor) {
+  if (code === "" || childProcesses.length > 0 || !editor) {
     return;
   }
 
@@ -135,11 +118,11 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
   const runner = cp.spawn("sh", ["-c", code], { detached: true });
 
   // Create buttons to stop or kill the process
-  childProcesses.push({ pid: runner.pid!, range: childRange });
+  childProcesses.push({ pid: runner.pid!, line: range.end.line + 2 });
   killAllButton.show();
 
   // Output results 3 lines below the parent code block
-  let currentPosition = new vscode.Position(range.end.line + 3, 0);
+  let outputPosition = new vscode.Position(range.end.line + 3, 0);
 
   // Write child process execution results onto markdown file
   runner.stdout.on("data", async (data: Buffer) => {
@@ -147,11 +130,11 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     await textEditLock.acquire("key", async () => {
       // Critical section code here
       const output = data.toString();
-      await insertText(editor, currentPosition, output);
+      await insertText(editor, outputPosition, output);
       const outputLines = output.split("\n");
-      const newPositionLine = currentPosition.line + outputLines.length - 1;
+      const newPositionLine = outputPosition.line + outputLines.length - 1;
       const lastLineLength = outputLines[outputLines.length - 1].length;
-      currentPosition = new vscode.Position(newPositionLine, lastLineLength);
+      outputPosition = new vscode.Position(newPositionLine, lastLineLength);
     });
   });
 
@@ -166,9 +149,9 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     }
 
     // If output did not end on a newline, add it
-    if (currentPosition.character !== 0) {
+    if (outputPosition.character !== 0) {
       await textEditLock.acquire("key", async () => {
-        await insertText(editor, currentPosition, "\n");
+        await insertText(editor, outputPosition, "\n");
       });
     }
   });

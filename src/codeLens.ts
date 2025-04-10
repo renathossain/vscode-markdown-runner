@@ -18,7 +18,7 @@ import * as vscode from "vscode";
 import { getLanguageConfig } from "./settings";
 
 // PIDs associated with `Run on Markdown` child processes
-export const childProcesses: { pid: number; range: vscode.Range }[] = [];
+export const childProcesses: { pid: number; line: number }[] = [];
 
 // Regex to parse blocks delimited with ```:
 // . matches any character, so .* matches any number of any characters
@@ -38,7 +38,6 @@ export function parseBlock(
   document: vscode.TextDocument,
   match: RegExpExecArray
 ) {
-  // match[0] captures the entire code block (we do not need it)
   const parsedLang = match[1].trim().toLowerCase(); // First capturing group of (.*?)\n(.*?)
   const language = parsedLang === "" ? "bash" : parsedLang; // Treat untitled blocks as bash files
   const code = match[2]; // Second capturing group of (.*?)\n(.*?)
@@ -49,7 +48,7 @@ export function parseBlock(
 }
 
 // Parses code blocks (code within ``` delimiters)
-// This is a generator function that yields language, code, location
+// This is a generator function that yields language, code, range
 function* parseCodeBlocks(
   document: vscode.TextDocument
 ): Generator<{ language: string; code: string; range: vscode.Range }> {
@@ -115,7 +114,8 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     }
 
     // Generate buttons to stop `Run on Markdown` processes
-    for (const { pid, range } of childProcesses) {
+    for (const { pid, line } of childProcesses) {
+      const range = new vscode.Range(line, 0, line, 0);
       pushCodeLens(codeLenses, range, `Stop Process`, `markdown.stopProcess`, [
         pid,
       ]);
