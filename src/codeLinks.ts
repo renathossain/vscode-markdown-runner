@@ -47,20 +47,20 @@ export function* parseInlineCode(
 }
 
 // DocumentLink Provider for inline code
-export class CodeSnippetLinkProvider implements vscode.DocumentLinkProvider {
+export class InlineCodeLinkProvider implements vscode.DocumentLinkProvider {
   provideDocumentLinks(
     document: vscode.TextDocument
   ): vscode.ProviderResult<vscode.DocumentLink[]> {
-    const codeSnippetLinks: vscode.DocumentLink[] = [];
+    const inlineCodeLinks: vscode.DocumentLink[] = [];
 
     // For each parsed inline code, generate a Document Link
     for (const { code, location } of parseInlineCode(document)) {
       const codeString = encodeURIComponent(JSON.stringify([code]));
       const command = `command:markdown.runInTerminal?${codeString}`;
       const link = new vscode.DocumentLink(location, vscode.Uri.parse(command));
-      codeSnippetLinks.push(link);
+      inlineCodeLinks.push(link);
     }
 
-    return codeSnippetLinks;
+    return inlineCodeLinks;
   }
 }

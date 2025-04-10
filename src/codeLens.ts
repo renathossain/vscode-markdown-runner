@@ -17,6 +17,9 @@
 import * as vscode from "vscode";
 import { getLanguageConfig } from "./settings";
 
+// PIDs associated with `Run on Markdown` child processes
+export const childProcesses: { pid: number; range: vscode.Range }[] = [];
+
 // Parses out any blocks within ``` delimiters
 export function parseBlock(
   document: vscode.TextDocument,
@@ -58,8 +61,18 @@ function* parseCodeBlocks(
   }
 }
 
-// PIDs associated with `Run on Markdown` child processes
-export const childProcesses: { pid: number; range: vscode.Range }[] = [];
+// Generate the code lens with the required parameters and push it to the list
+function pushCodeLens(
+  codeLenses: vscode.CodeLens[],
+  range: vscode.Range,
+  title: string,
+  command: string,
+  args: unknown[]
+) {
+  codeLenses.push(
+    new vscode.CodeLens(range, { title, command, arguments: args })
+  );
+}
 
 // CodeLens buttons provider for parsed code blocks
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
@@ -115,17 +128,4 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
 
     return codeLenses;
   }
-}
-
-// Generate the code lens with the required parameters and push it to the list
-function pushCodeLens(
-  codeLenses: vscode.CodeLens[],
-  range: vscode.Range,
-  title: string,
-  command: string,
-  args: unknown[]
-) {
-  codeLenses.push(
-    new vscode.CodeLens(range, { title, command, arguments: args })
-  );
 }

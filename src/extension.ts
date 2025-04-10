@@ -56,9 +56,10 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import treeKill from "tree-kill";
-import { CodeSnippetLinkProvider } from "./codeLinks";
+import { InlineCodeLinkProvider } from "./codeLinks";
 import { ButtonCodeLensProvider, childProcesses } from "./codeLens";
-import { runInTerminal, getRunCommand, runOnMarkdown } from "./handlers";
+import { runInTerminal, getRunCommand } from "./handlers/runInTerminal";
+import { runOnMarkdown } from "./handlers/runOnMarkdown";
 
 // List of command handlers
 export const commandHandlers = [
@@ -120,7 +121,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.languages.registerDocumentLinkProvider(
       { language: "markdown", scheme: "file" },
-      new CodeSnippetLinkProvider()
+      new InlineCodeLinkProvider()
     )
   );
 
