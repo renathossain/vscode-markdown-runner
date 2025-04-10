@@ -20,36 +20,31 @@
 //                                    |
 //                       +------------+-------------+
 //                       |            |             |
-//                 codeLinks.ts  codeLens.ts   codeRunner.ts
-//                       |          |  |            |
-//                       +-----+----+  +-----+------+
-//                             |             |
-//                         parser.ts  compilerConfig.ts
+//                 codeLinks.ts  codeLens.ts     handlers
+//                                  |               |
+//                                  |       +------------------+
+//                                  |       |                  |
+//                                  | runInTerminal.ts   runOnMarkdown.ts
+//                                  |    |
+//                                settings.ts
 //
-// - `extension.ts`: Responsible for activating the extension and orchestrating
-//   the loading of the codeLinks, codeLens and registering the commands that
-//   perform actions such as executing or copying code blocks.
+// - `extension.ts`: Responsible for activating the extension, loading
+//   codeLinks and codeLens buttons, as well as registering their handlers.
 //
-// - `codeLinks.ts`: Uses `parser.ts` to parse inline code snippets, then turn them
-//   into links that the user can 'Ctrl + Left Click' to run them.
+// - `codeLinks.ts`: Turns all strings enclosed with ` delimiters into
+//   clickable links that run in the terminal when clicked.
 //
-// - `codeLens.ts`: Uses `parser.ts` to parse code blocks and determine
-//   their language and content, then generate appropriate code lens buttons for
-//   each code block in the editor. It only generates the buttons for languages
-//   specified in the language configuration provided by `compilerConfig.ts`.
+// - `codeLens.ts`: Puts buttons that perform various actions like copying and
+//   running code above all code blocks enclosed with ``` delimiters.
 //
-// - `codeRunner.ts`: Uses `compilerConfig.ts` to provide the correct file
-//   extension and compiler to execute code blocks.
+// - `runInTerminal.ts`: Handlers for either running code directly in the terminal
+//   line by line or writing code to a file and running the file.
 //
-// - `compilerConfig.ts`: Provides language configurations used by `codeLens.ts`
-//   and `codeRunner.ts`.
+// - `runOnMarkdown.ts`: Handlers for writing the output of an executing process
+//   directly onto the markdown file.
 //
-// - `parser.ts`: Responsible for parsing code blocks to determine their language
-//   and content used by `codeLinks.ts` and `codeLens.ts`.
-//
-// - Data Flow:
-// `compilerConfig.ts` +-+-> `codeLinks.ts` +-+-> `extension.ts` +-+-> codeRunner.ts
-// `parser.ts`         +-+-> `codeLens.ts`  +-+
+// - `settings.ts`: API that reads the Language Name, File Extension or Compiler
+//   Command/Path settings for a specified language.
 //
 // ************************************************************************
 
