@@ -20,18 +20,30 @@ import { getLanguageConfig } from "./settings";
 // PIDs associated with `Run on Markdown` child processes
 export const childProcesses: { pid: number; range: vscode.Range }[] = [];
 
+// Regex to parse blocks delimited with ```:
+// . matches any character, so .* matches any number of any characters
+// .*? matches lazily (least amount of char to satisfy the regex),
+// Without ?, it matches greedily by default (max chars to satisfy regex)
+// (.*?)\n(.*?) - the brackets the denote the individual "capturing groups" (2 of them)
+// The first capturing group captures the code block type (e.g. python, rust, etc.)
+// The second capturing group captures the code itself
+// Flags: g searches the text globally (all occurrences)
+// Flags: m makes the ^ match the start of a line (by default it is start of the text)
+// m and ^ ensures the codeblock delims ``` always start at the beginning of the line
+// Flags: s makes the . match newline characters as well (by default it does not)
+export const blockRegex: RegExp = /^```(.*?)\n(.*?)^```/gms;
+
 // Parses out any blocks within ``` delimiters
 export function parseBlock(
   document: vscode.TextDocument,
-  match: RegExpExecArray,
-  regex: RegExp
+  match: RegExpExecArray
 ) {
   // match[0] captures the entire code block (we do not need it)
   const parsedLang = match[1].trim().toLowerCase(); // First capturing group of (.*?)\n(.*?)
   const language = parsedLang === "" ? "bash" : parsedLang; // Treat untitled blocks as bash files
   const code = match[2]; // Second capturing group of (.*?)\n(.*?)
   const start = document.positionAt(match.index); // Start position of the match
-  const end = document.positionAt(regex.lastIndex); // End position of the match
+  const end = document.positionAt(match.index + match[0].length); // End position of the match
   const range = new vscode.Range(start, end);
   return { language, code, range };
 }
@@ -41,23 +53,9 @@ export function parseBlock(
 function* parseCodeBlocks(
   document: vscode.TextDocument
 ): Generator<{ language: string; code: string; range: vscode.Range }> {
-  // Explanation of regex:
-  // . matches any character, so .* matches any number of any characters
-  // .*? matches lazily (least amount of char to satisfy the regex),
-  // Without ?, it matches greedily by default (max chars to satisfy regex)
-  // (.*?)\n(.*?) - the brackets the denote the individual "capturing groups" (2 of them)
-  // The first capturing group captures the code block type (e.g. python, rust, etc.)
-  // The second capturing group captures the code itself
-  // Flags: g searches the text globally (all occurrences)
-  // Flags: m makes the ^ match the start of a line (by default it is start of the text)
-  // m and ^ ensures the codeblock delims ``` always start at the beginning of the line
-  // Flags: s makes the . match newline characters as well (by default it does not)
-  const regex: RegExp = /^```(.*?)\n(.*?)^```/gms;
-
-  // Loop through all matches and yield them
   let match;
-  while ((match = regex.exec(document.getText())) !== null) {
-    yield parseBlock(document, match, regex);
+  while ((match = blockRegex.exec(document.getText())) !== null) {
+    yield parseBlock(document, match);
   }
 }
 

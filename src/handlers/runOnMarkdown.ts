@@ -17,7 +17,7 @@
 import * as vscode from "vscode";
 import * as cp from "child_process";
 import AsyncLock from "async-lock";
-import { childProcesses, parseBlock } from "../codeLens";
+import { childProcesses, parseBlock, blockRegex } from "../codeLens";
 
 // Safety button to kill all processes
 const killAllButton = vscode.window.createStatusBarItem(
@@ -32,8 +32,6 @@ killAllButton.text = "$(stop-circle) Kill All Processes";
 
 // Used for `Run on Markdown`
 function findResultBlock(document: vscode.TextDocument, startLine: number) {
-  const regex: RegExp = /^```(.*?)\n(.*?)^```/gms;
-
   // Check if startLine is out of bounds
   if (startLine < 0 || startLine >= document.lineCount) {
     return null;
@@ -46,13 +44,13 @@ function findResultBlock(document: vscode.TextDocument, startLine: number) {
   const slicedText = fullText.slice(startOffset);
 
   // Find first match within the sliced document
-  const match = regex.exec(slicedText);
+  const match = blockRegex.exec(slicedText);
   if (!match) {
     return null;
   }
 
   // Parse and validate the data
-  const { language, code } = parseBlock(document, match, regex);
+  const { language, code } = parseBlock(document, match);
   if (language !== `result`) {
     return null;
   }
@@ -92,13 +90,8 @@ async function insertText(
 
 // Run command on the markdown file
 export async function runOnMarkdown(code: string, range: vscode.Range) {
-  if (code === "") {
-    return;
-  }
-
-  // Do not support multiple output streams at the same time
-  // TODO: maybe implement this in the future
-  if (childProcesses.length > 0) {
+  // TODO: implement multiple output streams at the same time
+  if (code === "" || childProcesses.length > 0) {
     return;
   }
 

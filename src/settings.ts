@@ -33,7 +33,7 @@ export function getLanguageConfig(language: string, configuration: string) {
     languageConfig[language] &&
     JSON.parse(languageConfig[language].replace(/'/g, '"'));
 
-  // Map for the configuration options
+  // Meaning of each item in the configValues array
   const indexMap: { [key: string]: number } = {
     name: 0,
     extension: 1,
