@@ -2,7 +2,7 @@
 
 This extension allows you to execute code blocks in any programming language directly from Markdown files in VS Code.
 
-<div style="display:flex; gap: 10px;">
+<div style="display:flex; gap: 10px; width: 100%;">
   <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunCodeBlock.gif" alt="Run Code Block" style="width: 100%; flex: 1;">
   <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunCodeSnippet.gif" alt="Run Code Snippet" style="width: 100%; flex: 1;">
   <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunOnMarkdown.gif" alt="Run On Markdown" style="width: 100%; flex: 1;">
