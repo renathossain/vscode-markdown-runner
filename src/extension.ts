@@ -58,9 +58,10 @@ import { CodeSnippetLinkProvider } from "./codeLinks";
 import { ButtonCodeLensProvider } from "./codeLens";
 import { cleanTempFiles, registerCommands } from "./codeRunner";
 
-// Main function that runs when the extension is activated
+// Main function that runs when extension is activated
 export function activate(context: vscode.ExtensionContext) {
-  // Initializes the CodeLens buttons for code blocks
+  // Initializes CodeLens provider for code blocks
+  // Code blocks are enclosed with ```
   context.subscriptions.push(
     vscode.languages.registerCodeLensProvider(
       { language: "markdown", scheme: "file" },
@@ -68,7 +69,8 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
 
-  // Initializes the DocumentLinks for inline code (code snippets)
+  // Initializes DocumentLinks provider for inline code
+  // Inline code is enclosed with `
   context.subscriptions.push(
     vscode.languages.registerDocumentLinkProvider(
       { language: "markdown", scheme: "file" },
@@ -79,8 +81,8 @@ export function activate(context: vscode.ExtensionContext) {
   registerCommands(context);
 }
 
-// Deletes the temporary files that were generated during the extension's usage
-// when the extension is deactivated or VS Code is closed
+// Function that runs when extension is deactivated
 export function deactivate() {
+  // Deletes temporary files created for code block execution
   cleanTempFiles();
 }
