@@ -55,9 +55,54 @@
 
 import * as vscode from "vscode";
 import * as fs from "fs";
+import treeKill from "tree-kill";
 import { CodeSnippetLinkProvider } from "./codeLinks";
-import { ButtonCodeLensProvider } from "./codeLens";
-import { tempFilePaths, commandHandlers } from "./handlers";
+import { ButtonCodeLensProvider, childProcesses } from "./codeLens";
+import { runInTerminal, getRunCommand, runOnMarkdown } from "./handlers";
+
+// List of command handlers
+export const commandHandlers = [
+  {
+    command: "markdown.runFile",
+    handler: async (language: string, code: string) => {
+      runInTerminal(await getRunCommand(language, code));
+    },
+  },
+  {
+    command: "markdown.runOnMarkdown",
+    handler: async (language: string, code: string, range: vscode.Range) => {
+      await runOnMarkdown(await getRunCommand(language, code), range);
+    },
+  },
+  { command: "markdown.runInTerminal", handler: runInTerminal },
+  {
+    command: "markdown.copy",
+    handler: (code: string) => {
+      vscode.env.clipboard.writeText(code);
+      vscode.window.showInformationMessage("Code copied to clipboard.");
+    },
+  },
+  {
+    command: "markdown.stopProcess",
+    handler: (pid: number) => treeKill(pid, "SIGINT"),
+  },
+  {
+    command: "markdown.killProcess",
+    handler: (pid: number) => treeKill(pid, "SIGKILL"),
+  },
+  {
+    command: "markdown.killAllProcesses",
+    handler: () => {
+      childProcesses.forEach(({ pid }, i) => {
+        treeKill(pid, "SIGKILL");
+        childProcesses.splice(i, 1);
+      });
+    },
+  },
+];
+
+// List of temporary files
+export const tempFilePaths: string[] = [];
 
 // Main function that runs when extension is activated
 export function activate(context: vscode.ExtensionContext) {
@@ -79,7 +124,7 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
 
-  // Register all extension commands
+  // Register all command handlers
   commandHandlers.forEach(({ command, handler }) => {
     context.subscriptions.push(
       vscode.commands.registerCommand(command, handler)

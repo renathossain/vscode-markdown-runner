@@ -19,46 +19,10 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as cp from "child_process";
-import treeKill from "tree-kill";
 import AsyncLock from "async-lock";
 import { getLanguageConfig } from "./settings";
 import { childProcesses, parseBlock } from "./codeLens";
-
-// List of functions triggered by all commands
-export const commandHandlers = [
-  {
-    command: "markdown.runFile",
-    handler: async (language: string, code: string) => {
-      runInTerminal(await getRunCommand(language, code));
-    },
-  },
-  {
-    command: "markdown.runOnMarkdown",
-    handler: async (language: string, code: string, range: vscode.Range) => {
-      await runOnMarkdown(await getRunCommand(language, code), range);
-    },
-  },
-  { command: "markdown.runInTerminal", handler: runInTerminal },
-  {
-    command: "markdown.copy",
-    handler: (code: string) => {
-      vscode.env.clipboard.writeText(code);
-      vscode.window.showInformationMessage("Code copied to clipboard.");
-    },
-  },
-  {
-    command: "markdown.stopProcess",
-    handler: (pid: number) => treeKill(pid, "SIGINT"),
-  },
-  {
-    command: "markdown.killProcess",
-    handler: (pid: number) => treeKill(pid, "SIGKILL"),
-  },
-  { command: "markdown.killAllProcesses", handler: killAllChildProcesses },
-];
-
-// List of temporary files
-export const tempFilePaths: string[] = [];
+import { tempFilePaths } from "./extension";
 
 // For Java code blocks, the user needs to specify a filename
 function getBaseName(language: string): Promise<string> {
@@ -178,10 +142,7 @@ export function runInTerminal(code: string) {
 }
 
 // Used for `Run on Markdown`
-export function findResultBlock(
-  document: vscode.TextDocument,
-  startLine: number
-) {
+function findResultBlock(document: vscode.TextDocument, startLine: number) {
   const regex: RegExp = /^```(.*?)\n(.*?)^```/gms;
 
   // Check if startLine is out of bounds
@@ -222,8 +183,19 @@ export function findResultBlock(
   return new vscode.Range(foundStartLine, 0, foundEndLine, 0);
 }
 
+// Safety button to kill all processes
+const killAllButton = vscode.window.createStatusBarItem(
+  vscode.StatusBarAlignment.Left
+);
+killAllButton.command = {
+  title: "Kill All `Run on Markdown` Processes",
+  command: "markdown.killAllProcesses",
+  arguments: [],
+};
+killAllButton.text = "$(stop-circle) Kill All Processes";
+
 // Run command on the markdown file
-async function runOnMarkdown(code: string, range: vscode.Range) {
+export async function runOnMarkdown(code: string, range: vscode.Range) {
   if (code === "") {
     return;
   }
@@ -329,23 +301,4 @@ async function insertText(
         vscode.window.activeTextEditor?.document.save();
       }
     });
-}
-
-// Safety button to kill all processes
-const killAllButton = vscode.window.createStatusBarItem(
-  vscode.StatusBarAlignment.Left
-);
-killAllButton.command = {
-  title: "Kill All `Run on Markdown` Processes",
-  command: "markdown.killAllProcesses",
-  arguments: [],
-};
-killAllButton.text = "$(stop-circle) Kill All Processes";
-
-// Kill All Button calls this function
-function killAllChildProcesses() {
-  childProcesses.forEach(({ pid }, i) => {
-    treeKill(pid, "SIGKILL");
-    childProcesses.splice(i, 1);
-  });
 }
