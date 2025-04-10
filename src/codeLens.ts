@@ -84,7 +84,7 @@ function pushCodeLens(
   range: vscode.Range,
   title: string,
   command: string,
-  commandArgs: any[]
+  commandArgs: unknown[]
 ) {
   const vscodeCommand: vscode.Command = {
     title: title,

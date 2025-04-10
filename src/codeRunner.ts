@@ -53,15 +53,21 @@ export function cleanTempFiles() {
   tempFilePaths.forEach((filePath) => {
     try {
       fs.unlinkSync(filePath);
-    } catch (error) {
+    } catch {
       vscode.window.showErrorMessage(`Error deleting file ${filePath}:`);
     }
   });
 }
 
+type CommandCallback =
+  | ((language: string, code: string) => void)
+  | ((language: string, code: string, range: vscode.Range) => void)
+  | ((code: string) => void)
+  | ((pid: number) => void);
+
 // Create the commands and assign what they do
 export function registerCommands(context: vscode.ExtensionContext) {
-  const commands: [string, (...args: any[]) => void][] = [
+  const commands: [string, CommandCallback][] = [
     [
       "markdown.runFile",
       async (language: string, code: string) => {
