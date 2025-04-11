@@ -43,8 +43,7 @@
 // - `runOnMarkdown.ts`: Handlers for writing the output of an executing process
 //   directly onto the markdown file.
 //
-// - `settings.ts`: API that reads the Language Name, File Extension or Compiler
-//   Command/Path settings for a specified language.
+// - `settings.ts`: Provides an API to access extension settings.
 //
 // ************************************************************************
 
