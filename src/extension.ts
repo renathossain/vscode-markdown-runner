@@ -28,8 +28,8 @@
 //                                  |    |
 //                                settings.ts
 //
-// - `extension.ts`: Responsible for activating the extension, loading
-//   codeLinks and codeLens buttons, as well as registering their handlers.
+// - `extension.ts`: Activates and deactivates the extension, loads
+//   codeLinks and codeLens buttons, as well as registers their handlers.
 //
 // - `codeLinks.ts`: Turns all strings enclosed with ` delimiters into
 //   clickable links that run in the terminal when clicked.
