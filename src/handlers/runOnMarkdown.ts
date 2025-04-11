@@ -68,11 +68,7 @@ async function insertText(
 ) {
   await editor
     .edit((editBuilder) => editBuilder.insert(position, text))
-    .then((success) => {
-      if (success)
-        // Save the document to ensure undo-ability
-        vscode.window.activeTextEditor?.document.save();
-    });
+    .then((success) => (success ? editor.document.save() : false));
 }
 
 // Run command on the markdown file
