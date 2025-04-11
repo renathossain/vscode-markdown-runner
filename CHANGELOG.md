@@ -3,7 +3,6 @@
 ## 2.1.0
 
 - **New Feature**: Added "Clear" and "Delete" Buttons for code blocks.
-- **New Feature**: Added show/hide checkboxes for CodeLens buttons in settings.
 - **New Feature**: Added per language "Default Codes" in settings, which is code that is always prepended to a file before it is compiled/executed.
 - **Improvement**: Implemented automatic parsing of Java executable name from code using regex. No need to enter the file name manually.
 - **Improvement**: Implemented compilation of TypeScript files the official way using `tsc`, then using `node` to run the resulting Javascript file.
