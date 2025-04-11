@@ -93,13 +93,13 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
   });
 
   // Start child process and create buttons to stop or kill the process
-  const runner = cp.spawn("sh", ["-c", code], { detached: true });
-  childProcesses.push({ pid: runner.pid!, line: range.end.line + 2 });
+  const child = cp.spawn("sh", ["-c", code], { detached: true });
+  childProcesses.push({ pid: child.pid!, line: range.end.line + 2 });
   killAllButton.show();
 
   // Output child process results 3 lines below parent code block
   let outputPosition = new vscode.Position(range.end.line + 3, 0);
-  runner.stdout.on("data", async (data: Buffer) => {
+  child.stdout.on("data", async (data: Buffer) => {
     await textEditLock.acquire("key", async () => {
       const output = data.toString();
       await insertText(editor, outputPosition, output);
@@ -112,9 +112,9 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     });
   });
 
-  runner.on("close", async () => {
+  child.on("close", async () => {
     // Remove process `stop` and `kill` controls once done with the process
-    childProcesses = childProcesses.filter((p) => p.pid !== runner.pid);
+    childProcesses = childProcesses.filter((p) => p.pid !== child.pid);
     if (!childProcesses.length) killAllButton.hide();
 
     // If output did not end on a newline, add it

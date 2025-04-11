@@ -22,21 +22,18 @@ import * as cp from "child_process";
 import { getLanguageConfig } from "../settings";
 import { tempFilePaths } from "../extension";
 
-// For Java code blocks, the user needs to specify a filename
-function getBaseName(language: string): Promise<string> {
-  if (language === "java")
-    return new Promise<string>((resolve) =>
-      vscode.window
-        .showInputBox({
-          prompt:
-            "Enter the name of the Java file (without extension). " +
-            "Note: The Java standard requires the filename to be the " +
-            "same as the name of the main class.",
-          placeHolder: "MyJavaFile",
-        })
-        .then((baseName) => resolve(baseName || ""))
-    );
-  else return Promise.resolve(`temp_${Date.now()}`);
+// Obtain the correct executable name given language and code
+function getBaseName(language: string, code: string): string {
+  if (language === "java") {
+    // The file name of the Java executable must match the class name
+    // We parse the class name using a regex:
+    // Match the exact words `public` and `class`
+    // \s+ - Matches one or more whitespace characters (spaces, tabs, etc.)
+    // (\w+) - Capturing group, which matches one or more "word" characters
+    // (letters, digits, underscore), which corresponds to the class name
+    const match = code.match(/public\s+class\s+(\w+)/);
+    return match ? match[1] : ``;
+  } else return `temp_${Date.now()}`;
 }
 
 // Inject the Python Path Code into Python Files
@@ -56,35 +53,29 @@ function injectPythonPath(language: string, code: string): string {
 }
 
 // Compiles a binary using the provided command
+// Pushes the binary path to temporary files to be deleted
 // Throws an error message if unsuccessful
-function compileHandler(command: string): Promise<boolean> {
-  return new Promise((resolve) =>
-    cp.exec(command, (error, stdout, stderr) => {
-      if (error) {
-        // Timeout is necessary because of interference with codelens
-        setTimeout(
-          () => vscode.window.showErrorMessage(stderr, { modal: true }),
-          100
-        );
-        resolve(false);
-      } else resolve(true);
-    })
-  );
+function compileHandler(cmd: string, path: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    cp.exec(cmd, (error, stdout, stderr) => {
+      if (!error) tempFilePaths.push(path);
+      else vscode.window.showInformationMessage(stderr);
+      resolve(!error);
+    });
+  });
 }
 
-// Save code to a temporary file and execute it
-// For compiled languages, a child process is created for compilation additionally
-// Return command string to be run in terminal or on markdown file as needed
+// Save code to a temporary file, and compile it if necessary
+// Return the string to be run in the terminal to execute the binary/code
 export async function getRunCommand(
   language: string,
   code: string
 ): Promise<string> {
-  const baseName = await getBaseName(language);
-  if (!baseName) return "";
+  // Obtain info to create the run command
+  const baseName = getBaseName(language, code);
   const extension = getLanguageConfig(language, "extension");
-  if (!extension) return "";
   const compiler = getLanguageConfig(language, "compiler");
-  if (!compiler) return "";
+  if (!baseName || !compiler || !extension) return "";
   code = injectPythonPath(language, code);
   const basePath = path.join(os.tmpdir(), baseName);
   const sourcePath = `${basePath}.${extension}`;
@@ -94,22 +85,24 @@ export async function getRunCommand(
   tempFilePaths.push(sourcePath);
 
   // Compilation for C, C++ and Rust
-  if (language === "c" || language === "cpp" || language === "rust") {
-    if (await compileHandler(`${compiler} -o ${basePath} ${sourcePath}`)) {
-      tempFilePaths.push(basePath);
-      return basePath;
-    } else return "";
-  }
+  if (["c", "cpp", "rust"].includes(language))
+    return (await compileHandler(
+      `${compiler} ${sourcePath} -o ${basePath}`,
+      basePath
+    ))
+      ? basePath
+      : "";
 
   // Compilation for Java
-  if (language === "java") {
-    if (await compileHandler(`${compiler} ${sourcePath}`)) {
-      tempFilePaths.push(`${basePath}.class`);
-      return `java -cp ${os.tmpdir()} ${baseName}`;
-    } else return "";
-  }
+  if (language === "java")
+    return (await compileHandler(
+      `${compiler} ${sourcePath}`,
+      `${basePath}.class`
+    ))
+      ? `java -cp ${os.tmpdir()} ${baseName}`
+      : "";
 
-  // If not a compiled language, then run it
+  // If not a compiled language, run the source code
   return `${compiler} ${sourcePath}`;
 }
 
