@@ -59,7 +59,7 @@ function compileHandler(cmd: string, path: string): Promise<boolean> {
   return new Promise((resolve) => {
     cp.exec(cmd, (error, stdout, stderr) => {
       if (!error) tempFilePaths.push(path);
-      else vscode.window.showInformationMessage(stderr);
+      else vscode.window.showErrorMessage(stderr);
       resolve(!error);
     });
   });

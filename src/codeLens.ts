@@ -36,11 +36,12 @@ export function parseBlock(
   document: vscode.TextDocument,
   match: RegExpExecArray
 ) {
-  const parsedLang = match[1].trim().toLowerCase(); // First capturing group of (.*?)\n(.*?)
-  const language = parsedLang === "" ? "bash" : parsedLang; // Treat untitled blocks as bash files
-  const code = match[2]; // Second capturing group of (.*?)\n(.*?)
-  const start = document.positionAt(match.index); // Start position of the match
-  const end = document.positionAt(match.index + match[0].length); // End position of the match
+  const parsedLang = match[1].trim().toLowerCase();
+  // Treat untitled blocks as bash files
+  const language = parsedLang === "" ? "bash" : parsedLang;
+  const code = match[2];
+  const start = document.positionAt(match.index);
+  const end = document.positionAt(match.index + match[0].length);
   const range = new vscode.Range(start, end);
   return { language, code, range };
 }
@@ -78,11 +79,13 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     // Generate buttons to stop `Run on Markdown` processes
     for (const { pid, line } of childProcesses) {
       const range = new vscode.Range(line, 0, line, 0);
-      pushCodeLens(codeLenses, range, `Stop Process`, `markdown.stopProcess`, [
+      pushCodeLens(codeLenses, range, `Stop Process`, `markdown.killProcess`, [
         pid,
+        "SIGINT",
       ]);
       pushCodeLens(codeLenses, range, `Kill Process`, `markdown.killProcess`, [
         pid,
+        "SIGKILL",
       ]);
     }
 
