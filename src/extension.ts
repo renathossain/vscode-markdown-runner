@@ -71,9 +71,14 @@ export const commandHandlers = [
   { command: "markdown.runInTerminal", handler: runInTerminal },
   {
     command: "markdown.copy",
-    handler: (code: string) => {
-      vscode.env.clipboard.writeText(code);
-      vscode.window.showInformationMessage("Code copied to clipboard.");
+    handler: (code: string) => vscode.env.clipboard.writeText(code),
+  },
+  {
+    command: "markdown.delete",
+    handler: (range: vscode.Range) => {
+      const editor = vscode.window.activeTextEditor;
+      editor?.edit((editBuilder) => editBuilder.delete(range));
+      editor?.document.save();
     },
   },
   {

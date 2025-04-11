@@ -7,7 +7,8 @@
 - **New Feature**: Added per language "Default Codes" in settings, which is code that is always prepended to a file before it is compiled/executed.
 - **Improvement**: Implemented automatic parsing of Java executable name from code using regex. No need to enter the file name manually.
 - **Improvement**: Implemented compilation of TypeScript files the official way using `tsc`, then using `node` to run the resulting Javascript file.
-- **Improvement**: Changed compilation error message appearance.
+- **Improvement**: Changed compilation error message appearance, prints the entire error message and allows to copy the error message.
+- **Change**: Removed the "Code copied to clipboard." notification.
 - **Bug Fix**: Fixed bug in "Run on Markdown" where last line of result block would be missing a newline.
 
 ## 2.0.0

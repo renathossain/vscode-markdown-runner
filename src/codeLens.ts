@@ -79,11 +79,11 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
     // Generate buttons to stop `Run on Markdown` processes
     for (const { pid, line } of childProcesses) {
       const range = new vscode.Range(line, 0, line, 0);
-      pushCodeLens(codeLenses, range, `Stop Process`, `markdown.killProcess`, [
+      pushCodeLens(codeLenses, range, `Stop`, `markdown.killProcess`, [
         pid,
         "SIGINT",
       ]);
-      pushCodeLens(codeLenses, range, `Kill Process`, `markdown.killProcess`, [
+      pushCodeLens(codeLenses, range, `Kill`, `markdown.killProcess`, [
         pid,
         "SIGKILL",
       ]);
@@ -102,6 +102,15 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
           `markdown.runFile`,
           [language, code]
         );
+        // For bash code blocks, provide `run in terminal (line by line)` option
+        if (language === `bash`)
+          pushCodeLens(
+            codeLenses,
+            range,
+            `Run Line by Line`,
+            `markdown.runInTerminal`,
+            [code]
+          );
         pushCodeLens(
           codeLenses,
           range,
@@ -111,18 +120,12 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         );
       }
 
-      // For bash code blocks, provide `run in terminal (line by line)` option
-      if (language === `bash`)
-        pushCodeLens(
-          codeLenses,
-          range,
-          `Run in Terminal`,
-          `markdown.runInTerminal`,
-          [code]
-        );
-
-      // Always provide button to copy code
+      // Always provide buttons to copy, clear or delete code blocks
       pushCodeLens(codeLenses, range, `Copy`, `markdown.copy`, [code]);
+      const clr = new vscode.Range(range.start.line + 1, 0, range.end.line, 0);
+      pushCodeLens(codeLenses, range, `Clear`, `markdown.delete`, [clr]);
+      const del = new vscode.Range(range.start.line, 0, range.end.line + 1, 0);
+      pushCodeLens(codeLenses, range, `Delete`, `markdown.delete`, [del]);
     }
 
     return codeLenses;
