@@ -125,10 +125,6 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
   // Deletes temporary files created for code block execution
   tempFilePaths.forEach((filePath) => {
-    try {
-      fs.unlinkSync(filePath);
-    } catch {
-      vscode.window.showErrorMessage(`Error deleting file ${filePath}:`);
-    }
+    fs.unlinkSync(filePath);
   });
 }

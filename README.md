@@ -27,7 +27,7 @@ Before running a code block:
 On Arch Linux, install all supported languages with:
 
 ```bash
-sudo pacman --needed -S php perl r dart groovy go rustup ghc julia lua ruby nodejs npm python bash
+sudo pacman --needed -S php perl r dart groovy go rustup typescript ghc julia lua ruby nodejs npm python bash
 ```
 
 For other systems, research language installation or use the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install).
