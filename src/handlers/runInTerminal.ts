@@ -56,10 +56,11 @@ function injectPythonPath(language: string, code: string): string {
 // Pushes the binary path to temporary files to be deleted
 // Throws an error message if unsuccessful
 function compileHandler(cmd: string, path: string): Promise<boolean> {
+  tempFilePaths.push(path);
   return new Promise((resolve) => {
     cp.exec(cmd, (error, stdout, stderr) => {
-      if (!error) tempFilePaths.push(path);
-      else vscode.window.showErrorMessage(stderr);
+      if (error || stderr !== "")
+        vscode.window.showErrorMessage(`${error}${stdout}${stderr}`);
       resolve(!error);
     });
   });
@@ -101,6 +102,13 @@ export async function getRunCommand(
     ))
       ? `java -cp ${os.tmpdir()} ${baseName}`
       : "";
+
+  // Compilation for TypeScript
+  if (language === "typescript") {
+    return (await compileHandler(`${compiler} ${sourcePath}`, `${basePath}.js`))
+      ? `${getLanguageConfig("javascript", "compiler")} ${basePath}.js`
+      : "";
+  }
 
   // If not a compiled language, run the source code
   return `${compiler} ${sourcePath}`;

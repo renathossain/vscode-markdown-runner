@@ -4,7 +4,7 @@
   "description": "Enables the seamless execution of code blocks in any language within Markdown files in VS Code",
   "publisher": "renathossain",
   "icon": "Icon.png",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "engines": {
     "vscode": "^1.87.0"
   },
@@ -32,7 +32,7 @@
             "java": "[\"Java\", \"java\", \"javac\"]",
             "cpp": "[\"C++\", \"cpp\", \"g++\"]",
             "rust": "[\"Rust\", \"rs\", \"rustc\"]",
-            "typescript": "[\"TypeScript\", \"ts\", \"npx ts-node\"]",
+            "typescript": "[\"TypeScript\", \"ts\", \"tsc\"]",
             "php": "[\"PHP\", \"php\", \"php\"]",
             "perl": "[\"Perl\", \"pl\", \"perl\"]",
             "r": "[\"R\", \"r\", \"Rscript\"]",
