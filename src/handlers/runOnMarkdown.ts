@@ -17,10 +17,13 @@
 import * as vscode from "vscode";
 import * as cp from "child_process";
 import AsyncLock from "async-lock";
-import { childProcesses, parseBlock, blockRegex } from "../codeLens";
+import { parseBlock, blockRegex } from "../codeLens";
 
 // Lock to make sure text insert or deletion happens atomically
 const textEditLock = new AsyncLock();
+
+// PIDs associated with `Run on Markdown` child processes
+export let childProcesses: { pid: number; line: number }[] = [];
 
 // Safety button to kill all processes
 const killAllButton = vscode.window.createStatusBarItem(
@@ -36,9 +39,7 @@ killAllButton.text = "$(stop-circle) Kill All Processes";
 // Used for `Run on Markdown`
 function findResultBlock(document: vscode.TextDocument, startLine: number) {
   // Check if startLine is out of bounds
-  if (startLine < 0 || startLine >= document.lineCount) {
-    return null;
-  }
+  if (startLine < 0 || startLine >= document.lineCount) return null;
 
   // Obtain the sliced document at `startLine`
   const fullText = document.getText();
@@ -48,23 +49,17 @@ function findResultBlock(document: vscode.TextDocument, startLine: number) {
 
   // Find first match within the sliced document
   const match = blockRegex.exec(slicedText);
-  if (!match) {
-    return null;
-  }
+  if (!match) return null;
 
   // Parse and validate the data
   const { language, code } = parseBlock(document, match);
-  if (language !== `result`) {
-    return null;
-  }
+  if (language !== `result`) return null;
 
   // The match must start a line away from startLine
   const matchIndex = match.index;
   const preMatchText = slicedText.slice(0, matchIndex);
   const relativeLineNumber = preMatchText.split("\n").length - 1;
-  if (relativeLineNumber !== 1) {
-    return null;
-  }
+  if (relativeLineNumber !== 1) return null;
 
   // The range of the contents inside the code block to get cleared
   const foundStartLine = startLine + relativeLineNumber + 1;
@@ -80,14 +75,11 @@ async function insertText(
   insertedText: string
 ) {
   await editor
-    .edit((editBuilder) => {
-      editBuilder.insert(currentPosition, insertedText);
-    })
+    .edit((editBuilder) => editBuilder.insert(currentPosition, insertedText))
     .then((success) => {
-      if (success) {
+      if (success)
         // Save the document to ensure undo-ability
         vscode.window.activeTextEditor?.document.save();
-      }
     });
 }
 
@@ -95,22 +87,17 @@ async function insertText(
 export async function runOnMarkdown(code: string, range: vscode.Range) {
   // TODO: implement multiple output streams at the same time
   const editor = vscode.window.activeTextEditor;
-  if (code === "" || childProcesses.length > 0 || !editor) {
-    return;
-  }
+  if (code === "" || childProcesses.length > 0 || !editor) return;
 
   // Create result block that holds execution results
   await textEditLock.acquire("key", async () => {
     const deleteRange = findResultBlock(editor.document, range.end.line + 1);
-    if (deleteRange) {
+    if (deleteRange)
       // If result block found, clear the contents inside it
-      await editor.edit((editBuilder) => {
-        editBuilder.delete(deleteRange);
-      });
-    } else {
+      await editor.edit((editBuilder) => editBuilder.delete(deleteRange));
+    else
       // If result block not found, create it
       await insertText(editor, range.end, "\n\n```result\n```");
-    }
   });
 
   // Start child process
@@ -139,19 +126,13 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
 
   runner.on("close", async () => {
     // Remove process `stop` and `kill` controls once done with the process
-    const index = childProcesses.findIndex((entry) => entry.pid === runner.pid);
-    if (index !== -1) {
-      childProcesses.splice(index, 1);
-    }
-    if (childProcesses.length === 0) {
-      killAllButton.hide();
-    }
+    childProcesses = childProcesses.filter((p) => p.pid !== runner.pid);
+    if (!childProcesses.length) killAllButton.hide();
 
     // If output did not end on a newline, add it
     await textEditLock.acquire("key", async () => {
-      if (outputPosition.character !== 0) {
+      if (outputPosition.character !== 0)
         await insertText(editor, outputPosition, "\n");
-      }
     });
   });
 }

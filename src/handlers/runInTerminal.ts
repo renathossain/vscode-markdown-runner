@@ -24,8 +24,8 @@ import { tempFilePaths } from "../extension";
 
 // For Java code blocks, the user needs to specify a filename
 function getBaseName(language: string): Promise<string> {
-  if (language === "java") {
-    return new Promise<string>((resolve) => {
+  if (language === "java")
+    return new Promise<string>((resolve) =>
       vscode.window
         .showInputBox({
           prompt:
@@ -34,13 +34,9 @@ function getBaseName(language: string): Promise<string> {
             "same as the name of the main class.",
           placeHolder: "MyJavaFile",
         })
-        .then((baseName) => {
-          resolve(baseName || "");
-        });
-    });
-  } else {
-    return Promise.resolve(`temp_${Date.now()}`);
-  }
+        .then((baseName) => resolve(baseName || ""))
+    );
+  else return Promise.resolve(`temp_${Date.now()}`);
 }
 
 // Inject the Python Path Code into Python Files
@@ -62,19 +58,18 @@ function injectPythonPath(language: string, code: string): string {
 // Compiles a binary using the provided command
 // Throws an error message if unsuccessful
 function compileHandler(command: string): Promise<boolean> {
-  return new Promise((resolve) => {
+  return new Promise((resolve) =>
     cp.exec(command, (error, stdout, stderr) => {
       if (error) {
         // Timeout is necessary because of interference with codelens
-        setTimeout(() => {
-          vscode.window.showErrorMessage(stderr, { modal: true });
-        }, 100);
+        setTimeout(
+          () => vscode.window.showErrorMessage(stderr, { modal: true }),
+          100
+        );
         resolve(false);
-      } else {
-        resolve(true);
-      }
-    });
-  });
+      } else resolve(true);
+    })
+  );
 }
 
 // Save code to a temporary file and execute it
@@ -85,17 +80,11 @@ export async function getRunCommand(
   code: string
 ): Promise<string> {
   const baseName = await getBaseName(language);
-  if (!baseName) {
-    return "";
-  }
+  if (!baseName) return "";
   const extension = getLanguageConfig(language, "extension");
-  if (!extension) {
-    return "";
-  }
+  if (!extension) return "";
   const compiler = getLanguageConfig(language, "compiler");
-  if (!compiler) {
-    return "";
-  }
+  if (!compiler) return "";
   code = injectPythonPath(language, code);
   const basePath = path.join(os.tmpdir(), baseName);
   const sourcePath = `${basePath}.${extension}`;
@@ -109,9 +98,7 @@ export async function getRunCommand(
     if (await compileHandler(`${compiler} -o ${basePath} ${sourcePath}`)) {
       tempFilePaths.push(basePath);
       return basePath;
-    } else {
-      return "";
-    }
+    } else return "";
   }
 
   // Compilation for Java
@@ -119,9 +106,7 @@ export async function getRunCommand(
     if (await compileHandler(`${compiler} ${sourcePath}`)) {
       tempFilePaths.push(`${basePath}.class`);
       return `java -cp ${os.tmpdir()} ${baseName}`;
-    } else {
-      return "";
-    }
+    } else return "";
   }
 
   // If not a compiled language, then run it
@@ -130,9 +115,7 @@ export async function getRunCommand(
 
 // Run command in the terminal
 export function runInTerminal(code: string) {
-  if (code === "") {
-    return;
-  }
+  if (code === "") return;
   const terminal =
     vscode.window.activeTerminal || vscode.window.createTerminal();
   terminal.show();

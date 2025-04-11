@@ -16,9 +16,7 @@
 
 import * as vscode from "vscode";
 import { getLanguageConfig } from "./settings";
-
-// PIDs associated with `Run on Markdown` child processes
-export const childProcesses: { pid: number; line: number }[] = [];
+import { childProcesses } from "./handlers/runOnMarkdown";
 
 // Regex to parse blocks delimited with ```:
 // . matches any character, so .* matches any number of any characters
@@ -53,9 +51,8 @@ function* parseCodeBlocks(
   document: vscode.TextDocument
 ): Generator<{ language: string; code: string; range: vscode.Range }> {
   let match;
-  while ((match = blockRegex.exec(document.getText())) !== null) {
+  while ((match = blockRegex.exec(document.getText())) !== null)
     yield parseBlock(document, match);
-  }
 }
 
 // Generate the code lens with the required parameters and push it to the list
@@ -100,7 +97,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
         );
       }
       // For bash code blocks, provide `run in terminal (line by line)` option
-      if (language === `bash`) {
+      if (language === `bash`)
         pushCodeLens(
           codeLenses,
           range,
@@ -108,7 +105,6 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
           `markdown.runInTerminal`,
           [code]
         );
-      }
       // Always provide button to copy code
       pushCodeLens(codeLenses, range, `Copy`, `markdown.copy`, [code]);
     }

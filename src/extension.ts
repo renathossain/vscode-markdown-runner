@@ -52,23 +52,21 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import treeKill from "tree-kill";
 import { InlineCodeLinkProvider } from "./codeLinks";
-import { ButtonCodeLensProvider, childProcesses } from "./codeLens";
+import { ButtonCodeLensProvider } from "./codeLens";
 import { runInTerminal, getRunCommand } from "./handlers/runInTerminal";
-import { runOnMarkdown } from "./handlers/runOnMarkdown";
+import { runOnMarkdown, childProcesses } from "./handlers/runOnMarkdown";
 
 // List of command handlers
 export const commandHandlers = [
   {
     command: "markdown.runFile",
-    handler: async (language: string, code: string) => {
-      runInTerminal(await getRunCommand(language, code));
-    },
+    handler: async (language: string, code: string) =>
+      runInTerminal(await getRunCommand(language, code)),
   },
   {
     command: "markdown.runOnMarkdown",
-    handler: async (language: string, code: string, range: vscode.Range) => {
-      await runOnMarkdown(await getRunCommand(language, code), range);
-    },
+    handler: async (language: string, code: string, range: vscode.Range) =>
+      await runOnMarkdown(await getRunCommand(language, code), range),
   },
   { command: "markdown.runInTerminal", handler: runInTerminal },
   {
@@ -88,12 +86,11 @@ export const commandHandlers = [
   },
   {
     command: "markdown.killAllProcesses",
-    handler: () => {
+    handler: () =>
       childProcesses.forEach(({ pid }, i) => {
         treeKill(pid, "SIGKILL");
         childProcesses.splice(i, 1);
-      });
-    },
+      }),
   },
 ];
 
@@ -121,11 +118,11 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // Register all command handlers
-  commandHandlers.forEach(({ command, handler }) => {
+  commandHandlers.forEach(({ command, handler }) =>
     context.subscriptions.push(
       vscode.commands.registerCommand(command, handler)
-    );
-  });
+    )
+  );
 }
 
 // Function that runs when extension is deactivated
