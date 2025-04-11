@@ -100,9 +100,8 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
   }
 
   // Create result block that holds execution results
-  const deleteRange = findResultBlock(editor.document, range.end.line + 1);
   await textEditLock.acquire("key", async () => {
-    // Critical section code here
+    const deleteRange = findResultBlock(editor.document, range.end.line + 1);
     if (deleteRange) {
       // If result block found, clear the contents inside it
       await editor.edit((editBuilder) => {
@@ -126,15 +125,15 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
 
   // Write child process execution results onto markdown file
   runner.stdout.on("data", async (data: Buffer) => {
-    // Throttle write attempts
     await textEditLock.acquire("key", async () => {
-      // Critical section code here
       const output = data.toString();
       await insertText(editor, outputPosition, output);
       const outputLines = output.split("\n");
       const newPositionLine = outputPosition.line + outputLines.length - 1;
-      const lastLineLength = outputLines[outputLines.length - 1].length;
-      outputPosition = new vscode.Position(newPositionLine, lastLineLength);
+      const newPositionChar =
+        (outputLines.length === 1 ? outputPosition.character : 0) +
+        outputLines[outputLines.length - 1].length;
+      outputPosition = new vscode.Position(newPositionLine, newPositionChar);
     });
   });
 
@@ -149,10 +148,10 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     }
 
     // If output did not end on a newline, add it
-    if (outputPosition.character !== 0) {
-      await textEditLock.acquire("key", async () => {
+    await textEditLock.acquire("key", async () => {
+      if (outputPosition.character !== 0) {
         await insertText(editor, outputPosition, "\n");
-      });
-    }
+      }
+    });
   });
 }

@@ -56,6 +56,26 @@ print("Python Fibonacci:")
 print([f(i) for i in range(10)])
 ```
 
+Testing "Run on Markdown" with Single Line Output:
+
+```bash
+#!/bin/bash
+
+printf "****1"
+sleep 1
+printf "****2"
+sleep 1
+printf "****3"
+sleep 1
+printf "****4"
+sleep 1
+printf "****5"
+```
+
+```result
+****1****2****3****4****5
+```
+
 Fibonacci in different programming languages:
 
 ```bash
