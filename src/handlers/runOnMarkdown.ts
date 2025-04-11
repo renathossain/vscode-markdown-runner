@@ -42,40 +42,32 @@ function findResultBlock(document: vscode.TextDocument, startLine: number) {
   if (startLine < 0 || startLine >= document.lineCount) return null;
 
   // Obtain the sliced document at `startLine`
-  const fullText = document.getText();
-  const startPos = document.lineAt(startLine).range.start;
-  const startOffset = document.offsetAt(startPos);
-  const slicedText = fullText.slice(startOffset);
+  const startOffset = document.offsetAt(new vscode.Position(startLine, 0));
+  const slicedText = document.getText().slice(startOffset);
 
-  // Find first match within the sliced document
+  // Find first match for a result block within the sliced document
   const match = blockRegex.exec(slicedText);
   if (!match) return null;
-
-  // Parse and validate the data
   const { language, code } = parseBlock(document, match);
   if (language !== `result`) return null;
 
-  // The match must start a line away from startLine
-  const matchIndex = match.index;
-  const preMatchText = slicedText.slice(0, matchIndex);
-  const relativeLineNumber = preMatchText.split("\n").length - 1;
-  if (relativeLineNumber !== 1) return null;
+  // The match must start at startLine
+  const matchLine = slicedText.slice(0, match.index).split("\n").length;
+  if (matchLine !== 1) return null;
 
-  // The range of the contents inside the code block to get cleared
-  const foundStartLine = startLine + relativeLineNumber + 1;
-  const codeLineCount = code.split("\n").length;
-  const foundEndLine = foundStartLine + codeLineCount - 1;
-  return new vscode.Range(foundStartLine, 0, foundEndLine, 0);
+  // Return range of results contents to be cleared
+  const endLine = startLine + 1 + code.split("\n").length - 1;
+  return new vscode.Range(startLine + 1, 0, endLine, 0);
 }
 
 // Helper function to runOnMarkdown
 async function insertText(
   editor: vscode.TextEditor,
-  currentPosition: vscode.Position,
-  insertedText: string
+  position: vscode.Position,
+  text: string
 ) {
   await editor
-    .edit((editBuilder) => editBuilder.insert(currentPosition, insertedText))
+    .edit((editBuilder) => editBuilder.insert(position, text))
     .then((success) => {
       if (success)
         // Save the document to ensure undo-ability
@@ -91,7 +83,7 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
 
   // Create result block that holds execution results
   await textEditLock.acquire("key", async () => {
-    const deleteRange = findResultBlock(editor.document, range.end.line + 1);
+    const deleteRange = findResultBlock(editor.document, range.end.line + 2);
     if (deleteRange)
       // If result block found, clear the contents inside it
       await editor.edit((editBuilder) => editBuilder.delete(deleteRange));
@@ -100,17 +92,13 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
       await insertText(editor, range.end, "\n\n```result\n```");
   });
 
-  // Start child process
+  // Start child process and create buttons to stop or kill the process
   const runner = cp.spawn("sh", ["-c", code], { detached: true });
-
-  // Create buttons to stop or kill the process
   childProcesses.push({ pid: runner.pid!, line: range.end.line + 2 });
   killAllButton.show();
 
-  // Output results 3 lines below the parent code block
+  // Output child process results 3 lines below parent code block
   let outputPosition = new vscode.Position(range.end.line + 3, 0);
-
-  // Write child process execution results onto markdown file
   runner.stdout.on("data", async (data: Buffer) => {
     await textEditLock.acquire("key", async () => {
       const output = data.toString();

@@ -75,6 +75,17 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
   ): vscode.ProviderResult<vscode.CodeLens[]> {
     const codeLenses: vscode.CodeLens[] = [];
 
+    // Generate buttons to stop `Run on Markdown` processes
+    for (const { pid, line } of childProcesses) {
+      const range = new vscode.Range(line, 0, line, 0);
+      pushCodeLens(codeLenses, range, `Stop Process`, `markdown.stopProcess`, [
+        pid,
+      ]);
+      pushCodeLens(codeLenses, range, `Kill Process`, `markdown.killProcess`, [
+        pid,
+      ]);
+    }
+
     // Loop through all parsed code blocks and generate buttons
     for (const { language, code, range } of parseCodeBlocks(document)) {
       const langName = getLanguageConfig(language, `name`);
@@ -96,6 +107,7 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
           [language, code, range]
         );
       }
+
       // For bash code blocks, provide `run in terminal (line by line)` option
       if (language === `bash`)
         pushCodeLens(
@@ -105,19 +117,9 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
           `markdown.runInTerminal`,
           [code]
         );
+
       // Always provide button to copy code
       pushCodeLens(codeLenses, range, `Copy`, `markdown.copy`, [code]);
-    }
-
-    // Generate buttons to stop `Run on Markdown` processes
-    for (const { pid, line } of childProcesses) {
-      const range = new vscode.Range(line, 0, line, 0);
-      pushCodeLens(codeLenses, range, `Stop Process`, `markdown.stopProcess`, [
-        pid,
-      ]);
-      pushCodeLens(codeLenses, range, `Kill Process`, `markdown.killProcess`, [
-        pid,
-      ]);
     }
 
     return codeLenses;
