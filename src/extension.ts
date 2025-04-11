@@ -29,7 +29,7 @@
 //                                settings.ts
 //
 // - `extension.ts`: Activates and deactivates the extension, loads
-//   codeLinks and codeLens buttons, as well as registers their handlers.
+//   codeLinks and codeLens buttons, and registers their handlers.
 //
 // - `codeLinks.ts`: Turns all strings enclosed with ` delimiters into
 //   clickable links that run in the terminal when clicked.
@@ -38,7 +38,7 @@
 //   running code above all code blocks enclosed with ``` delimiters.
 //
 // - `runInTerminal.ts`: Handlers for either running code directly in the terminal
-//   line by line or writing code to a file and running the file.
+//   line by line or writing code to a file and compiling/running the file.
 //
 // - `runOnMarkdown.ts`: Handlers for writing the output of an executing process
 //   directly onto the markdown file.
@@ -77,12 +77,8 @@ export const commandHandlers = [
     },
   },
   {
-    command: "markdown.stopProcess",
-    handler: (pid: number) => treeKill(pid, "SIGINT"),
-  },
-  {
     command: "markdown.killProcess",
-    handler: (pid: number) => treeKill(pid, "SIGKILL"),
+    handler: (pid: number, signal: string) => treeKill(pid, signal),
   },
   {
     command: "markdown.killAllProcesses",

@@ -51,7 +51,7 @@ function findResultBlock(document: vscode.TextDocument, startLine: number) {
   const { language, code } = parseBlock(document, match);
   if (language !== `result`) return null;
 
-  // The match must start at startLine
+  // The match must be on the first line of the sliced document
   const matchLine = slicedText.slice(0, match.index).split("\n").length;
   if (matchLine !== 1) return null;
 
