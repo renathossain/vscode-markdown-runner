@@ -76,6 +76,21 @@ printf "****5"
 ****1****2****3****4****5
 ```
 
+Default codes:
+
+Configure the following default codes in extension settings and test the following 2 code blocks out:
+
+- Item: `bash`, Value: `var=123\n`
+- Item: `cpp`, Value: `-I@ #include <bits/stdc++.h>\nusing namespace std;\nint main(){\n@}\n`
+
+```bash
+echo $var
+```
+
+```cpp
+cout << 456 << endl;
+```
+
 Fibonacci in different programming languages:
 
 ```bash

@@ -36,20 +36,34 @@ function getBaseName(language: string, code: string): string {
   } else return `temp_${Date.now()}`;
 }
 
-// Inject the Python Path Code into Python Files
-function injectPythonPath(language: string, code: string): string {
-  // Read the Python Path configuration boolean
+// Inject all enabled default codes into the code string
+function injectDefaultCode(language: string, code: string): string {
+  // Read the configuration for pythonPath and defaultCodes
   const config = vscode.workspace.getConfiguration();
   const pythonPathEnabled = config.get<boolean>("markdownRunner.pythonPath");
+  const defaultCodeConfig =
+    config.get<{
+      [language: string]: string;
+    }>("markdownRunner.defaultCodes") || {};
 
-  // If the boolean is true, inject the markdown file's path into the code
+  // If pythonPath is enabled, inject the markdown file's path into the code
   const editor = vscode.window.activeTextEditor;
   if (pythonPathEnabled && editor && language === "python") {
     const documentDirectory = path.dirname(editor.document.uri.fsPath);
     code = `import sys\nsys.path.insert(0, r'${documentDirectory}')\n` + code;
   }
 
-  return code;
+  // Inject default code, if available from settings
+  const defaultCode: string = defaultCodeConfig[language] || "";
+  const newlineCode = defaultCode.replace(/\\n/g, "\n");
+  // Explanation of regex:
+  // ^: anchors search to beginning, `-I` must appear in the beginning of string
+  // (.): 1st capturing group, match 1 character (like `@` in the example)
+  // ([\s\S]+$): 2nd capturing group that matches 1 or more (+) of any
+  // characters (\s\S) and `$` means it matches to the end of the string
+  const match = /^-I(.) ([\s\S]+$)/.exec(newlineCode);
+  if (match) return match[2].replace(match[1], code);
+  else return newlineCode + code;
 }
 
 // Compiles a binary using the provided command
@@ -77,7 +91,7 @@ export async function getRunCommand(
   const extension = getLanguageConfig(language, "extension");
   const compiler = getLanguageConfig(language, "compiler");
   if (!baseName || !compiler || !extension) return "";
-  code = injectPythonPath(language, code);
+  code = injectDefaultCode(language, code);
   const basePath = path.join(os.tmpdir(), baseName);
   const sourcePath = `${basePath}.${extension}`;
 
