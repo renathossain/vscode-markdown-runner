@@ -40,18 +40,39 @@ Download or copy [DEMO.md](DEMO.md) and the `demo_helpers` folder into VS Code a
 
 ### Compiler Configuration
 
-- Configure language compilers by specifying Item: `Code Block Tag` and associated Value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added.
+Configure language compilers by specifying for each `Language (Code Block Tag)`, the following value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added.
 
 ```plaintext
 // Example
-Item: python, Value: ["Python", "py", "python"]
+Item: "python", Value: "["Python", "py", "python"]"
 ```
 
-- Reset settings using the ↻ icons or remove the `markdownRunner.compilerConfiguration` entry from VSCode's `settings.json` to restore to default if any issues occur.
+Reset settings using the ↻ icons or remove the `markdownRunner.compilerConfiguration` entry from VSCode's `settings.json` to restore to default if any issues occur.
 
 ### Python Path
 
 Enable this to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.
+
+### Default Codes
+
+Prepend or wrap your code blocks with default code to improve readability, by specifying for each `language (Code Block Tag)`, either the string to be prepended or the `-I@` (insert at) flag followed by whitespace and a string containing the `@` symbol where you want to insert the code.
+
+```plaintext
+// Example
+Item: `bash`, Value: `var=123\n`
+Item: `cpp`, Value: `-I@ #include <bits/stdc++.h>\nusing namespace std;\nint main(){\n@}\n`
+```
+
+The bash code `echo $var` is prepended and becomes `var=123\necho $var` which outputs `123`.
+The code `cout << 456 << endl;` is transformed to the following, which outputs `456`:
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+int main(){
+cout << 456 << endl;
+}
+```
 
 ## Future Development
 
