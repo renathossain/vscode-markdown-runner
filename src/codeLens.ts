@@ -102,12 +102,12 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
           `markdown.runFile`,
           [language, code]
         );
-        // For bash code blocks, provide `run in terminal (line by line)` option
+        // Only for bash code blocks, provide `Run in Terminal (line by line)` option
         if (language === `bash`)
           pushCodeLens(
             codeLenses,
             range,
-            `Run Line by Line`,
+            `Run in Terminal`,
             `markdown.runInTerminal`,
             [code]
           );
