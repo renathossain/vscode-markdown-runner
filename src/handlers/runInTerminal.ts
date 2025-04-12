@@ -32,6 +32,8 @@ function getBaseName(language: string, code: string): string {
     // (\w+) - Capturing group, which matches one or more "word" characters
     // (letters, digits, underscore), which corresponds to the class name
     const match = code.match(/public\s+class\s+(\w+)/);
+    const errorMsg = `Compilation failed: No public class found.`;
+    if (!match) vscode.window.showErrorMessage(errorMsg);
     return match ? match[1] : ``;
   } else return `temp_${Date.now()}`;
 }
