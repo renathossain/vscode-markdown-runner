@@ -4,7 +4,7 @@
   "description": "Enables the seamless execution of code blocks in any language within Markdown files in VS Code",
   "publisher": "renathossain",
   "icon": "Icon.png",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "engines": {
     "vscode": "^1.87.0"
   },
@@ -25,14 +25,17 @@
       "properties": {
         "markdownRunner.compilerConfiguration": {
           "type": "object",
-          "description": "Configure language compilers by specifying Item: `Code Block Tag` and associated Value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added.",
+          "description": "Configure language compilers by specifying for each `Language (Code Block Tag)`, the following value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added.",
+          "additionalProperties": {
+            "type": "string"
+          },
           "default": {
             "python": "[\"Python\", \"py\", \"python\"]",
             "c": "[\"C\", \"c\", \"gcc\"]",
             "java": "[\"Java\", \"java\", \"javac\"]",
             "cpp": "[\"C++\", \"cpp\", \"g++\"]",
             "rust": "[\"Rust\", \"rs\", \"rustc\"]",
-            "typescript": "[\"TypeScript\", \"ts\", \"npx ts-node\"]",
+            "typescript": "[\"TypeScript\", \"ts\", \"tsc\"]",
             "php": "[\"PHP\", \"php\", \"php\"]",
             "perl": "[\"Perl\", \"pl\", \"perl\"]",
             "r": "[\"R\", \"r\", \"Rscript\"]",
@@ -45,15 +48,20 @@
             "ruby": "[\"Ruby\", \"rb\", \"ruby\"]",
             "javascript": "[\"JavaScript\", \"js\", \"node\"]",
             "bash": "[\"Bash\", \"sh\", \"bash\"]"
-          },
-          "additionalProperties": {
-            "type": "string"
           }
         },
         "markdownRunner.pythonPath": {
           "type": "boolean",
           "description": "Enable this to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.",
           "default": true
+        },
+        "markdownRunner.defaultCodes": {
+          "type": "object",
+          "description": "Prepend or wrap your code blocks with default code to improve readability, by specifying for each `language (Code Block Tag)`, either the string to be prepended or the `-I@` (insert at) flag followed by whitespace and a string containing the `@` symbol where you want to insert the code. Examples:\nItem: `bash`, Value: `var=123\\n`\nItem: `cpp`, Value: `-I@ #include <bits/stdc++.h>\\nusing namespace std;\\nint main(){\\n@}\\n`",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {}
         }
       }
     }
@@ -79,10 +87,10 @@
     "@typescript-eslint/eslint-plugin": "^8.29.1",
     "@typescript-eslint/parser": "^8.29.1",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.5.1",
+    "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.3.2",
     "eslint": "^9.24.0",
-    "eslint-config-prettier": "^10.1.1",
+    "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-prettier": "^5.2.6",
     "globals": "^16.0.0",
     "prettier": "^3.5.3",

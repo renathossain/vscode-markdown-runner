@@ -1,5 +1,15 @@
 # Change Log
 
+## 2.1.0
+
+- **New Feature**: Added per language "Default Codes" in settings, which is code that is always prepended/inserted to a file before it is compiled/executed.
+- **New Feature**: Added "Clear" and "Delete" Buttons for code blocks.
+- **Improvement**: Implemented automatic parsing of Java executable name from code using regex. No need to enter the file name manually.
+- **Improvement**: Implemented compilation of TypeScript files the official way using `tsc`, then using `node` to run the resulting Javascript file.
+- **Change**: Changed compilation error message appearance, prints the entire error message and allows to copy the error message.
+- **Change**: Removed the "Code copied to clipboard." notification.
+- **Bug Fix**: Fixed bug in "Run on Markdown" where last line of result block would be missing a newline.
+
 ## 2.0.0
 
 - **New Feature:** Added "Run on Markdown" button to output execution results directly within the Markdown file. When "Run on Markdown" is pressed, the result of the execution is inserted into a new code block tagged `result` directly below the original code block. This feature includes:

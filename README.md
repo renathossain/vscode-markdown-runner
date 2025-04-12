@@ -2,10 +2,10 @@
 
 This extension allows you to execute code blocks in any programming language directly from Markdown files in VS Code.
 
-<div style="display: flex; flex-wrap: wrap; gap: 10px;">
-  <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunCodeBlock.gif" alt="Run Code Block" width="270">
-  <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunCodeSnippet.gif" alt="Run Code Snippet" width="270">
-  <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunOnMarkdown.gif" alt="Run On Markdown" width="270">
+<div style="display:flex; gap: 10px;">
+  <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunCodeBlock.gif" alt="Run Code Block" width="270" style="width: 100%; flex: 1;">
+  <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunCodeSnippet.gif" alt="Run Code Snippet" width="270" style="width: 100%; flex: 1;">
+  <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunOnMarkdown.gif" alt="Run On Markdown" width="270" style="width: 100%; flex: 1;">
 </div>
 
 ## Features
@@ -27,8 +27,9 @@ Before running a code block:
 On Arch Linux, install all supported languages with:
 
 ```bash
-sudo pacman --needed -S php perl r dart groovy go rustup ghc julia lua ruby nodejs npm python bash
+sudo pacman --needed -S php perl r dart groovy go rustup typescript ghc julia lua ruby nodejs npm python bash
 ```
+
 For other systems, research language installation or use the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install).
 
 ## Demo File
@@ -39,18 +40,39 @@ Download or copy [DEMO.md](DEMO.md) and the `demo_helpers` folder into VS Code a
 
 ### Compiler Configuration
 
-- Configure language compilers by specifying Item: `Code Block Tag` and associated Value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added.
+Configure language compilers by specifying for each `Language (Code Block Tag)`, the following value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added.
 
 ```plaintext
 // Example
-Item: python, Value: ["Python", "py", "python"]
+Item: `python`, Value: `["Python", "py", "python"]`
 ```
 
-- Reset settings using the ↻ icons or remove the `markdownRunner.compilerConfiguration` entry from VSCode's `settings.json` to restore to default if any issues occur.
+Reset settings using the ↻ icons or remove the `markdownRunner.compilerConfiguration` entry from VSCode's `settings.json` to restore to default if any issues occur.
 
 ### Python Path
 
 Enable this to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.
+
+### Default Codes
+
+Prepend or wrap your code blocks with default code to improve readability, by specifying for each `language (Code Block Tag)`, either the string to be prepended or the `-I@` (insert at) flag followed by whitespace and a string containing the `@` symbol where you want to insert the code.
+
+```plaintext
+// Example
+Item: `bash`, Value: `var=123\n`
+Item: `cpp`, Value: `-I@ #include <bits/stdc++.h>\nusing namespace std;\nint main(){\n@}\n`
+```
+
+- The Bash code `echo $var` is preceded by `var=123`, forming `var=123\necho $var`, which results in the output `123`.
+- The code `cout << 456 << endl;` is transformed to the following, which outputs `456`:
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+int main(){
+cout << 456 << endl;
+}
+```
 
 ## Future Development
 

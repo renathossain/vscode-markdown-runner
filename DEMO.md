@@ -56,6 +56,41 @@ print("Python Fibonacci:")
 print([f(i) for i in range(10)])
 ```
 
+Testing "Run on Markdown" with Single Line Output:
+
+```bash
+#!/bin/bash
+
+printf "****1"
+sleep 1
+printf "****2"
+sleep 1
+printf "****3"
+sleep 1
+printf "****4"
+sleep 1
+printf "****5"
+```
+
+```result
+****1****2****3****4****5
+```
+
+Default codes:
+
+Configure the following default codes in extension settings and test the following 2 code blocks out:
+
+- Item: `bash`, Value: `var=123\n`
+- Item: `cpp`, Value: `-I@ #include <bits/stdc++.h>\nusing namespace std;\nint main(){\n@}\n`
+
+```bash
+echo $var
+```
+
+```cpp
+cout << 456 << endl;
+```
+
 Fibonacci in different programming languages:
 
 ```bash
@@ -96,18 +131,18 @@ print([f(i) for i in range(10)])
 
 ```javascript
 function f(n) {
-    if (n <= 0) {
-        return 0;
-    }
-    if (n === 1) {
-        return 1;
-    }
-    return f(n - 1) + f(n - 2);
+  if (n <= 0) {
+    return 0;
+  }
+  if (n === 1) {
+    return 1;
+  }
+  return f(n - 1) + f(n - 2);
 }
 
 const result = [];
 for (let i = 0; i < 10; i++) {
-    result.push(f(i));
+  result.push(f(i));
 }
 
 console.log("JavaScript Fibonacci:");
@@ -297,17 +332,17 @@ echo "[" . implode(", ", array_map("f", range(0, 9))) . "]\n";
 
 ```typescript
 function f(n: number): number {
-    if (n <= 0) {
-        return 0;
-    }
-    if (n === 1) {
-        return 1;
-    }
-    return f(n - 1) + f(n - 2);
+  if (n <= 0) return 0;
+  if (n === 1) return 1;
+  return f(n - 1) + f(n - 2);
 }
 
 console.log("TypeScript Fibonacci:");
-console.log("[" + Array.from({ length: 10 }, (_, i) => f(i)).join(', ') + "]");
+let result: number[] = [];
+for (let i = 0; i < 10; i++) {
+  result.push(f(i));
+}
+console.log("[" + result.join(", ") + "]");
 ```
 
 ```c

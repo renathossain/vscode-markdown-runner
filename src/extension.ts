@@ -20,47 +20,87 @@
 //                                    |
 //                       +------------+-------------+
 //                       |            |             |
-//                 codeLinks.ts  codeLens.ts   codeRunner.ts
-//                       |          |  |            |
-//                       +-----+----+  +-----+------+
-//                             |             |
-//                         parser.ts  compilerConfig.ts
+//                 codeLinks.ts  codeLens.ts     handlers
+//                                  |               |
+//                                  |       +------------------+
+//                                  |       |                  |
+//                                  | runInTerminal.ts   runOnMarkdown.ts
+//                                  |    |
+//                                settings.ts
 //
-// - `extension.ts`: Responsible for activating the extension and orchestrating
-//   the loading of the codeLinks, codeLens and registering the commands that
-//   perform actions such as executing or copying code blocks.
+// - `extension.ts`: Activates and deactivates the extension, loads
+//   codeLinks and codeLens buttons, and registers their handlers.
 //
-// - `codeLinks.ts`: Uses `parser.ts` to parse inline code snippets, then turn them
-//   into links that the user can 'Ctrl + Left Click' to run them.
+// - `codeLinks.ts`: Turns all strings enclosed with ` delimiters into
+//   clickable links that run in the terminal when clicked.
 //
-// - `codeLens.ts`: Uses `parser.ts` to parse code blocks and determine
-//   their language and content, then generate appropriate code lens buttons for
-//   each code block in the editor. It only generates the buttons for languages
-//   specified in the language configuration provided by `compilerConfig.ts`.
+// - `codeLens.ts`: Puts buttons that perform various actions like copying and
+//   running code above all code blocks enclosed with ``` delimiters.
 //
-// - `codeRunner.ts`: Uses `compilerConfig.ts` to provide the correct file
-//   extension and compiler to execute code blocks.
+// - `runInTerminal.ts`: Handlers for either running code directly in the terminal
+//   line by line or writing code to a file and compiling/running the file.
 //
-// - `compilerConfig.ts`: Provides language configurations used by `codeLens.ts`
-//   and `codeRunner.ts`.
+// - `runOnMarkdown.ts`: Handlers for writing the output of an executing process
+//   directly onto the markdown file.
 //
-// - `parser.ts`: Responsible for parsing code blocks to determine their language
-//   and content used by `codeLinks.ts` and `codeLens.ts`.
-//
-// - Data Flow:
-// `compilerConfig.ts` +-+-> `codeLinks.ts` +-+-> `extension.ts` +-+-> codeRunner.ts
-// `parser.ts`         +-+-> `codeLens.ts`  +-+
+// - `settings.ts`: Provides an API to access extension settings.
 //
 // ************************************************************************
 
 import * as vscode from "vscode";
-import { CodeSnippetLinkProvider } from "./codeLinks";
+import * as fs from "fs";
+import treeKill from "tree-kill";
+import { InlineCodeLinkProvider } from "./codeLinks";
 import { ButtonCodeLensProvider } from "./codeLens";
-import { cleanTempFiles, registerCommands } from "./codeRunner";
+import { runInTerminal, getRunCommand } from "./handlers/runInTerminal";
+import { runOnMarkdown, childProcesses } from "./handlers/runOnMarkdown";
 
-// Main function that runs when the extension is activated
+// List of command handlers
+export const commandHandlers = [
+  {
+    command: "markdown.runFile",
+    handler: async (language: string, code: string) =>
+      runInTerminal(await getRunCommand(language, code)),
+  },
+  {
+    command: "markdown.runOnMarkdown",
+    handler: async (language: string, code: string, range: vscode.Range) =>
+      await runOnMarkdown(await getRunCommand(language, code), range),
+  },
+  { command: "markdown.runInTerminal", handler: runInTerminal },
+  {
+    command: "markdown.copy",
+    handler: (code: string) => vscode.env.clipboard.writeText(code),
+  },
+  {
+    command: "markdown.delete",
+    handler: (range: vscode.Range) => {
+      const editor = vscode.window.activeTextEditor;
+      editor?.edit((editBuilder) => editBuilder.delete(range));
+      editor?.document.save();
+    },
+  },
+  {
+    command: "markdown.killProcess",
+    handler: (pid: number, signal: string) => treeKill(pid, signal),
+  },
+  {
+    command: "markdown.killAllProcesses",
+    handler: () =>
+      childProcesses.forEach(({ pid }, i) => {
+        treeKill(pid, "SIGKILL");
+        childProcesses.splice(i, 1);
+      }),
+  },
+];
+
+// List of temporary files
+export const tempFilePaths: string[] = [];
+
+// Main function that runs when extension is activated
 export function activate(context: vscode.ExtensionContext) {
-  // Initializes the CodeLens buttons for code blocks
+  // Initializes CodeLens provider for code blocks
+  // Code blocks are enclosed with ```
   context.subscriptions.push(
     vscode.languages.registerCodeLensProvider(
       { language: "markdown", scheme: "file" },
@@ -68,19 +108,27 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
 
-  // Initializes the DocumentLinks for inline code (code snippets)
+  // Initializes DocumentLinks provider for inline code
+  // Inline code is enclosed with `
   context.subscriptions.push(
     vscode.languages.registerDocumentLinkProvider(
       { language: "markdown", scheme: "file" },
-      new CodeSnippetLinkProvider()
+      new InlineCodeLinkProvider()
     )
   );
 
-  registerCommands(context);
+  // Register all command handlers
+  commandHandlers.forEach(({ command, handler }) =>
+    context.subscriptions.push(
+      vscode.commands.registerCommand(command, handler)
+    )
+  );
 }
 
-// Deletes the temporary files that were generated during the extension's usage
-// when the extension is deactivated or VS Code is closed
+// Function that runs when extension is deactivated
 export function deactivate() {
-  cleanTempFiles();
+  // Deletes temporary files created for code block execution
+  tempFilePaths.forEach((filePath) => {
+    fs.unlinkSync(filePath);
+  });
 }
