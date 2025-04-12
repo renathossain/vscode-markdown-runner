@@ -44,7 +44,7 @@ Configure language compilers by specifying for each `Language (Code Block Tag)`,
 
 ```plaintext
 // Example
-Item: "python", Value: "["Python", "py", "python"]"
+Item: `python`, Value: `["Python", "py", "python"]`
 ```
 
 Reset settings using the ↻ icons or remove the `markdownRunner.compilerConfiguration` entry from VSCode's `settings.json` to restore to default if any issues occur.
