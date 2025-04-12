@@ -63,8 +63,8 @@ Item: `bash`, Value: `var=123\n`
 Item: `cpp`, Value: `-I@ #include <bits/stdc++.h>\nusing namespace std;\nint main(){\n@}\n`
 ```
 
-The bash code `echo $var` is prepended and becomes `var=123\necho $var` which outputs `123`.
-The code `cout << 456 << endl;` is transformed to the following, which outputs `456`:
+- The bash code `echo $var` is prepended and becomes `var=123\necho $var` which outputs `123`.
+- The code `cout << 456 << endl;` is transformed to the following, which outputs `456`:
 
 ```cpp
 #include <bits/stdc++.h>
