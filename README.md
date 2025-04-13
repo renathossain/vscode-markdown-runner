@@ -63,7 +63,7 @@ Item: `bash`, Value: `var=123\n`
 Item: `cpp`, Value: `-I@ #include <bits/stdc++.h>\nusing namespace std;\nint main(){\n@}\n`
 ```
 
-- The Bash code `echo $var` is preceded by `var=123`, forming `var=123\necho $var`, which results in the output `123`.
+- The Bash code `echo $var` is preceded by `var=123\n`, forming `var=123\necho $var`, which results in the output `123`.
 - The code `cout << 456 << endl;` is transformed to the following, which outputs `456`:
 
 ```cpp
