@@ -76,8 +76,7 @@ export const commandHandlers = [
     command: "markdown.delete",
     handler: (range: vscode.Range) => {
       const editor = vscode.window.activeTextEditor;
-      if (editor?.edit((editBuilder) => editBuilder.delete(range)))
-        editor?.document.save();
+      if (editor?.edit((text) => text.delete(range))) editor?.document.save();
     },
   },
   {

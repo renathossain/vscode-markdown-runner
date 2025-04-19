@@ -3,6 +3,7 @@
 ## 2.1.1
 
 - **Improvement**: Added support for code blocks with more than 3 backticks.
+- **Improvement**: Improved save synchronization to be compatible with Prettier's formatOnSave.
 
 ## 2.1.0
 

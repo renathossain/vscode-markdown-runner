@@ -60,17 +60,6 @@ function findResultBlock(document: vscode.TextDocument, startLine: number) {
   return new vscode.Range(startLine + 1, 0, endLine, 0);
 }
 
-// Helper function to runOnMarkdown
-async function insertText(
-  editor: vscode.TextEditor,
-  position: vscode.Position,
-  text: string
-) {
-  await editor
-    .edit((editBuilder) => editBuilder.insert(position, text))
-    .then((success) => (success ? editor.document.save() : false));
-}
-
 // Run command on the markdown file
 export async function runOnMarkdown(code: string, range: vscode.Range) {
   // TODO: implement multiple output streams at the same time
@@ -82,10 +71,10 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     const deleteRange = findResultBlock(editor.document, range.end.line + 2);
     if (deleteRange)
       // If result block found, clear the contents inside it
-      await editor.edit((editBuilder) => editBuilder.delete(deleteRange));
+      await editor.edit((text) => text.delete(deleteRange));
     else
       // If result block not found, create it
-      await insertText(editor, range.end, "\n\n```result\n```");
+      await editor.edit((text) => text.insert(range.end, "\n\n```result\n```"));
   });
 
   // Start child process and create buttons to stop or kill the process
@@ -98,7 +87,7 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
   child.stdout.on("data", async (data: Buffer) => {
     await textEditLock.acquire("key", async () => {
       const output = data.toString();
-      await insertText(editor, outputPosition, output);
+      await editor.edit((text) => text.insert(outputPosition, output));
       const outputLines = output.split("\n");
       const newPositionLine = outputPosition.line + outputLines.length - 1;
       const newPositionChar =
@@ -116,7 +105,10 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     // If output did not end on a newline, add it
     await textEditLock.acquire("key", async () => {
       if (outputPosition.character !== 0)
-        await insertText(editor, outputPosition, "\n");
+        await editor.edit((text) => text.insert(outputPosition, "\n"));
+
+      // Save the document after all text deletes/inserts
+      await editor.document.save();
     });
   });
 }
