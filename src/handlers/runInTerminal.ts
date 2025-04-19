@@ -120,11 +120,10 @@ export async function getRunCommand(
       : "";
 
   // Compilation for TypeScript
-  if (language === "typescript") {
+  if (language === "typescript")
     return (await compileHandler(`${compiler} ${sourcePath}`, `${basePath}.js`))
       ? `${getLanguageConfig("javascript", "compiler")} ${basePath}.js`
       : "";
-  }
 
   // If not a compiled language, run the source code
   return `${compiler} ${sourcePath}`;

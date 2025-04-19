@@ -60,76 +60,65 @@ function* parseCodeBlocks(
 
 // Generate the code lens with the required parameters and push it to the list
 function pushCodeLens(
-  codeLenses: vscode.CodeLens[],
+  lenses: vscode.CodeLens[],
   range: vscode.Range,
   title: string,
   command: string,
   args: unknown[]
 ) {
-  codeLenses.push(
-    new vscode.CodeLens(range, { title, command, arguments: args })
-  );
+  lenses.push(new vscode.CodeLens(range, { title, command, arguments: args }));
+}
+
+// Implementation for ButtonCodeLensProvider
+function provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
+  const lenses: vscode.CodeLens[] = [];
+
+  // Generate buttons to stop `Run on Markdown` processes
+  for (const { pid, line } of childProcesses) {
+    const range = new vscode.Range(line, 0, line, 0);
+    const argsStop = [pid, "SIGINT"];
+    const argsKill = [pid, "SIGKILL"];
+    pushCodeLens(lenses, range, `Stop`, `markdown.killProcess`, argsStop);
+    pushCodeLens(lenses, range, `Kill`, `markdown.killProcess`, argsKill);
+  }
+
+  // Loop through all parsed code blocks and generate buttons
+  for (const { language, code, range } of parseCodeBlocks(document)) {
+    const name = getLanguageConfig(language, `name`);
+
+    // For all supported languages, provide options to run the code block
+    if (name !== undefined) {
+      // Provide `Run {Language} Block` option
+      const titleRun = `Run ${name} Block`;
+      const commandRun = `markdown.runFile`;
+      const argsRun = [language, code];
+      pushCodeLens(lenses, range, titleRun, commandRun, argsRun);
+
+      // Only for bash code blocks, provide `Run in Terminal (line by line)` option
+      const titleBash = `Run in Terminal`;
+      const commandBash = `markdown.runInTerminal`;
+      if (language === `bash`)
+        pushCodeLens(lenses, range, titleBash, commandBash, [code]);
+
+      // Provide `Run on Markdown` option
+      const titleMark = `Run on Markdown`;
+      const commandMark = `markdown.runOnMarkdown`;
+      const argsMark = [language, code, range];
+      pushCodeLens(lenses, range, titleMark, commandMark, argsMark);
+    }
+
+    // Always provide buttons to copy, clear or delete code blocks
+    pushCodeLens(lenses, range, `Copy`, `markdown.copy`, [code]);
+    const clr = new vscode.Range(range.start.line + 1, 0, range.end.line, 0);
+    pushCodeLens(lenses, range, `Clear`, `markdown.delete`, [clr]);
+    const del = new vscode.Range(range.start.line, 0, range.end.line + 1, 0);
+    pushCodeLens(lenses, range, `Delete`, `markdown.delete`, [del]);
+  }
+
+  return lenses;
 }
 
 // CodeLens buttons provider for parsed code blocks
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
-  provideCodeLenses(
-    document: vscode.TextDocument
-  ): vscode.ProviderResult<vscode.CodeLens[]> {
-    const codeLenses: vscode.CodeLens[] = [];
-
-    // Generate buttons to stop `Run on Markdown` processes
-    for (const { pid, line } of childProcesses) {
-      const range = new vscode.Range(line, 0, line, 0);
-      pushCodeLens(codeLenses, range, `Stop`, `markdown.killProcess`, [
-        pid,
-        "SIGINT",
-      ]);
-      pushCodeLens(codeLenses, range, `Kill`, `markdown.killProcess`, [
-        pid,
-        "SIGKILL",
-      ]);
-    }
-
-    // Loop through all parsed code blocks and generate buttons
-    for (const { language, code, range } of parseCodeBlocks(document)) {
-      const langName = getLanguageConfig(language, `name`);
-
-      // For all supported languages, provide options to run the code block
-      if (langName !== undefined) {
-        pushCodeLens(
-          codeLenses,
-          range,
-          `Run ${langName} Block`,
-          `markdown.runFile`,
-          [language, code]
-        );
-        // Only for bash code blocks, provide `Run in Terminal (line by line)` option
-        if (language === `bash`)
-          pushCodeLens(
-            codeLenses,
-            range,
-            `Run in Terminal`,
-            `markdown.runInTerminal`,
-            [code]
-          );
-        pushCodeLens(
-          codeLenses,
-          range,
-          `Run on Markdown`,
-          `markdown.runOnMarkdown`,
-          [language, code, range]
-        );
-      }
-
-      // Always provide buttons to copy, clear or delete code blocks
-      pushCodeLens(codeLenses, range, `Copy`, `markdown.copy`, [code]);
-      const clr = new vscode.Range(range.start.line + 1, 0, range.end.line, 0);
-      pushCodeLens(codeLenses, range, `Clear`, `markdown.delete`, [clr]);
-      const del = new vscode.Range(range.start.line, 0, range.end.line + 1, 0);
-      pushCodeLens(codeLenses, range, `Delete`, `markdown.delete`, [del]);
-    }
-
-    return codeLenses;
-  }
+  provideCodeLenses = provideCodeLenses;
 }
