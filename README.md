@@ -1,8 +1,6 @@
 # Markdown Code Block Runner for VS Code
 
-This extension allows you to execute code blocks in any programming language directly from Markdown files in VS Code.
-
-Available on [Visual Studio Marketplace](https://open-vsx.org/extension/renathossain/markdown-runner) and [Open VSX Registry](https://open-vsx.org/extension/renathossain/markdown-runner).
+This extension allows you to execute code blocks in any programming language directly from Markdown files in VS Code. Available on [Visual Studio Marketplace](https://open-vsx.org/extension/renathossain/markdown-runner) and [Open VSX Registry](https://open-vsx.org/extension/renathossain/markdown-runner).
 
 <div style="display:flex; gap: 10px;">
   <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunCodeBlock.gif" alt="Run Code Block" width="270" style="width: 100%; flex: 1;">
