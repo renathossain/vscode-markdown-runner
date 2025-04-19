@@ -18,35 +18,37 @@ import * as vscode from "vscode";
 import { getLanguageConfig } from "./settings";
 import { childProcesses } from "./handlers/runOnMarkdown";
 
-// Regex to parse blocks delimited with ```:
+// Regex to parse blocks delimited with at least 3 ticks `:
+// (`{3,}) matches at 3 or more backticks ` (first capturing group)
+// \1$ ensures that the closing backticks match the same length as the opening ones
 // . matches any character, so .* matches any number of any characters
 // .*? matches lazily (least amount of char to satisfy the regex),
 // Without ?, it matches greedily by default (max chars to satisfy regex)
 // (.*?)\n(.*?) - the brackets the denote the individual "capturing groups" (2 of them)
-// The first capturing group captures the code block type (e.g. python, rust, etc.)
-// The second capturing group captures the code itself
+// The second capturing group captures the code block type (e.g. python, rust, etc.)
+// The third capturing group captures the code itself
 // Flags: g searches the text globally (all occurrences)
 // Flags: m makes the ^ match the start of a line (by default it is start of the text)
 // m and ^ ensures the codeblock delims ``` always start at the beginning of the line
 // Flags: s makes the . match newline characters as well (by default it does not)
-export const blockRegex: RegExp = /^```(.*?)\n(.*?)^```/gms;
+export const blockRegex: RegExp = /^(`{3,})(.*?)\n(.*?)^\1$/gms;
 
-// Parses out any blocks within ``` delimiters
+// Parses blocks
 export function parseBlock(
   document: vscode.TextDocument,
   match: RegExpExecArray
 ) {
-  const parsedLang = match[1].trim().toLowerCase();
+  const parsedLang = match[2].trim().toLowerCase();
   // Treat untitled blocks as bash files
   const language = parsedLang === "" ? "bash" : parsedLang;
-  const code = match[2];
+  const code = match[3];
   const start = document.positionAt(match.index);
   const end = document.positionAt(match.index + match[0].length);
   const range = new vscode.Range(start, end);
   return { language, code, range };
 }
 
-// Parses code blocks (code within ``` delimiters)
+// Parses code blocks
 // This is a generator function that yields language, code, range
 function* parseCodeBlocks(
   document: vscode.TextDocument

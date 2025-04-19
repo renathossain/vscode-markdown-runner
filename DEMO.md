@@ -31,7 +31,7 @@ int main() {
 
 Test case with ``` in the middle of the code:
 
-```rust
+````rust
 fn main () {
     println!("{}", square(5));
 }
@@ -45,7 +45,7 @@ fn main () {
 fn square(x: i32) -> i32 {
     return x * x;
 }
-```
+````
 
 Test case Python import helper:
 

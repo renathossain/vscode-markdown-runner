@@ -35,7 +35,7 @@
 //   clickable links that run in the terminal when clicked.
 //
 // - `codeLens.ts`: Puts buttons that perform various actions like copying and
-//   running code above all code blocks enclosed with ``` delimiters.
+//   running code above all code blocks enclosed with at least 3 ` delimiters.
 //
 // - `runInTerminal.ts`: Handlers for either running code directly in the terminal
 //   line by line or writing code to a file and compiling/running the file.
@@ -76,8 +76,8 @@ export const commandHandlers = [
     command: "markdown.delete",
     handler: (range: vscode.Range) => {
       const editor = vscode.window.activeTextEditor;
-      editor?.edit((editBuilder) => editBuilder.delete(range));
-      editor?.document.save();
+      if (editor?.edit((editBuilder) => editBuilder.delete(range)))
+        editor?.document.save();
     },
   },
   {
@@ -86,11 +86,10 @@ export const commandHandlers = [
   },
   {
     command: "markdown.killAllProcesses",
-    handler: () =>
-      childProcesses.forEach(({ pid }, i) => {
-        treeKill(pid, "SIGKILL");
-        childProcesses.splice(i, 1);
-      }),
+    handler: () => {
+      childProcesses.forEach(({ pid }) => treeKill(pid, "SIGKILL"));
+      childProcesses.length = 0;
+    },
   },
 ];
 
@@ -128,7 +127,5 @@ export function activate(context: vscode.ExtensionContext) {
 // Function that runs when extension is deactivated
 export function deactivate() {
   // Deletes temporary files created for code block execution
-  tempFilePaths.forEach((filePath) => {
-    fs.unlinkSync(filePath);
-  });
+  tempFilePaths.forEach((filePath) => fs.unlinkSync(filePath));
 }

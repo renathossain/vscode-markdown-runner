@@ -1,5 +1,9 @@
 # Change Log
 
+## 2.1.1
+
+- **Improvement**: Added support for code blocks with more than 3 backticks.
+
 ## 2.1.0
 
 - **New Feature**: Added per language "Default Codes" in settings, which is code that is always prepended/inserted to a file before it is compiled/executed.
