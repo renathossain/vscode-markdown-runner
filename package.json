@@ -16,7 +16,8 @@
     "url": "https://github.com/renathossain/vscode-markdown-runner.git"
   },
   "activationEvents": [
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "onLanguage:quarto"
   ],
   "main": "./dist/extension.js",
   "contributes": {

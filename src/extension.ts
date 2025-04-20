@@ -97,20 +97,23 @@ export const tempFilePaths: string[] = [];
 
 // Main function that runs when extension is activated
 export function activate(context: vscode.ExtensionContext) {
-  // Initializes CodeLens provider for code blocks
-  // Code blocks are enclosed with ```
+  const supportedLanguages = [
+    { language: "markdown", scheme: "file" },
+    { language: "quarto", scheme: "file" },
+  ];
+
+  // CodeLens for code blocks
   context.subscriptions.push(
     vscode.languages.registerCodeLensProvider(
-      { language: "markdown", scheme: "file" },
+      supportedLanguages,
       new ButtonCodeLensProvider()
     )
   );
 
-  // Initializes DocumentLinks provider for inline code
-  // Inline code is enclosed with `
+  // Document links for inline code
   context.subscriptions.push(
     vscode.languages.registerDocumentLinkProvider(
-      { language: "markdown", scheme: "file" },
+      supportedLanguages,
       new InlineCodeLinkProvider()
     )
   );
