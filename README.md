@@ -3,9 +3,9 @@
 This extension allows you to execute code blocks in any programming language directly from Markdown/Quarto files in VS Code. Available on [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=renathossain.markdown-runner) and [Open VSX Registry](https://open-vsx.org/extension/renathossain/markdown-runner).
 
 <p align="center">
-  <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunCodeBlock.gif" alt="Run Code Block" width="30%">
-  <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunCodeSnippet.gif" alt="Run Code Snippet" width="30%">
-  <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunOnMarkdown.gif" alt="Run On Markdown" width="30%">
+  <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunCodeBlock.gif" alt="Run Code Block" width="32%">
+  <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunCodeSnippet.gif" alt="Run Code Snippet" width="32%">
+  <img src="https://github.com/renathossain/vscode-markdown-runner/raw/master/assets/RunOnMarkdown.gif" alt="Run On Markdown" width="32%">
 </p>
 
 ## Features
