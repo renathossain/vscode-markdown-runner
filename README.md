@@ -23,7 +23,7 @@ Before running a code block:
 - Ensure your code is correct.
 - Install necessary languages and dependencies.
 - Add compilers to the PATH environment variable if necessary to enable global access to installed languages.
-- For Quarto Support, also download the [Quarto VS Code Extension](https://marketplace.visualstudio.com/items?itemName=quarto.quarto)
+- For Quarto Support, also download the [Quarto VS Code Extension](https://marketplace.visualstudio.com/items?itemName=quarto.quarto).
 
 On Arch Linux, install all supported languages with:
 
@@ -35,7 +35,7 @@ For other systems, research language installation or use the [Windows Subsystem 
 
 ## Demo File
 
-Download or copy [DEMO.md](DEMO.md) and the `demo_helpers` folder into VS Code after installing this extension, and test all the features out!
+Download or copy [DEMO.md](DEMO.md) and the [demo_helpers](demo_helpers) folder into VS Code after installing this extension, and test all the features out!
 
 ## Extension Settings
 
