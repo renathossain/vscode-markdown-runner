@@ -31,7 +31,7 @@
 // - `extension.ts`: Activates and deactivates the extension, loads
 //   codeLinks and codeLens buttons, and registers their handlers.
 //
-// - `codeLinks.ts`: Turns all strings enclosed with ` delimiters into
+// - `codeLinks.ts`: Turns all strings enclosed with single ` delimiters into
 //   clickable links that run in the terminal when clicked.
 //
 // - `codeLens.ts`: Puts buttons that perform various actions like copying and
