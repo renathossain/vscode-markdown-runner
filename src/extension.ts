@@ -104,9 +104,8 @@ function registerProviders(context: vscode.ExtensionContext) {
   // Determine which file types to activate the extension on
   const config = vscode.workspace.getConfiguration();
   const quartoEnabled = config.get<boolean>("markdownRunner.activateOnQuarto");
-  const supportedLanguages = [{ language: "markdown", scheme: "file" }];
-  if (quartoEnabled)
-    supportedLanguages.push({ language: "quarto", scheme: "file" });
+  const docSelector = [{ language: "markdown", scheme: "file" }];
+  if (quartoEnabled) docSelector.push({ language: "quarto", scheme: "file" });
 
   // Dispose previous providers if they exist
   codeLensDisposable?.dispose();
@@ -114,11 +113,11 @@ function registerProviders(context: vscode.ExtensionContext) {
 
   // Create and register the new providers
   codeLensDisposable = vscode.languages.registerCodeLensProvider(
-    supportedLanguages,
+    docSelector,
     new ButtonCodeLensProvider()
   );
   linkProviderDisposable = vscode.languages.registerDocumentLinkProvider(
-    supportedLanguages,
+    docSelector,
     new InlineCodeLinkProvider()
   );
   context.subscriptions.push(codeLensDisposable, linkProviderDisposable);
