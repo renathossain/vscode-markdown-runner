@@ -4,7 +4,7 @@
   "description": "Enables the seamless execution of code blocks in any language within Markdown files in VS Code",
   "publisher": "renathossain",
   "icon": "Icon.png",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "engines": {
     "vscode": "^1.99.0"
   },
@@ -53,7 +53,7 @@
         },
         "markdownRunner.pythonPath": {
           "type": "boolean",
-          "description": "Enable this to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.",
+          "description": "Enable to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.",
           "default": true
         },
         "markdownRunner.defaultCodes": {
@@ -63,6 +63,11 @@
             "type": "string"
           },
           "default": {}
+        },
+        "markdownRunner.activateOnQuarto": {
+          "type": "boolean",
+          "description": "Enable to activate the extension on Quarto (.qmd) files.",
+          "default": true
         }
       }
     }

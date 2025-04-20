@@ -95,27 +95,45 @@ export const commandHandlers = [
 // List of temporary files
 export const tempFilePaths: string[] = [];
 
+// Providers
+let codeLensDisposable: vscode.Disposable | undefined;
+let linkProviderDisposable: vscode.Disposable | undefined;
+
+// Register the correct providers based on configuration
+function registerProviders(context: vscode.ExtensionContext) {
+  // Determine which file types to activate the extension on
+  const config = vscode.workspace.getConfiguration();
+  const quartoEnabled = config.get<boolean>("markdownRunner.activateOnQuarto");
+  const supportedLanguages = [{ language: "markdown", scheme: "file" }];
+  if (quartoEnabled)
+    supportedLanguages.push({ language: "quarto", scheme: "file" });
+
+  // Dispose previous providers if they exist
+  codeLensDisposable?.dispose();
+  linkProviderDisposable?.dispose();
+
+  // Create and register the new providers
+  codeLensDisposable = vscode.languages.registerCodeLensProvider(
+    supportedLanguages,
+    new ButtonCodeLensProvider()
+  );
+  linkProviderDisposable = vscode.languages.registerDocumentLinkProvider(
+    supportedLanguages,
+    new InlineCodeLinkProvider()
+  );
+  context.subscriptions.push(codeLensDisposable, linkProviderDisposable);
+}
+
 // Main function that runs when extension is activated
 export function activate(context: vscode.ExtensionContext) {
-  const supportedLanguages = [
-    { language: "markdown", scheme: "file" },
-    { language: "quarto", scheme: "file" },
-  ];
+  registerProviders(context);
 
-  // CodeLens for code blocks
+  // Re-register providers on a configuration change
   context.subscriptions.push(
-    vscode.languages.registerCodeLensProvider(
-      supportedLanguages,
-      new ButtonCodeLensProvider()
-    )
-  );
-
-  // Document links for inline code
-  context.subscriptions.push(
-    vscode.languages.registerDocumentLinkProvider(
-      supportedLanguages,
-      new InlineCodeLinkProvider()
-    )
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("markdownRunner.activateOnQuarto"))
+        registerProviders(context);
+    })
   );
 
   // Register all command handlers

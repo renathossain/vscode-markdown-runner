@@ -52,7 +52,7 @@ Reset settings using the ↻ icons or remove the `markdownRunner.compilerConfigu
 
 ### Python Path
 
-Enable this to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.
+Enable to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.
 
 ### Default Codes
 
@@ -74,6 +74,10 @@ int main(){
 cout << 456 << endl;
 }
 ```
+
+### Activate On Quarto
+
+Enable to activate the extension on Quarto (.qmd) files.
 
 ## Future Development
 
