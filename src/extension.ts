@@ -16,17 +16,9 @@
 
 // ******************************ARCHITECTURE******************************
 //
-//                               extension.ts
-//                                    |
-//                       +------------+-------------+
-//                       |            |             |
-//                 codeLinks.ts  codeLens.ts     handlers
-//                                  |               |
-//                                  |       +------------------+
-//                                  |       |                  |
-//                                  | runInTerminal.ts   runOnMarkdown.ts
-//                                  |    |
-//                                settings.ts
+//   Parsers:            Registry:           Handlers:
+//   codeLens.ts ---+--> extension.ts --+--> runInTerminal.ts
+//   codeLinks.ts --|                   |--> runOnMarkdown.ts
 //
 // - `extension.ts`: Activates and deactivates the extension, loads
 //   codeLinks and codeLens buttons, and registers their handlers.
@@ -52,8 +44,8 @@ import * as fs from "fs";
 import treeKill from "tree-kill";
 import { InlineCodeLinkProvider } from "./codeLinks";
 import { ButtonCodeLensProvider } from "./codeLens";
-import { runInTerminal, getRunCommand } from "./handlers/runInTerminal";
-import { runOnMarkdown, childProcesses } from "./handlers/runOnMarkdown";
+import { runInTerminal, getRunCommand } from "./runInTerminal";
+import { runOnMarkdown, childProcesses } from "./runOnMarkdown";
 
 // List of command handlers
 export const commandHandlers = [

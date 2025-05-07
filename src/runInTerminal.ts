@@ -19,8 +19,8 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as cp from "child_process";
-import { getLanguageConfig } from "../settings";
-import { tempFilePaths } from "../extension";
+import { getLanguageConfig } from "./settings";
+import { tempFilePaths } from "./extension";
 
 // Obtain the correct executable name given language and code
 function getBaseName(language: string, code: string): string {

@@ -17,7 +17,7 @@
 import * as vscode from "vscode";
 import * as cp from "child_process";
 import AsyncLock from "async-lock";
-import { parseBlock, blockRegex } from "../codeLens";
+import { parseBlock, blockRegex } from "./codeLens";
 
 // Lock to make sure text insert or deletion happens atomically
 const textEditLock = new AsyncLock();

@@ -16,7 +16,7 @@
 
 import * as vscode from "vscode";
 import { getLanguageConfig } from "./settings";
-import { childProcesses } from "./handlers/runOnMarkdown";
+import { childProcesses } from "./runOnMarkdown";
 
 // Regex to parse blocks delimited with at least 3 ticks `:
 // (`{3,}) matches at 3 or more backticks ` (first capturing group)
