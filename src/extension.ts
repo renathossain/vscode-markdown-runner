@@ -60,10 +60,7 @@ export const commandHandlers = [
       await runOnMarkdown(await getRunCommand(language, code), range),
   },
   { command: "markdown.runInTerminal", handler: runInTerminal },
-  {
-    command: "markdown.copy",
-    handler: (code: string) => vscode.env.clipboard.writeText(code),
-  },
+  { command: "markdown.copy", handler: vscode.env.clipboard.writeText },
   {
     command: "markdown.delete",
     handler: (range: vscode.Range) => {
@@ -71,10 +68,7 @@ export const commandHandlers = [
       if (editor?.edit((text) => text.delete(range))) editor?.document.save();
     },
   },
-  {
-    command: "markdown.killProcess",
-    handler: (pid: number, signal: string) => treeKill(pid, signal),
-  },
+  { command: "markdown.killProcess", handler: treeKill },
   {
     command: "markdown.killAllProcesses",
     handler: () => {
