@@ -42,7 +42,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import treeKill from "tree-kill";
-import { InlineCodeLinkProvider } from "./codeLinks";
+import { InlineCodeLinkProvider, InlineCodeHoverProvider } from "./codeLinks";
 import { ButtonCodeLensProvider } from "./codeLens";
 import { runInTerminal, getRunCommand } from "./runInTerminal";
 import { runOnMarkdown, childProcesses } from "./runOnMarkdown";
@@ -60,7 +60,13 @@ export const commandHandlers = [
       await runOnMarkdown(await getRunCommand(language, code), range),
   },
   { command: "markdown.runInTerminal", handler: runInTerminal },
-  { command: "markdown.copy", handler: vscode.env.clipboard.writeText },
+  {
+    command: "markdown.copy",
+    handler: (code: string) => {
+      vscode.env.clipboard.writeText(code);
+      vscode.window.setStatusBarMessage("Copied to Clipboard!", 2000);
+    },
+  },
   {
     command: "markdown.delete",
     handler: (range: vscode.Range) => {
@@ -84,6 +90,7 @@ export const tempFilePaths: string[] = [];
 // Providers
 let codeLensDisposable: vscode.Disposable | undefined;
 let linkProviderDisposable: vscode.Disposable | undefined;
+let hoverProviderDisposable: vscode.Disposable | undefined;
 
 // Register the correct providers based on configuration
 function registerProviders(context: vscode.ExtensionContext) {
@@ -96,6 +103,7 @@ function registerProviders(context: vscode.ExtensionContext) {
   // Dispose previous providers if they exist
   codeLensDisposable?.dispose();
   linkProviderDisposable?.dispose();
+  hoverProviderDisposable?.dispose();
 
   // Create and register the new providers
   codeLensDisposable = vscode.languages.registerCodeLensProvider(
@@ -105,6 +113,10 @@ function registerProviders(context: vscode.ExtensionContext) {
   linkProviderDisposable = vscode.languages.registerDocumentLinkProvider(
     docSelector,
     new InlineCodeLinkProvider()
+  );
+  hoverProviderDisposable = vscode.languages.registerHoverProvider(
+    docSelector,
+    new InlineCodeHoverProvider()
   );
   context.subscriptions.push(codeLensDisposable, linkProviderDisposable);
 }
@@ -132,5 +144,5 @@ export function activate(context: vscode.ExtensionContext) {
 // Function that runs when extension is deactivated
 export function deactivate() {
   // Deletes temporary files created for code block execution
-  tempFilePaths.forEach((filePath) => fs.unlinkSync(filePath));
+  tempFilePaths.forEach(fs.unlinkSync);
 }
