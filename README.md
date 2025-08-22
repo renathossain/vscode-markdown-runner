@@ -11,7 +11,7 @@ This extension allows you to execute code blocks in any programming language dir
 ## Features
 
 - **Execute Code Blocks**: CodeLens Buttons appear above each code block (```) for running or copying the code. Temporary files are created for execution and are cleaned up afterward.
-- **Execute Code Snippets**: Run code snippets (enclosed in `) with Ctrl + Click. Results are displayed in the terminal.
+- **Execute Code Snippets**: Run code snippets (enclosed in `) with Ctrl + Click. Results appear in the terminal. Copy snippets using the hover tooltip.
 - **Save Execution Results**: Capture the output of executing a code block directly within the Markdown document.
 - **Broad Language Support**: Supports a wide range of languages, including C, Rust, C++, Java, TypeScript, PHP, Perl, R, Dart, Groovy, Go, Haskell, Julia, Lua, Ruby, JavaScript, Python, Bash. Add non-compiled languages via settings.
 
@@ -87,6 +87,6 @@ Planned features (no guarantee):
 
 Your feedback and contributions are welcome in shaping the future of this extension!
 
-# License
+## License
 
 [GPL-3.0 license](LICENSE)

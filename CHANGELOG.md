@@ -1,5 +1,10 @@
 # Change Log
 
+## 2.3.0
+
+- **New Feature**: Added "Copy to clipboard" hover tooltip for code snippets enclosed in single backticks.
+- **Change**: Added "Copied to clipboard!" status bar message.
+
 ## 2.2.0
 
 - **New Feature**: Added Quarto Support and toggle to enable/disable it.

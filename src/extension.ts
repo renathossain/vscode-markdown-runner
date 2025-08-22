@@ -64,7 +64,7 @@ export const commandHandlers = [
     command: "markdown.copy",
     handler: (code: string) => {
       vscode.env.clipboard.writeText(code);
-      vscode.window.setStatusBarMessage("Copied to Clipboard!", 2000);
+      vscode.window.setStatusBarMessage("Copied to clipboard!", 2000);
     },
   },
   {
