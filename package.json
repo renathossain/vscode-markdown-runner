@@ -48,7 +48,8 @@
             "lua": "[\"Lua\", \"lua\", \"lua\"]",
             "ruby": "[\"Ruby\", \"rb\", \"ruby\"]",
             "javascript": "[\"JavaScript\", \"js\", \"node\"]",
-            "bash": "[\"Bash\", \"sh\", \"bash\"]"
+            "bash": "[\"Bash\", \"sh\", \"bash\"]",
+            "powershell": "[\"Powershell\", \"ps1\", \"powershell\"]"
           }
         },
         "markdownRunner.pythonPath": {

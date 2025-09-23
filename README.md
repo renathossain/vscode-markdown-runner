@@ -25,10 +25,31 @@ Before running a code block:
 - Add compilers to the PATH environment variable if necessary to enable global access to installed languages.
 - For Quarto Support, also download the [Quarto VS Code Extension](https://marketplace.visualstudio.com/items?itemName=quarto.quarto).
 
+On Windows 11, install all supported languages. When prompted during installation, always check the "Add to PATH" option.
+
+```powershell
+$pkgs = "Python", "OpenJS.NodeJS", "RubyInstallerTeam.Ruby.3.4", "rjpcomputing.luaforwindows", "commercialhaskell.stack", "GoLang.Go", "Apache.Groovy.4", "Google.DartSDK", "RProject.R", "StrawberryPerl.StrawberryPerl", "PHP.PHP.8.4", "MartinStorsjo.LLVM-MinGW.UCRT", "Rustlang.Rustup", "EclipseAdoptium.Temurin.17.JDK"
+$pkgs | ForEach-Object { winget install $_ --accept-package-agreements --accept-source-agreements }
+winget install "JuliaLang.Julia" --interactive # Check "Add to PATH" checkbox
+
+# Add R to PATH variable
+$rBin = Get-ChildItem "C:\Program Files\R" -Directory | Sort-Object Name -Descending | Select-Object -First 1 | ForEach-Object { Join-Path $_.FullName "bin" }
+if (-not ($env:PATH.Split(';') -contains $rBin)) { [Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";$rBin", [EnvironmentVariableTarget]::User) }
+```
+
+Relaunch Powershell and continue installing:
+
+```powershell
+rustup default stable-x86_64-pc-windows-gnu
+npm install -g typescript
+stack setup
+```
+
 On Arch Linux, install all supported languages with:
 
 ```bash
 sudo pacman --needed -S bash python nodejs ruby lua julia ghc go groovy dart r perl php typescript gcc rustup jdk-openjdk
+rustup default stable
 ```
 
 For other systems, research language installation or use the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install).
