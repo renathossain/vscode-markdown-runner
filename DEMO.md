@@ -117,6 +117,22 @@ echo "Bash Fibonacci:"
 fib 10
 ```
 
+```powershell
+function f($n) {
+    if ($n -le 0) { return 0 }
+    if ($n -eq 1) { return 1 }
+    else {
+        $a = f($n - 1)
+        $b = f($n - 2)
+        return ($a + $b)
+    }
+}
+
+Write-Output "PowerShell Fibonacci:"
+$fibList = 0..9 | ForEach-Object { f $_ }
+Write-Output ("[" + ($fibList -join ", ") + "]")
+```
+
 ```python
 def f(n):
     if n <= 0:
