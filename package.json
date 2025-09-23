@@ -43,7 +43,7 @@
             "dart": "[\"Dart\", \"dart\", \"dart\"]",
             "groovy": "[\"Groovy\", \"groovy\", \"groovy\"]",
             "go": "[\"Go\", \"go\", \"go run\"]",
-            "haskell": "[\"Haskell\", \"hs\", \"runhaskell\"]",
+            "haskell": "[\"Haskell\", \"hs\", \"stack runghc\"]",
             "julia": "[\"Julia\", \"jl\", \"julia\"]",
             "lua": "[\"Lua\", \"lua\", \"lua\"]",
             "ruby": "[\"Ruby\", \"rb\", \"ruby\"]",

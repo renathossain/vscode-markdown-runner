@@ -48,8 +48,10 @@ stack setup
 On Arch Linux, install all supported languages with:
 
 ```bash
-sudo pacman --needed -S bash python nodejs ruby lua julia ghc go groovy dart r perl php typescript gcc rustup jdk-openjdk
+sudo pacman --needed -S bash python nodejs ruby lua julia go groovy dart r perl php typescript gcc rustup jdk-openjdk
 rustup default stable
+yay --needed -S stack-bin
+stack setup
 ```
 
 For other systems, research language installation or use the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install).
