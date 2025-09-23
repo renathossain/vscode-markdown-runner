@@ -97,7 +97,7 @@ function provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
       // Only for bash code blocks, provide `Run in Terminal (line by line)` option
       const titleBash = `Run in Terminal`;
       const commandBash = `markdown.runInTerminal`;
-      if (language === `bash`)
+      if (language === `bash` || language === `powershell`)
         pushCodeLens(lenses, range, titleBash, commandBash, [code]);
 
       // Provide `Run on Markdown` option

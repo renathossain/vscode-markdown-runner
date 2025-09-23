@@ -12,9 +12,18 @@ Run the following as a Bash File or line by line in the terminal:
 ping -c 10 google.com
 ```
 
+```powershell
+ping -n 10 google.com
+```
+
 ```bash
 echo "Hello"
 echo "This is a bash file."
+```
+
+```powershell
+Write-Output "Hello"
+Write-Output "This is a bash file."
 ```
 
 Mistakes in code demo:

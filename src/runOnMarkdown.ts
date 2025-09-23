@@ -25,6 +25,11 @@ const textEditLock = new AsyncLock();
 // PIDs associated with `Run on Markdown` child processes
 export let childProcesses: { pid: number; line: number }[] = [];
 
+// Remove a child process from list
+export function removeChild(pid: number | undefined) {
+  childProcesses = childProcesses.filter((cp) => cp.pid !== pid);
+}
+
 // Safety button to kill all processes
 const killAllButton = vscode.window.createStatusBarItem(
   vscode.StatusBarAlignment.Left
@@ -66,6 +71,16 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
   const editor = vscode.window.activeTextEditor;
   if (code === "" || childProcesses.length > 0 || !editor) return;
 
+  // Start child process and create buttons to stop or kill the process
+  const child = cp.spawn(code, { shell: true });
+  if (child.pid) {
+    childProcesses.push({ pid: child.pid, line: range.end.line + 2 });
+    killAllButton.show();
+  } else {
+    vscode.window.showErrorMessage("Failed to start process.");
+    return;
+  }
+
   // Create result block that holds execution results
   await textEditLock.acquire("key", async () => {
     const deleteRange = findResultBlock(editor.document, range.end.line + 2);
@@ -76,11 +91,6 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
       // If result block not found, create it
       await editor.edit((text) => text.insert(range.end, "\n\n```result\n```"));
   });
-
-  // Start child process and create buttons to stop or kill the process
-  const child = cp.spawn("sh", ["-c", code], { detached: true });
-  childProcesses.push({ pid: child.pid!, line: range.end.line + 2 });
-  killAllButton.show();
 
   // Output child process results 3 lines below parent code block
   let outputPosition = new vscode.Position(range.end.line + 3, 0);
@@ -99,7 +109,7 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
 
   child.on("close", async () => {
     // Remove process `stop` and `kill` controls once done with the process
-    childProcesses = childProcesses.filter((p) => p.pid !== child.pid);
+    removeChild(child.pid);
     if (!childProcesses.length) killAllButton.hide();
 
     // If output did not end on a newline, add it

@@ -45,7 +45,7 @@ import treeKill from "tree-kill";
 import { InlineCodeLinkProvider, InlineCodeHoverProvider } from "./codeLinks";
 import { ButtonCodeLensProvider } from "./codeLens";
 import { runInTerminal, getRunCommand } from "./runInTerminal";
-import { runOnMarkdown, childProcesses } from "./runOnMarkdown";
+import { runOnMarkdown, childProcesses, removeChild } from "./runOnMarkdown";
 
 // List of command handlers
 export const commandHandlers = [
@@ -74,7 +74,13 @@ export const commandHandlers = [
       if (editor?.edit((text) => text.delete(range))) editor?.document.save();
     },
   },
-  { command: "markdown.killProcess", handler: treeKill },
+  {
+    command: "markdown.killProcess",
+    handler: (pid: number, signal: string) => {
+      treeKill(pid, signal);
+      removeChild(pid);
+    },
+  },
   {
     command: "markdown.killAllProcesses",
     handler: () => {
