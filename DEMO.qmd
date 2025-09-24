@@ -18,12 +18,12 @@ ping -n 10 google.com
 
 ```bash
 echo "Hello"
-echo "This is a bash file."
+echo "This is a Bash file."
 ```
 
 ```powershell
 Write-Output "Hello"
-Write-Output "This is a bash file."
+Write-Output "This is a PowerShell file."
 ```
 
 Mistakes in code demo:
