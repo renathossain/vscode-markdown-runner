@@ -16,11 +16,11 @@
 
 import * as vscode from "vscode";
 import * as cp from "child_process";
-import AsyncLock from "async-lock";
+import Mutex from "semaphore-async-await";
 import { parseBlock, blockRegex } from "./codeLens";
 
-// Lock to make sure text insert or deletion happens atomically
-const textEditLock = new AsyncLock();
+// Global mutex to ensure all text insertion or deletion happens atomically
+const textEditMutex = new Mutex(1);
 
 // PIDs associated with `Run on Markdown` child processes
 export let childProcesses: { pid: number; line: number }[] = [];
@@ -71,54 +71,72 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
   const editor = vscode.window.activeTextEditor;
   if (code === "" || childProcesses.length > 0 || !editor) return;
 
-  // Start child process and create buttons to stop or kill the process
+  // Mutex ensures result block exists before child process inserts
+  const resultMutex = new Mutex(1);
+  await resultMutex.acquire();
+
+  // Start child process
   const child = cp.spawn(code, { shell: true });
-  if (child.pid) {
+
+  // Output child process results 3 lines below parent code block
+  let outputPosition = new vscode.Position(range.end.line + 3, 0);
+
+  // Whenever child process outputs a new batch of data, write it
+  child.stdout.on("data", async (data: Buffer) => {
+    await resultMutex.acquire();
+    await textEditMutex.acquire();
+    const output = data.toString();
+    await editor.edit((text) => text.insert(outputPosition, output));
+    const outputLines = output.split("\n");
+    const newPositionLine = outputPosition.line + outputLines.length - 1;
+    const newPositionChar =
+      (outputLines.length === 1 ? outputPosition.character : 0) +
+      outputLines[outputLines.length - 1].length;
+    outputPosition = new vscode.Position(newPositionLine, newPositionChar);
+    resultMutex.release();
+    textEditMutex.release();
+  });
+
+  // Runs when child process has finished writing all data
+  child.stdout.on("end", async () => {
+    // If output did not end on a newline, add it
+    await resultMutex.acquire();
+    await textEditMutex.acquire();
+    if (outputPosition.character !== 0)
+      await editor.edit((text) => text.insert(outputPosition, "\n"));
+
+    // Save the document after all text deletes/inserts
+    await editor.document.save();
+    resultMutex.release();
+    textEditMutex.release();
+  });
+
+  // Runs when child process exits (but not all data may be written)
+  child.on("close", async () => {
+    // Remove process `Stop` and `Kill` controls
+    removeChild(child.pid);
+    if (!childProcesses.length) killAllButton.hide();
+  });
+
+  // Create buttons to stop or kill the process
+  if (child.pid != undefined) {
     childProcesses.push({ pid: child.pid, line: range.end.line + 2 });
     killAllButton.show();
   } else {
     vscode.window.showErrorMessage("Failed to start process.");
+    resultMutex.release();
     return;
   }
 
   // Create result block that holds execution results
-  await textEditLock.acquire("key", async () => {
-    const deleteRange = findResultBlock(editor.document, range.end.line + 2);
-    if (deleteRange)
-      // If result block found, clear the contents inside it
-      await editor.edit((text) => text.delete(deleteRange));
-    else
-      // If result block not found, create it
-      await editor.edit((text) => text.insert(range.end, "\n\n```result\n```"));
-  });
-
-  // Output child process results 3 lines below parent code block
-  let outputPosition = new vscode.Position(range.end.line + 3, 0);
-  child.stdout.on("data", async (data: Buffer) => {
-    await textEditLock.acquire("key", async () => {
-      const output = data.toString();
-      await editor.edit((text) => text.insert(outputPosition, output));
-      const outputLines = output.split("\n");
-      const newPositionLine = outputPosition.line + outputLines.length - 1;
-      const newPositionChar =
-        (outputLines.length === 1 ? outputPosition.character : 0) +
-        outputLines[outputLines.length - 1].length;
-      outputPosition = new vscode.Position(newPositionLine, newPositionChar);
-    });
-  });
-
-  child.on("close", async () => {
-    // Remove process `stop` and `kill` controls once done with the process
-    removeChild(child.pid);
-    if (!childProcesses.length) killAllButton.hide();
-
-    // If output did not end on a newline, add it
-    await textEditLock.acquire("key", async () => {
-      if (outputPosition.character !== 0)
-        await editor.edit((text) => text.insert(outputPosition, "\n"));
-
-      // Save the document after all text deletes/inserts
-      await editor.document.save();
-    });
-  });
+  await textEditMutex.acquire();
+  const deleteRange = findResultBlock(editor.document, range.end.line + 2);
+  if (deleteRange)
+    // If result block found, clear the contents inside it
+    await editor.edit((text) => text.delete(deleteRange));
+  else
+    // If result block not found, create it
+    await editor.edit((text) => text.insert(range.end, "\n\n```result\n```"));
+  resultMutex.release();
+  textEditMutex.release();
 }

@@ -109,7 +109,7 @@
   },
   "dependencies": {
     "@types/async-lock": "^1.4.2",
-    "async-lock": "^1.4.1",
+    "semaphore-async-await": "^1.5.1",
     "tree-kill": "^1.2.2"
   }
 }

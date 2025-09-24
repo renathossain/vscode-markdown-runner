@@ -77,15 +77,17 @@ export const commandHandlers = [
   {
     command: "markdown.killProcess",
     handler: (pid: number, signal: string) => {
-      treeKill(pid, signal);
       removeChild(pid);
+      treeKill(pid, signal);
     },
   },
   {
     command: "markdown.killAllProcesses",
     handler: () => {
-      childProcesses.forEach(({ pid }) => treeKill(pid, "SIGKILL"));
-      childProcesses.length = 0;
+      childProcesses.forEach(({ pid }) => {
+        removeChild(pid);
+        treeKill(pid, "SIGKILL");
+      });
     },
   },
 ];
