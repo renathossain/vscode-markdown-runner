@@ -12,9 +12,18 @@ Run the following as a Bash File or line by line in the terminal:
 ping -c 10 google.com
 ```
 
+```powershell
+ping -n 10 google.com
+```
+
 ```bash
 echo "Hello"
-echo "This is a bash file."
+echo "This is a Bash file."
+```
+
+```powershell
+Write-Output "Hello"
+Write-Output "This is a PowerShell file."
 ```
 
 Mistakes in code demo:
@@ -80,11 +89,11 @@ Default codes:
 
 Configure the following default codes in extension settings and test the following 2 code blocks out:
 
-- Item: `bash`, Value: `var=123\n`
+- Item: `python`, Value: `var = 123\n`
 - Item: `cpp`, Value: `-I@ #include <bits/stdc++.h>\nusing namespace std;\nint main(){\n@}\n`
 
-```bash
-echo $var
+```python
+print(var)
 ```
 
 ```cpp
@@ -115,6 +124,22 @@ fib() {
 
 echo "Bash Fibonacci:"
 fib 10
+```
+
+```powershell
+function f($n) {
+    if ($n -le 0) { return 0 }
+    if ($n -eq 1) { return 1 }
+    else {
+        $a = f($n - 1)
+        $b = f($n - 2)
+        return ($a + $b)
+    }
+}
+
+Write-Output "PowerShell Fibonacci:"
+$fibList = 0..9 | ForEach-Object { f $_ }
+Write-Output ("[" + ($fibList -join ", ") + "]")
 ```
 
 ```python

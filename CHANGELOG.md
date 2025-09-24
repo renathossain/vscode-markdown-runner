@@ -1,5 +1,12 @@
 # Change Log
 
+## 2.4.0
+
+- **New Feature**: Added official support for Windows 11 and PowerShell.
+- **Bug Fix**: "Run on Markdown" now works on Windows 11 and has improved synchronization reliability.
+- **Change**: Switched the default Haskell compiler to the cross-platform Stack project builder.
+- **Improvement**: Added language installation instructions for Windows 11 in the README.
+
 ## 2.3.0
 
 - **New Feature**: Added "Copy to clipboard" hover tooltip for code snippets enclosed in single backticks.
