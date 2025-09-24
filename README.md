@@ -25,7 +25,7 @@ Before running a code block:
 - Add compilers to the PATH environment variable if necessary to enable global access to installed languages.
 - For Quarto Support, also download the [Quarto VS Code Extension](https://marketplace.visualstudio.com/items?itemName=quarto.quarto).
 
-On Windows 11, install all supported languages. When prompted during installation, always check the "Add to PATH" option.
+On Windows 11, install all supported languages in PowerShell using `winget`. When prompted during installation, always check the "Add to PATH" option.
 
 ```powershell
 $pkgs = "Python", "OpenJS.NodeJS", "RubyInstallerTeam.Ruby.3.4", "rjpcomputing.luaforwindows", "commercialhaskell.stack", "GoLang.Go", "Apache.Groovy.4", "Google.DartSDK", "RProject.R", "StrawberryPerl.StrawberryPerl", "PHP.PHP.8.4", "MartinStorsjo.LLVM-MinGW.UCRT", "Rustlang.Rustup", "EclipseAdoptium.Temurin.17.JDK"
@@ -58,7 +58,7 @@ For other systems, research language installation or use the [Windows Subsystem 
 
 ## Demo File
 
-Download or copy [DEMO.md](DEMO.md) and the [demo_helpers](demo_helpers) folder into VS Code after installing this extension, and test all the features out!
+Download or copy [DEMO.md](DEMO.md)/[DEMO.qmd](DEMO.qmd) and the [demo_helpers](demo_helpers) folder into VS Code after installing this extension, and test all the features out!
 
 ## Extension Settings
 
