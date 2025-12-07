@@ -54,7 +54,8 @@ function* parseCodeBlocks(
   document: vscode.TextDocument
 ): Generator<{ language: string; code: string; range: vscode.Range }> {
   let match;
-  while ((match = blockRegex.exec(document.getText())) !== null)
+  const regex = new RegExp(blockRegex.source, blockRegex.flags);
+  while ((match = regex.exec(document.getText())) !== null)
     yield parseBlock(document, match);
 }
 

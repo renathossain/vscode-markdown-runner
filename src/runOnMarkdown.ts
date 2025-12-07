@@ -51,7 +51,8 @@ function findResultBlock(document: vscode.TextDocument, startLine: number) {
   const slicedText = document.getText().slice(startOffset);
 
   // Find first match for a result block within the sliced document
-  const match = blockRegex.exec(slicedText);
+  const regex = new RegExp(blockRegex.source, blockRegex.flags);
+  const match = regex.exec(slicedText);
   if (!match) return null;
   const { language, code } = parseBlock(document, match);
   if (language !== `result`) return null;

@@ -35,7 +35,8 @@ export function* parseInlineCode(
   document: vscode.TextDocument
 ): Generator<{ code: string; range: vscode.Range }> {
   let match;
-  while ((match = inlineRegex.exec(document.getText())) !== null) {
+  const regex = new RegExp(inlineRegex.source, inlineRegex.flags);
+  while ((match = regex.exec(document.getText())) !== null) {
     const code = match[1]; // First capturing group ([^`\n]+?)
     const start = document.positionAt(match.index);
     const end = document.positionAt(match.index + match[0].length);
@@ -69,7 +70,8 @@ export class InlineCodeHoverProvider implements vscode.HoverProvider {
     document: vscode.TextDocument,
     position: vscode.Position
   ): vscode.ProviderResult<vscode.Hover> {
-    const range = document.getWordRangeAtPosition(position, inlineRegex);
+    const regex = new RegExp(inlineRegex.source, inlineRegex.flags);
+    const range = document.getWordRangeAtPosition(position, regex);
     if (!range) return;
     const code = document.getText(range).replace(/`/g, "");
     const codeString = encodeURIComponent(JSON.stringify([code]));
