@@ -39,22 +39,12 @@ export function parseBlock(
   match: RegExpExecArray
 ) {
   const parsedLang = match[2].trim().toLowerCase();
-  // Treat untitled blocks as bash files
-  const language = parsedLang === "" ? "bash" : parsedLang;
+  const language = parsedLang === "" ? "bash" : parsedLang; // Treat untitled blocks as bash files
   const code = match[3];
   const start = document.positionAt(match.index);
   const end = document.positionAt(match.index + match[0].length);
   const range = new vscode.Range(start, end);
   return { language, code, range };
-}
-
-// Parses code blocks
-// This is a generator function that yields language, code, range
-function* parseCodeBlocks(
-  document: vscode.TextDocument
-): Generator<{ language: string; code: string; range: vscode.Range }> {
-  for (const match of document.getText().matchAll(blockRegex()))
-    yield parseBlock(document, match);
 }
 
 // Generate the code lens with the required parameters and push it to the list
@@ -82,7 +72,8 @@ function provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
   }
 
   // Loop through all parsed code blocks and generate buttons
-  for (const { language, code, range } of parseCodeBlocks(document)) {
+  for (const match of document.getText().matchAll(blockRegex())) {
+    const { language, code, range } = parseBlock(document, match);
     const name = getLanguageConfig(language, `name`);
 
     // For all supported languages, provide options to run the code block
