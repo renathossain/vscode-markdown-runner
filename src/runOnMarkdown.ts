@@ -51,7 +51,7 @@ function findResultBlock(document: vscode.TextDocument, startLine: number) {
   const slicedText = document.getText().slice(startOffset);
 
   // Find first match for a result block within the sliced document
-  const match = blockRegex.exec(slicedText);
+  const match = blockRegex().exec(slicedText);
   if (!match) return null;
   const { language, code } = parseBlock(document, match);
   if (language !== `result`) return null;
@@ -79,34 +79,38 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
   const child = cp.spawn(code, { shell: true });
 
   // Output child process results 3 lines below parent code block
-  let outputPosition = new vscode.Position(range.end.line + 3, 0);
+  let outputPos = new vscode.Position(range.end.line + 3, 0);
 
   // Whenever child process outputs a new batch of data, write it
   child.stdout.on("data", async (data: Buffer) => {
     await resultMutex.acquire();
     await textEditMutex.acquire();
+
     const output = data.toString();
-    await editor.edit((text) => text.insert(outputPosition, output));
-    const outputLines = output.split("\n");
-    const newPositionLine = outputPosition.line + outputLines.length - 1;
-    const newPositionChar =
-      (outputLines.length === 1 ? outputPosition.character : 0) +
-      outputLines[outputLines.length - 1].length;
-    outputPosition = new vscode.Position(newPositionLine, newPositionChar);
+    await editor.edit((text) => text.insert(outputPos, output));
+    const lines = output.split("\n");
+    const last = lines[lines.length - 1];
+    outputPos = new vscode.Position(
+      outputPos.line + lines.length - 1,
+      lines.length === 1 ? outputPos.character + last.length : last.length
+    );
+
     resultMutex.release();
     textEditMutex.release();
   });
 
   // Runs when child process has finished writing all data
   child.stdout.on("end", async () => {
-    // If output did not end on a newline, add it
     await resultMutex.acquire();
     await textEditMutex.acquire();
-    if (outputPosition.character !== 0)
-      await editor.edit((text) => text.insert(outputPosition, "\n"));
+
+    // If output did not end on a newline, add it
+    if (outputPos.character !== 0)
+      await editor.edit((text) => text.insert(outputPos, "\n"));
 
     // Save the document after all text deletes/inserts
     await editor.document.save();
+
     resultMutex.release();
     textEditMutex.release();
   });
@@ -131,12 +135,13 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
   // Create result block that holds execution results
   await textEditMutex.acquire();
   const deleteRange = findResultBlock(editor.document, range.end.line + 2);
-  if (deleteRange)
-    // If result block found, clear the contents inside it
-    await editor.edit((text) => text.delete(deleteRange));
-  else
-    // If result block not found, create it
-    await editor.edit((text) => text.insert(range.end, "\n\n```result\n```"));
+
+  // If result block found, clear the contents inside it, otherwise create it
+  const resultBlock = "\n\n```result\n```";
+  await editor.edit((text) =>
+    deleteRange ? text.delete(deleteRange) : text.insert(range.end, resultBlock)
+  );
+
   resultMutex.release();
   textEditMutex.release();
 }

@@ -1,5 +1,9 @@
 # Change Log
 
+## 2.5.0
+
+- **Bug Fix**: Fixed an issue where CodeLens buttons failed to appear or appeared in wrong positions when using "Run on Markdown".
+
 ## 2.4.0
 
 - **New Feature**: Added official support for Windows 11 and PowerShell.

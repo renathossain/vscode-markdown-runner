@@ -31,7 +31,7 @@ import { childProcesses } from "./runOnMarkdown";
 // Flags: m makes the ^ match the start of a line (by default it is start of the text)
 // m and ^ ensures the codeblock delims ``` always start at the beginning of the line
 // Flags: s makes the . match newline characters as well (by default it does not)
-export const blockRegex: RegExp = /^(`{3,})(.*?)\n(.*?)^\1$/gms;
+export const blockRegex = () => /^(`{3,})(.*?)\n(.*?)^\1$/gms;
 
 // Parses blocks
 export function parseBlock(
@@ -53,8 +53,7 @@ export function parseBlock(
 function* parseCodeBlocks(
   document: vscode.TextDocument
 ): Generator<{ language: string; code: string; range: vscode.Range }> {
-  let match;
-  while ((match = blockRegex.exec(document.getText())) !== null)
+  for (const match of document.getText().matchAll(blockRegex()))
     yield parseBlock(document, match);
 }
 
