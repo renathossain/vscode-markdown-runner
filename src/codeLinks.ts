@@ -27,16 +27,14 @@ import * as vscode from "vscode";
 // (?!`+) means negative look ahead of at least one `
 // This means that if there are multiple consecutive ` before and/or after
 // the code block, then we reject it.
-const inlineRegex: RegExp = /(?<!`+)`([^`\n]+?)`(?!`+)/g;
+const inlineRegex = () => /(?<!`+)`([^`\n]+?)`(?!`+)/g;
 
 // Parses inline code (code within ` delimiters)
 // This is a generator function that yields code and its range
 export function* parseInlineCode(
   document: vscode.TextDocument
 ): Generator<{ code: string; range: vscode.Range }> {
-  let match;
-  const regex = new RegExp(inlineRegex.source, inlineRegex.flags);
-  while ((match = regex.exec(document.getText())) !== null) {
+  for (const match of document.getText().matchAll(inlineRegex())) {
     const code = match[1]; // First capturing group ([^`\n]+?)
     const start = document.positionAt(match.index);
     const end = document.positionAt(match.index + match[0].length);
@@ -70,8 +68,7 @@ export class InlineCodeHoverProvider implements vscode.HoverProvider {
     document: vscode.TextDocument,
     position: vscode.Position
   ): vscode.ProviderResult<vscode.Hover> {
-    const regex = new RegExp(inlineRegex.source, inlineRegex.flags);
-    const range = document.getWordRangeAtPosition(position, regex);
+    const range = document.getWordRangeAtPosition(position, inlineRegex());
     if (!range) return;
     const code = document.getText(range).replace(/`/g, "");
     const codeString = encodeURIComponent(JSON.stringify([code]));
