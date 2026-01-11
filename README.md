@@ -14,6 +14,8 @@ This extension allows you to execute code blocks in any programming language dir
 - **Execute Code Snippets**: Run code snippets (enclosed in `) with Ctrl + Click. Results appear in the terminal. Copy snippets using the hover tooltip.
 - **Save Execution Results**: Capture the output of executing a code block directly within the Markdown document.
 - **Broad Language Support**: Supports a wide range of languages, including C, Rust, C++, Java, TypeScript, PHP, Perl, R, Dart, Groovy, Go, Haskell, Julia, Lua, Ruby, JavaScript, Python, Bash, PowerShell. Add non-compiled languages via settings.
+- **Custom Command Support**: Configure custom shell commands for each language using `markdownRunner.cmdConfiguration` for more control over code execution.
+- **Shell Script Integration**: Use custom shell scripts to execute code blocks by either adding them to the Compiler Configuration or using the new Custom Command Configuration.
 
 ## Requirements
 
@@ -72,6 +74,19 @@ Item: `python`, Value: `["Python", "py", "python"]`
 ```
 
 Reset settings using the ↻ icons or remove the `markdownRunner.compilerConfiguration` entry from VSCode's `settings.json` to restore to default if any issues occur.
+
+### Custom Command Configuration
+
+Configure custom shell commands for each `Language (Code Block Tag)` to execute code blocks. The command will receive the temporary file path as its last argument. If specified, this command will be used instead of the default compilation/execution process and has higher priority than the custom shell script in Compiler Configuration.
+
+```plaintext
+// Example
+Item: `python`, Value: `python3 -u`
+Item: `bash`, Value: `bash -x`
+Item: `python`, Value: `/path/to/script.sh` // Using a custom script
+```
+
+This configuration provides a simpler way to specify custom commands compared to modifying the Compiler Configuration array.
 
 ### Python Path
 

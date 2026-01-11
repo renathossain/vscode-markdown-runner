@@ -19,7 +19,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as cp from "child_process";
-import { getLanguageConfig } from "./settings";
+import { getLanguageConfig, getCustomCommand } from "./settings";
 import { tempFilePaths } from "./extension";
 
 // Obtain the correct executable name given language and code
@@ -92,6 +92,7 @@ export async function getRunCommand(
   const baseName = getBaseName(language, code);
   const extension = getLanguageConfig(language, "extension");
   const compiler = getLanguageConfig(language, "compiler");
+  const customCommand = getCustomCommand(language);
   if (!baseName || !compiler || !extension) return "";
   code = injectDefaultCode(language, code);
   const basePath = path.join(os.tmpdir(), baseName);
@@ -100,6 +101,12 @@ export async function getRunCommand(
   // Write code to a file, SECURITY: Only Owner Read and Write
   fs.writeFileSync(sourcePath, code, { mode: 0o600 });
   tempFilePaths.push(sourcePath);
+
+  // Check if custom command is defined in cmdConfiguration (highest priority)
+  if (customCommand) {
+    // Use custom command to run the code
+    return `${customCommand} ${sourcePath}`;
+  }
 
   // Compilation for C, C++ and Rust
   if (["c", "cpp", "rust"].includes(language))

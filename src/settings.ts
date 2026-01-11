@@ -25,23 +25,25 @@ import * as vscode from "vscode";
 export function getLanguageConfig(language: string, configuration: string) {
   // Obtain config values for a specific language
   const config = vscode.workspace.getConfiguration();
-  const languageConfig =
-    config.get<{
-      [language: string]: string;
-    }>("markdownRunner.compilerConfiguration") || {};
-  const configValues: string[] =
-    languageConfig[language] &&
-    JSON.parse(languageConfig[language].replace(/'/g, '"'));
+  const languageConfig = config.get<{ [language: string]: string }>("markdownRunner.compilerConfiguration") || {};
+  const configValues: string[] = languageConfig[language] && JSON.parse(languageConfig[language].replace(/'/g, '"'));
 
   // Meaning of each item in the configValues array
   const indexMap: { [key: string]: number } = {
     name: 0,
     extension: 1,
     compiler: 2,
+    shellScript: 3,
   };
 
   // Return the correct configuration
-  return configValues && indexMap[configuration] !== undefined
-    ? configValues[indexMap[configuration]]
-    : undefined;
+  return configValues && indexMap[configuration] !== undefined ? configValues[indexMap[configuration]] : undefined;
+}
+
+// Return the custom command for a specific language
+export function getCustomCommand(language: string): string | undefined {
+  // Obtain custom command for a specific language
+  const config = vscode.workspace.getConfiguration();
+  const cmdConfig = config.get<{ [language: string]: string }>("markdownRunner.cmdConfiguration") || {};
+  return cmdConfig[language];
 }
