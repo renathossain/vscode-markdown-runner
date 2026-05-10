@@ -59,29 +59,23 @@ export let codeLensProvider: ButtonCodeLensProvider | undefined;
 let disposables: vscode.Disposable[] = [];
 
 // List of command handlers
-const commands = [
-  [
-    "markdown.runFile",
-    async (lang: string, code: string) =>
-      runInTerminal(await getRunCommand(lang, code)),
-  ],
-  [
-    "markdown.runOnMarkdown",
-    async (lang: string, code: string, range: vscode.Range) =>
-      runOnMarkdown(await getRunCommand(lang, code), range),
-  ],
-  ["markdown.runInTerminal", runInTerminal],
-  [
-    "markdown.copy",
-    (code: string) => {
-      vscode.env.clipboard.writeText(code);
-      vscode.window.setStatusBarMessage("Copied to clipboard!", 2000);
-    },
-  ],
-  ["markdown.delete", deleteOnMarkdown],
-  ["markdown.killProcess", killProcess],
-  ["markdown.killAllProcesses", killAllProcesses],
-] as const;
+const commands = {
+  "markdown.runFile": async (lang: string, code: string) =>
+    runInTerminal(await getRunCommand(lang, code)),
+  "markdown.runOnMarkdown": async (
+    lang: string,
+    code: string,
+    range: vscode.Range,
+  ) => runOnMarkdown(await getRunCommand(lang, code), range),
+  "markdown.runInTerminal": runInTerminal,
+  "markdown.copy": (code: string) => {
+    vscode.env.clipboard.writeText(code);
+    vscode.window.setStatusBarMessage("Copied to clipboard!", 2000);
+  },
+  "markdown.delete": deleteOnMarkdown,
+  "markdown.killProcess": killProcess,
+  "markdown.killAllProcesses": killAllProcesses,
+};
 
 // Register the correct providers based on configuration
 function registerProviders(context: vscode.ExtensionContext) {
@@ -119,8 +113,8 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // Register all command handlers
-  commands.map(([command, handler]) =>
-    context.subscriptions.push(
+  context.subscriptions.push(
+    ...Object.entries(commands).map(([command, handler]) =>
       vscode.commands.registerCommand(command, handler),
     ),
   );
