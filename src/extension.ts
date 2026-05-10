@@ -93,17 +93,16 @@ function registerProviders(context: vscode.ExtensionContext) {
 
   // Dispose previous providers if they exist
   disposables.forEach((d) => d.dispose());
-  disposables = [];
 
   // Create and register the new providers
   codeLensProvider = new ButtonCodeLensProvider();
   const inlineProvider = new InlineCodeLinkProvider();
   const hoverProvider = new InlineCodeHoverProvider();
-  disposables.push(
+  disposables = [
     vscode.languages.registerCodeLensProvider(selector, codeLensProvider),
     vscode.languages.registerDocumentLinkProvider(selector, inlineProvider),
     vscode.languages.registerHoverProvider(selector, hoverProvider),
-  );
+  ];
   context.subscriptions.push(...disposables);
 }
 

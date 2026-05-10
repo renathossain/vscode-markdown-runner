@@ -103,6 +103,6 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
   onDidChangeCodeLenses = this._emitter.event;
   provideCodeLenses = provideCodeLenses;
 
-  // Expose method to display reparsed CodeLenses on-demand
+  // Expose method to refresh CodeLenses on-demand
   public refresh = () => this._emitter.fire();
 }
