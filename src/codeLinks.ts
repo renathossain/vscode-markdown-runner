@@ -32,7 +32,7 @@ const inlineRegex = () => /(?<!`+)`([^`\n]+?)`(?!`+)/g;
 // DocumentLink Provider for inline code
 export class InlineCodeLinkProvider implements vscode.DocumentLinkProvider {
   provideDocumentLinks(
-    document: vscode.TextDocument
+    document: vscode.TextDocument,
   ): vscode.ProviderResult<vscode.DocumentLink[]> {
     const inlineCodeLinks: vscode.DocumentLink[] = [];
 
@@ -58,7 +58,7 @@ export class InlineCodeLinkProvider implements vscode.DocumentLinkProvider {
 export class InlineCodeHoverProvider implements vscode.HoverProvider {
   provideHover(
     document: vscode.TextDocument,
-    position: vscode.Position
+    position: vscode.Position,
   ): vscode.ProviderResult<vscode.Hover> {
     const range = document.getWordRangeAtPosition(position, inlineRegex());
     if (!range) return;

@@ -45,10 +45,15 @@ import treeKill from "tree-kill";
 import { InlineCodeLinkProvider, InlineCodeHoverProvider } from "./codeLinks";
 import { ButtonCodeLensProvider } from "./codeLens";
 import { runInTerminal, getRunCommand } from "./runInTerminal";
-import { runOnMarkdown, childProcesses, removeChild } from "./runOnMarkdown";
+import {
+  runOnMarkdown,
+  deleteOnMarkdown,
+  childProcesses,
+  removeChild,
+} from "./runOnMarkdown";
 
 // List of command handlers
-export const commandHandlers = [
+const commandHandlers = [
   {
     command: "markdown.runFile",
     handler: async (language: string, code: string) =>
@@ -69,10 +74,7 @@ export const commandHandlers = [
   },
   {
     command: "markdown.delete",
-    handler: (range: vscode.Range) => {
-      const editor = vscode.window.activeTextEditor;
-      if (editor?.edit((text) => text.delete(range))) editor?.document.save();
-    },
+    handler: deleteOnMarkdown,
   },
   {
     command: "markdown.killProcess",
@@ -116,15 +118,15 @@ function registerProviders(context: vscode.ExtensionContext) {
   // Create and register the new providers
   codeLensDisposable = vscode.languages.registerCodeLensProvider(
     docSelector,
-    new ButtonCodeLensProvider()
+    new ButtonCodeLensProvider(),
   );
   linkProviderDisposable = vscode.languages.registerDocumentLinkProvider(
     docSelector,
-    new InlineCodeLinkProvider()
+    new InlineCodeLinkProvider(),
   );
   hoverProviderDisposable = vscode.languages.registerHoverProvider(
     docSelector,
-    new InlineCodeHoverProvider()
+    new InlineCodeHoverProvider(),
   );
   context.subscriptions.push(codeLensDisposable, linkProviderDisposable);
 }
@@ -138,14 +140,14 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("markdownRunner.activateOnQuarto"))
         registerProviders(context);
-    })
+    }),
   );
 
   // Register all command handlers
   commandHandlers.forEach(({ command, handler }) =>
     context.subscriptions.push(
-      vscode.commands.registerCommand(command, handler)
-    )
+      vscode.commands.registerCommand(command, handler),
+    ),
   );
 }
 

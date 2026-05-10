@@ -86,7 +86,7 @@ function compileHandler(cmd: string, path: string): Promise<boolean> {
 // Return the string to be run in the terminal to execute the binary/code
 export async function getRunCommand(
   language: string,
-  code: string
+  code: string,
 ): Promise<string> {
   // Obtain info to create the run command
   const baseName = getBaseName(language, code);
@@ -105,7 +105,7 @@ export async function getRunCommand(
   if (["c", "cpp", "rust"].includes(language))
     return (await compileHandler(
       `${compiler} ${sourcePath} -o ${basePath}`,
-      basePath
+      basePath,
     ))
       ? basePath
       : "";
@@ -114,7 +114,7 @@ export async function getRunCommand(
   if (language === "java")
     return (await compileHandler(
       `${compiler} ${sourcePath}`,
-      `${basePath}.class`
+      `${basePath}.class`,
     ))
       ? `java -cp ${os.tmpdir()} ${baseName}`
       : "";

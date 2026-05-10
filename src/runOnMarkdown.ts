@@ -32,7 +32,7 @@ export function removeChild(pid: number | undefined) {
 
 // Safety button to kill all processes
 const killAllButton = vscode.window.createStatusBarItem(
-  vscode.StatusBarAlignment.Left
+  vscode.StatusBarAlignment.Left,
 );
 killAllButton.command = {
   title: "Kill All `Run on Markdown` Processes",
@@ -65,15 +65,30 @@ function findResultBlock(document: vscode.TextDocument, startLine: number) {
   return new vscode.Range(startLine + 1, 0, endLine, 0);
 }
 
+// Delete selected range in text
+export async function deleteOnMarkdown(range: vscode.Range) {
+  if (!textEditMutex.tryAcquire()) return;
+  const editor = vscode.window.activeTextEditor;
+  if (await editor?.edit((text) => text.delete(range)))
+    await editor?.document.save();
+  textEditMutex.release();
+}
+
 // Run command on the markdown file
 export async function runOnMarkdown(code: string, range: vscode.Range) {
+  if (!textEditMutex.tryAcquire()) return;
+
+  // Mutex ensures result block/previous buffer is written befure next buffer starts
+  const resultMutex = new Mutex(1);
+  await resultMutex.acquire();
+
+  // Mutex ensures process is finished before removing `Kill` controls
+  const killMutex = new Mutex(1);
+  await killMutex.acquire();
+
   // TODO: implement multiple output streams at the same time
   const editor = vscode.window.activeTextEditor;
   if (code === "" || childProcesses.length > 0 || !editor) return;
-
-  // Mutex ensures result block exists before child process inserts
-  const resultMutex = new Mutex(1);
-  await resultMutex.acquire();
 
   // Start child process
   const child = cp.spawn(code, { shell: true });
@@ -84,7 +99,6 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
   // Whenever child process outputs a new batch of data, write it
   child.stdout.on("data", async (data: Buffer) => {
     await resultMutex.acquire();
-    await textEditMutex.acquire();
 
     const output = data.toString();
     await editor.edit((text) => text.insert(outputPos, output));
@@ -92,34 +106,36 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     const last = lines[lines.length - 1];
     outputPos = new vscode.Position(
       outputPos.line + lines.length - 1,
-      lines.length === 1 ? outputPos.character + last.length : last.length
+      lines.length === 1 ? outputPos.character + last.length : last.length,
     );
 
     resultMutex.release();
-    textEditMutex.release();
   });
 
   // Runs when child process has finished writing all data
   child.stdout.on("end", async () => {
     await resultMutex.acquire();
-    await textEditMutex.acquire();
 
     // If output did not end on a newline, add it
     if (outputPos.character !== 0)
       await editor.edit((text) => text.insert(outputPos, "\n"));
 
+    // Remove process `Stop`, `Kill` and `KillAll` controls
+    await killMutex.acquire();
+    removeChild(child.pid);
+    if (!childProcesses.length) killAllButton.hide();
+
     // Save the document after all text deletes/inserts
     await editor.document.save();
 
-    resultMutex.release();
     textEditMutex.release();
+    resultMutex.release();
+    killMutex.release();
   });
 
   // Runs when child process exits (but not all data may be written)
   child.on("close", async () => {
-    // Remove process `Stop` and `Kill` controls
-    removeChild(child.pid);
-    if (!childProcesses.length) killAllButton.hide();
+    killMutex.release();
   });
 
   // Create buttons to stop or kill the process
@@ -128,20 +144,19 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     killAllButton.show();
   } else {
     vscode.window.showErrorMessage("Failed to start process.");
+    textEditMutex.release();
     resultMutex.release();
+    killMutex.release();
     return;
   }
 
-  // Create result block that holds execution results
-  await textEditMutex.acquire();
-  const deleteRange = findResultBlock(editor.document, range.end.line + 2);
-
   // If result block found, clear the contents inside it, otherwise create it
+  const deleteRange = findResultBlock(editor.document, range.end.line + 2);
   const resultBlock = "\n\n```result\n```";
   await editor.edit((text) =>
-    deleteRange ? text.delete(deleteRange) : text.insert(range.end, resultBlock)
+    deleteRange
+      ? text.delete(deleteRange)
+      : text.insert(range.end, resultBlock),
   );
-
   resultMutex.release();
-  textEditMutex.release();
 }
