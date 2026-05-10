@@ -41,15 +41,14 @@
 
 import * as vscode from "vscode";
 import * as fs from "fs";
-import treeKill from "tree-kill";
 import { InlineCodeLinkProvider, InlineCodeHoverProvider } from "./codeLinks";
 import { ButtonCodeLensProvider } from "./codeLens";
 import { runInTerminal, getRunCommand } from "./runInTerminal";
 import {
-  runOnMarkdown,
   deleteOnMarkdown,
-  childProcesses,
-  removeChild,
+  runOnMarkdown,
+  killProcess,
+  killAllProcesses,
 } from "./runOnMarkdown";
 
 // List of command handlers
@@ -78,19 +77,11 @@ const commandHandlers = [
   },
   {
     command: "markdown.killProcess",
-    handler: (pid: number, signal: string) => {
-      removeChild(pid);
-      treeKill(pid, signal);
-    },
+    handler: killProcess,
   },
   {
     command: "markdown.killAllProcesses",
-    handler: () => {
-      childProcesses.forEach(({ pid }) => {
-        removeChild(pid);
-        treeKill(pid, "SIGKILL");
-      });
-    },
+    handler: killAllProcesses,
   },
 ];
 

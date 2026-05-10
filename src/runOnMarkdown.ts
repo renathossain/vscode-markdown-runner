@@ -17,6 +17,7 @@
 import * as vscode from "vscode";
 import * as cp from "child_process";
 import Mutex from "semaphore-async-await";
+import treeKill from "tree-kill";
 import { parseBlock, blockRegex } from "./codeLens";
 
 // Global mutex to ensure all text insertion or deletion happens atomically
@@ -24,11 +25,6 @@ const textEditMutex = new Mutex(1);
 
 // PIDs associated with `Run on Markdown` child processes
 export let childProcesses: { pid: number; line: number }[] = [];
-
-// Remove a child process from list
-export function removeChild(pid: number | undefined) {
-  childProcesses = childProcesses.filter((cp) => cp.pid !== pid);
-}
 
 // Safety button to kill all processes
 const killAllButton = vscode.window.createStatusBarItem(
@@ -122,7 +118,7 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
 
     // Remove process `Stop`, `Kill` and `KillAll` controls
     await killMutex.acquire();
-    removeChild(child.pid);
+    childProcesses = childProcesses.filter((cp) => cp.pid !== child.pid);
     if (!childProcesses.length) killAllButton.hide();
 
     // Save the document after all text deletes/inserts
@@ -159,4 +155,19 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
       : text.insert(range.end, resultBlock),
   );
   resultMutex.release();
+}
+
+// Kill process
+export async function killProcess(pid: number, signal: string) {
+  childProcesses = childProcesses.filter((cp) => cp.pid !== pid);
+  treeKill(pid, signal);
+}
+
+// Kill all processes
+export async function killAllProcesses() {
+  const processes = childProcesses;
+  childProcesses = [];
+  processes.forEach(({ pid }) => {
+    treeKill(pid, "SIGKILL");
+  });
 }
