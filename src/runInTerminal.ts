@@ -37,7 +37,7 @@ const getBaseName = (lang: string, code: string) =>
     : `temp_${Date.now()}`;
 
 // Inject all enabled default codes into the code string
-function injectDefaultCode(language: string, code: string): string {
+function injectDefaultCode(language: string, code: string) {
   // Read the configuration for pythonPath and defaultCodes
   const config = vscode.workspace.getConfiguration();
   const pythonPathEnabled = config.get<boolean>("markdownRunner.pythonPath");
@@ -79,10 +79,7 @@ const compile = (cmd: string, out: string) => (
 
 // Save code to a temporary file, and compile it if necessary
 // Return the string to be run in the terminal to execute the binary/code
-export async function getRunCommand(
-  language: string,
-  code: string,
-): Promise<string> {
+export async function getRunCommand(language: string, code: string) {
   // Obtain info to create the run command
   const baseName = getBaseName(language, code);
   const extension = getLanguageConfig(language, "extension");
