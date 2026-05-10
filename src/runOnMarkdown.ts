@@ -34,7 +34,6 @@ const killAllButton = vscode.window.createStatusBarItem(
 killAllButton.command = {
   title: "Kill All `Run on Markdown` Processes",
   command: "markdown.killAllProcesses",
-  arguments: [],
 };
 killAllButton.text = "$(stop-circle) Kill All Processes";
 
@@ -51,14 +50,14 @@ function findResultBlock(document: vscode.TextDocument, startLine: number) {
   const match = blockRegex().exec(slicedText);
   if (!match) return null;
   const { language, code } = parseBlock(document, match);
-  if (language !== `result`) return null;
+  if (language !== "result") return null;
 
   // The match must be on the first line of the sliced document
   const matchLine = slicedText.slice(0, match.index).split("\n").length;
   if (matchLine !== 1) return null;
 
   // Return range of results contents to be cleared
-  const endLine = startLine + 1 + code.split("\n").length - 1;
+  const endLine = startLine + code.split("\n").length;
   return new vscode.Range(startLine + 1, 0, endLine, 0);
 }
 
@@ -75,8 +74,7 @@ export async function deleteOnMarkdown(range: vscode.Range) {
 export async function runOnMarkdown(code: string, range: vscode.Range) {
   // TODO: implement multiple output streams at the same time
   const editor = vscode.window.activeTextEditor;
-  if (code === "" || childProcesses.length > 0 || !editor) return;
-  if (!textEditMutex.tryAcquire()) return;
+  if (code === "" || !editor || !textEditMutex.tryAcquire()) return;
 
   // Mutex ensures result block/previous buffer is written befure next buffer starts
   const resultMutex = new Mutex(1);
@@ -84,6 +82,16 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
 
   // Start child process
   const child = cp.spawn(code, { shell: true });
+  if (child.pid == null) {
+    vscode.window.showErrorMessage("Failed to start process.");
+    textEditMutex.release();
+    resultMutex.release();
+    return;
+  }
+
+  // Create buttons to stop or kill the process
+  childProcesses.push({ pid: child.pid, line: range.end.line + 2 });
+  killAllButton.show();
 
   // Output child process results 3 lines below parent code block
   let outputPos = new vscode.Position(range.end.line + 3, 0);
@@ -126,17 +134,6 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     resultMutex.release();
   });
 
-  // Create buttons to stop or kill the process
-  if (child.pid != undefined) {
-    childProcesses.push({ pid: child.pid, line: range.end.line + 2 });
-    killAllButton.show();
-  } else {
-    vscode.window.showErrorMessage("Failed to start process.");
-    textEditMutex.release();
-    resultMutex.release();
-    return;
-  }
-
   // If result block found, clear the contents inside it, otherwise create it
   const deleteRange = findResultBlock(editor.document, range.end.line + 2);
   const resultBlock = "\n\n```result\n```";
@@ -158,7 +155,5 @@ export async function killProcess(pid: number, signal: string) {
 export async function killAllProcesses() {
   const processes = childProcesses;
   childProcesses = [];
-  processes.forEach(({ pid }) => {
-    treeKill(pid, "SIGKILL");
-  });
+  processes.forEach(({ pid }) => treeKill(pid, "SIGKILL"));
 }
