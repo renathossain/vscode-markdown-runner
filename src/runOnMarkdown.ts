@@ -19,6 +19,7 @@ import * as cp from "child_process";
 import Mutex from "semaphore-async-await";
 import treeKill from "tree-kill";
 import { parseBlock, blockRegex } from "./codeLens";
+import { codeLensProvider } from "./extension";
 
 // Global mutex to ensure all text insertion or deletion happens atomically
 const textEditMutex = new Mutex(1);
@@ -72,19 +73,14 @@ export async function deleteOnMarkdown(range: vscode.Range) {
 
 // Run command on the markdown file
 export async function runOnMarkdown(code: string, range: vscode.Range) {
+  // TODO: implement multiple output streams at the same time
+  const editor = vscode.window.activeTextEditor;
+  if (code === "" || childProcesses.length > 0 || !editor) return;
   if (!textEditMutex.tryAcquire()) return;
 
   // Mutex ensures result block/previous buffer is written befure next buffer starts
   const resultMutex = new Mutex(1);
   await resultMutex.acquire();
-
-  // Mutex ensures process is finished before removing `Kill` controls
-  const killMutex = new Mutex(1);
-  await killMutex.acquire();
-
-  // TODO: implement multiple output streams at the same time
-  const editor = vscode.window.activeTextEditor;
-  if (code === "" || childProcesses.length > 0 || !editor) return;
 
   // Start child process
   const child = cp.spawn(code, { shell: true });
@@ -108,30 +104,26 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     resultMutex.release();
   });
 
-  // Runs when child process has finished writing all data
-  child.stdout.on("end", async () => {
+  // Runs when child process exits (but not all data may be written)
+  child.stdout.on("close", async () => {
     await resultMutex.acquire();
+
+    // Remove process `Stop`, `Kill` and `KillAll` controls
+    childProcesses = childProcesses.filter((cp) => cp.pid !== child.pid);
+    if (!childProcesses.length) killAllButton.hide();
 
     // If output did not end on a newline, add it
     if (outputPos.character !== 0)
       await editor.edit((text) => text.insert(outputPos, "\n"));
 
-    // Remove process `Stop`, `Kill` and `KillAll` controls
-    await killMutex.acquire();
-    childProcesses = childProcesses.filter((cp) => cp.pid !== child.pid);
-    if (!childProcesses.length) killAllButton.hide();
-
     // Save the document after all text deletes/inserts
     await editor.document.save();
 
+    // Refresh CodeLenses after finished process
+    codeLensProvider?.refresh();
+
     textEditMutex.release();
     resultMutex.release();
-    killMutex.release();
-  });
-
-  // Runs when child process exits (but not all data may be written)
-  child.on("close", async () => {
-    killMutex.release();
   });
 
   // Create buttons to stop or kill the process
@@ -142,7 +134,6 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     vscode.window.showErrorMessage("Failed to start process.");
     textEditMutex.release();
     resultMutex.release();
-    killMutex.release();
     return;
   }
 

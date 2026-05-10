@@ -89,6 +89,7 @@ const commandHandlers = [
 export const tempFilePaths: string[] = [];
 
 // Providers
+export let codeLensProvider: ButtonCodeLensProvider | undefined;
 let codeLensDisposable: vscode.Disposable | undefined;
 let linkProviderDisposable: vscode.Disposable | undefined;
 let hoverProviderDisposable: vscode.Disposable | undefined;
@@ -107,9 +108,10 @@ function registerProviders(context: vscode.ExtensionContext) {
   hoverProviderDisposable?.dispose();
 
   // Create and register the new providers
+  codeLensProvider = new ButtonCodeLensProvider();
   codeLensDisposable = vscode.languages.registerCodeLensProvider(
     docSelector,
-    new ButtonCodeLensProvider(),
+    codeLensProvider,
   );
   linkProviderDisposable = vscode.languages.registerDocumentLinkProvider(
     docSelector,
@@ -119,7 +121,11 @@ function registerProviders(context: vscode.ExtensionContext) {
     docSelector,
     new InlineCodeHoverProvider(),
   );
-  context.subscriptions.push(codeLensDisposable, linkProviderDisposable);
+  context.subscriptions.push(
+    codeLensDisposable,
+    linkProviderDisposable,
+    hoverProviderDisposable,
+  );
 }
 
 // Main function that runs when extension is activated

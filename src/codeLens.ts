@@ -110,5 +110,12 @@ function provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
 
 // CodeLens buttons provider for parsed code blocks
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
+  private _onDidChangeCodeLenses = new vscode.EventEmitter<void>();
+  public onDidChangeCodeLenses = this._onDidChangeCodeLenses.event;
   provideCodeLenses = provideCodeLenses;
+
+  // Expose method to display reparsed CodeLenses on-demand
+  public refresh() {
+    this._onDidChangeCodeLenses.fire();
+  }
 }
