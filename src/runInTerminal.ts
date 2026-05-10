@@ -23,20 +23,18 @@ import { getLanguageConfig } from "./settings";
 import { tempFilePaths } from "./extension";
 
 // Obtain the correct executable name given language and code
-function getBaseName(language: string, code: string): string {
-  if (language === "java") {
-    // The file name of the Java executable must match the class name
-    // We parse the class name using a regex:
-    // Match the exact words `public` and `class`
-    // \s+ - Matches one or more whitespace characters (spaces, tabs, etc.)
-    // (\w+) - Capturing group, which matches one or more "word" characters
-    // (letters, digits, underscore), which corresponds to the class name
-    const match = code.match(/public\s+class\s+(\w+)/);
-    const errorMsg = `Compilation failed: No public class found.`;
-    if (!match) vscode.window.showErrorMessage(errorMsg);
-    return match ? match[1] : ``;
-  } else return `temp_${Date.now()}`;
-}
+const getBaseName = (lang: string, code: string) =>
+  // Java requires executable name match the class name, which is parsed using regex
+  // Match the exact words `public` and `class`, where:
+  // \s+ - Matches one or more whitespace characters (spaces, tabs, etc.)
+  // (\w+) - Capturing group for class name, matches one or more "word" characters
+  lang === "java"
+    ? (code.match(/public\s+class\s+(\w+)/)?.[1] ??
+      (vscode.window.showErrorMessage(
+        "Compilation failed: No public class found.",
+      ),
+      ""))
+    : `temp_${Date.now()}`;
 
 // Inject all enabled default codes into the code string
 function injectDefaultCode(language: string, code: string): string {
@@ -44,9 +42,7 @@ function injectDefaultCode(language: string, code: string): string {
   const config = vscode.workspace.getConfiguration();
   const pythonPathEnabled = config.get<boolean>("markdownRunner.pythonPath");
   const defaultCodeConfig =
-    config.get<{
-      [language: string]: string;
-    }>("markdownRunner.defaultCodes") || {};
+    config.get<Record<string, string>>("markdownRunner.defaultCodes") || {};
 
   // If pythonPath is enabled, inject the markdown file's path into the code
   const editor = vscode.window.activeTextEditor;
@@ -56,31 +52,30 @@ function injectDefaultCode(language: string, code: string): string {
   }
 
   // Inject default code, if available from settings
-  const defaultCode: string = defaultCodeConfig[language] || "";
-  const newlineCode = defaultCode.replace(/\\n/g, "\n");
+  const newlineCode = (defaultCodeConfig[language] || "").replace(/\\n/g, "\n");
   // Explanation of regex:
   // ^: anchors search to beginning, `-I` must appear in the beginning of string
   // (.): 1st capturing group, match 1 character (like `@` in the example)
   // ([\s\S]+$): 2nd capturing group that matches 1 or more (+) of any
   // characters (\s\S) and `$` means it matches to the end of the string
   const match = /^-I(.) ([\s\S]+$)/.exec(newlineCode);
-  if (match) return match[2].replace(match[1], code);
-  else return newlineCode + code;
+  return match ? match[2].replace(match[1], code) : newlineCode + code;
 }
 
 // Compiles a binary using the provided command
 // Pushes the binary path to temporary files to be deleted
 // Throws an error message if unsuccessful
-function compileHandler(cmd: string, path: string): Promise<boolean> {
-  tempFilePaths.push(path);
-  return new Promise((resolve) => {
-    cp.exec(cmd, (error, stdout, stderr) => {
-      if (error || stderr !== "")
-        vscode.window.showErrorMessage(`${error}${stdout}${stderr}`);
-      resolve(!error);
-    });
-  });
-}
+const compile = (cmd: string, out: string) => (
+  tempFilePaths.push(out),
+  new Promise<boolean>((resolve) =>
+    // e - error, s - stdout, se - stderr
+    cp.exec(cmd, (e, s, se) => {
+      if (e || se)
+        vscode.window.showErrorMessage(`${e ?? ""}${s ?? ""}${se ?? ""}`);
+      resolve(!e);
+    }),
+  )
+);
 
 // Save code to a temporary file, and compile it if necessary
 // Return the string to be run in the terminal to execute the binary/code
@@ -93,6 +88,8 @@ export async function getRunCommand(
   const extension = getLanguageConfig(language, "extension");
   const compiler = getLanguageConfig(language, "compiler");
   if (!baseName || !compiler || !extension) return "";
+
+  // Construct sourcePath
   code = injectDefaultCode(language, code);
   const basePath = path.join(os.tmpdir(), baseName);
   const sourcePath = `${basePath}.${extension}`;
@@ -103,25 +100,19 @@ export async function getRunCommand(
 
   // Compilation for C, C++ and Rust
   if (["c", "cpp", "rust"].includes(language))
-    return (await compileHandler(
-      `${compiler} ${sourcePath} -o ${basePath}`,
-      basePath,
-    ))
+    return (await compile(`${compiler} ${sourcePath} -o ${basePath}`, basePath))
       ? basePath
       : "";
 
   // Compilation for Java
   if (language === "java")
-    return (await compileHandler(
-      `${compiler} ${sourcePath}`,
-      `${basePath}.class`,
-    ))
+    return (await compile(`${compiler} ${sourcePath}`, `${basePath}.class`))
       ? `java -cp ${os.tmpdir()} ${baseName}`
       : "";
 
   // Compilation for TypeScript
   if (language === "typescript")
-    return (await compileHandler(`${compiler} ${sourcePath}`, `${basePath}.js`))
+    return (await compile(`${compiler} ${sourcePath}`, `${basePath}.js`))
       ? `${getLanguageConfig("javascript", "compiler")} ${basePath}.js`
       : "";
 
@@ -131,7 +122,7 @@ export async function getRunCommand(
 
 // Run command in the terminal
 export function runInTerminal(code: string) {
-  if (code === "") return;
+  if (!code) return;
   const terminal =
     vscode.window.activeTerminal || vscode.window.createTerminal();
   terminal.show();

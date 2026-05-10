@@ -74,7 +74,7 @@ export async function deleteOnMarkdown(range: vscode.Range) {
 export async function runOnMarkdown(code: string, range: vscode.Range) {
   // TODO: implement multiple output streams at the same time
   const editor = vscode.window.activeTextEditor;
-  if (code === "" || !editor || !textEditMutex.tryAcquire()) return;
+  if (!code || !editor || !textEditMutex.tryAcquire()) return;
 
   // Mutex ensures result block/previous buffer is written befure next buffer starts
   const resultMutex = new Mutex(1);

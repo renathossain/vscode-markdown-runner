@@ -39,7 +39,7 @@ export function parseBlock(
   match: RegExpExecArray,
 ) {
   const parsedLang = match[2].trim().toLowerCase();
-  const language = parsedLang === "" ? "bash" : parsedLang; // Treat untitled blocks as bash files
+  const language = !parsedLang ? "bash" : parsedLang; // Treat untitled blocks as bash files
   const code = match[3];
   const start = document.positionAt(match.index);
   const end = document.positionAt(match.index + match[0].length);
