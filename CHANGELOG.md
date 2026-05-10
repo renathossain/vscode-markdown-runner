@@ -1,5 +1,10 @@
 # Change Log
 
+## 2.6.0
+
+- **Bug Fix**: Prevents deletion of code blocks during "Run on Markdown", which previously caused misplaced output.
+- **Bug Fix**: Fixed lingering "Kill Process" buttons after execution completes.
+
 ## 2.5.0
 
 - **Bug Fix**: Fixed an issue where CodeLens buttons failed to appear or appeared in wrong positions when using "Run on Markdown".
