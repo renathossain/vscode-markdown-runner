@@ -21,9 +21,6 @@ import treeKill from "tree-kill";
 import { parseBlock, blockRegex } from "./codeLens";
 import { codeLensProvider } from "./extension";
 
-// For testing
-export const runFinishedEmitter = new vscode.EventEmitter<void>();
-
 // Global mutex to ensure all text insertion or deletion happens atomically
 const textEditMutex = new Mutex(1);
 
@@ -83,12 +80,17 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
   const resultMutex = new Mutex(1);
   await resultMutex.acquire();
 
+  // Mutex ensures runOnMarkdown does not finish until child process fully finishes
+  const finishMutex = new Mutex(1);
+  await finishMutex.acquire();
+
   // Start child process
   const child = cp.spawn(code, { shell: true });
   if (child.pid == null) {
     vscode.window.showErrorMessage("Failed to start process.");
     textEditMutex.release();
     resultMutex.release();
+    finishMutex.release();
     return;
   }
 
@@ -133,9 +135,9 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     // Refresh CodeLenses after finished process
     codeLensProvider?.refresh();
 
-    runFinishedEmitter.fire();
     textEditMutex.release();
     resultMutex.release();
+    finishMutex.release();
   });
 
   // If result block found, clear the contents inside it, otherwise create it
@@ -147,6 +149,8 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
       : text.insert(range.end, resultBlock),
   );
   resultMutex.release();
+  await finishMutex.acquire();
+  finishMutex.release();
 }
 
 // Kill process

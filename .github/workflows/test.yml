@@ -98,10 +98,6 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
-      - name: Run tests (Linux)
-        if: runner.os == 'Linux'
-        run: xvfb-run -a npm run test
-
-      - name: Run tests (macOS/Windows)
-        if: runner.os != 'Linux'
-        run: npm run test
+      - name: Run tests
+        shell: bash
+        run: if [ "$RUNNER_OS" = "Linux" ]; then xvfb-run -a npm run test; else npm run test; fi
