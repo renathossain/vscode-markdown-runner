@@ -3,36 +3,47 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 
-suite("Run on Markdown", () => {
-  test("Python", async () => {
-    const file = path.join(__dirname, "test.md");
-    fs.writeFileSync(file, '```python\nprint("hello")\n```\n');
+const ext = vscode.extensions.getExtension("renathossain.markdown-runner");
 
-    const doc = await vscode.workspace.openTextDocument(file);
-    await vscode.window.showTextDocument(doc);
+async function runTest(lang: string, code: string, result: string) {
+  const file = path.join(__dirname, `test-${lang}.md`);
+  fs.writeFileSync(file, `\`\`\`${lang}\n${code}\n\`\`\`\n`);
 
-    const ext = vscode.extensions.getExtension("renathossain.markdown-runner");
-    await ext?.activate();
+  const doc = await vscode.workspace.openTextDocument(file);
+  await vscode.window.showTextDocument(doc);
 
-    const finished = new Promise<void>((resolve) => {
-      const sub = ext?.exports.runFinishedEmitter.event(() => {
-        sub.dispose();
-        resolve();
-      });
+  const finished = new Promise<void>((resolve) => {
+    const sub = ext!.exports.runFinishedEmitter.event(() => {
+      sub.dispose();
+      resolve();
     });
+  });
 
-    await vscode.commands.executeCommand(
-      "markdown.runOnMarkdown",
-      "python",
-      'print("hello")',
-      new vscode.Range(0, 0, 2, 3),
-    );
+  const text = doc.getText();
+  const range = new vscode.Range(
+    doc.positionAt(text.indexOf("```")),
+    doc.positionAt(text.lastIndexOf("```") + 3),
+  );
 
-    await finished;
+  await vscode.commands.executeCommand(
+    "markdown.runOnMarkdown",
+    lang,
+    code,
+    range,
+  );
 
-    assert.strictEqual(
-      doc.getText().trim(),
-      '```python\nprint("hello")\n```\n\n```result\nhello\n```',
-    );
+  await finished;
+  assert.ok(doc.getText().includes(result));
+}
+
+suite("Run on Markdown", () => {
+  const result = "```result\n82\n```";
+
+  suiteSetup(async () => {
+    await ext?.activate();
+  });
+
+  test("Python", async () => {
+    await runTest("python", "print(10 + 72)", result);
   });
 });

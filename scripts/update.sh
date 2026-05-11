@@ -4,8 +4,10 @@
 set -e
 
 # Clean workspace
-rm -rf node_modules
+rm -rf .vscode-test
 rm -rf dist
+rm -rf node_modules
+rm -rf out
 rm -f package-lock.json
 
 # Update and install dependencies
