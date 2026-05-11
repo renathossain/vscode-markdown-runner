@@ -80,9 +80,13 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
   const resultMutex = new Mutex(1);
   await resultMutex.acquire();
 
-  // Mutex ensures runOnMarkdown does not finish until child process fully finishes
-  const finishMutex = new Mutex(1);
-  await finishMutex.acquire();
+  // Mutex released when child process exits
+  const exitMutex = new Mutex(1);
+  await exitMutex.acquire();
+
+  // Mutex released when output is fully written
+  const endMutex = new Mutex(1);
+  await endMutex.acquire();
 
   // Start child process
   const child = cp.spawn(code, { shell: true });
@@ -90,7 +94,8 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     vscode.window.showErrorMessage("Failed to start process.");
     textEditMutex.release();
     resultMutex.release();
-    finishMutex.release();
+    exitMutex.release();
+    endMutex.release();
     return;
   }
 
@@ -119,11 +124,16 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
 
   // Runs when child process exits (but not all data may be written)
   child.on("exit", async () => {
-    await resultMutex.acquire();
-
     // Remove process `Stop`, `Kill` and `KillAll` controls
     childProcesses = childProcesses.filter((cp) => cp.pid !== child.pid);
     if (!childProcesses.length) killAllButton.hide();
+
+    exitMutex.release();
+  });
+
+  // Runs when all data is written (but child process may not have exited)
+  child.stdout.on("end", async () => {
+    await resultMutex.acquire();
 
     // If output did not end on a newline, add it
     if (outputPos.character !== 0)
@@ -132,12 +142,8 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     // Save the document after all text deletes/inserts
     await editor.document.save();
 
-    // Refresh CodeLenses after finished process
-    codeLensProvider?.refresh();
-
-    textEditMutex.release();
     resultMutex.release();
-    finishMutex.release();
+    endMutex.release();
   });
 
   // If result block found, clear the contents inside it, otherwise create it
@@ -148,9 +154,16 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
       ? text.delete(deleteRange)
       : text.insert(range.end, resultBlock),
   );
+
   resultMutex.release();
-  await finishMutex.acquire();
-  finishMutex.release();
+  await exitMutex.acquire();
+  await endMutex.acquire();
+  textEditMutex.release();
+  exitMutex.release();
+  endMutex.release();
+
+  // Refresh CodeLenses after finished process
+  codeLensProvider?.refresh();
 }
 
 // Kill process
