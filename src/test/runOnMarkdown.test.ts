@@ -147,13 +147,13 @@ suite("Run on Markdown", function () {
   //     await runTest("haskell", `main = print (10 + 72)`, result);
   //   });
 
-  //   test("Julia", async () => {
-  //     await runTest("julia", `println(10 + 72)`, result);
-  //   });
+  test("Julia", async () => {
+    await runTest("julia", `println(10 + 72)`, result);
+  });
 
-  //   test("Lua", async () => {
-  //     await runTest("lua", `print(10 + 72)`, result);
-  //   });
+  test("Lua", async () => {
+    await runTest("lua", `print(10 + 72)`, result);
+  });
 
   test("Ruby", async () => {
     await runTest("ruby", `puts 10 + 72`, result);

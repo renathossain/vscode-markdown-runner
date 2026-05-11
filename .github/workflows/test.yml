@@ -36,6 +36,8 @@ jobs:
 
       - name: Setup Go
         uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -44,6 +46,12 @@ jobs:
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
+
+      - name: Setup Julia
+        uses: julia-actions/setup-julia@v2
+
+      - name: Setup Lua
+        uses: leafo/gh-actions-lua@v13
 
       # - name: Install system dependencies
       #   run: |
