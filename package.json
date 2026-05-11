@@ -36,7 +36,7 @@
             "java": "[\"Java\", \"java\", \"javac\"]",
             "cpp": "[\"C++\", \"cpp\", \"g++\"]",
             "rust": "[\"Rust\", \"rs\", \"rustc\"]",
-            "typescript": "[\"TypeScript\", \"ts\", \"tsc\"]",
+            "typescript": "[\"TypeScript\", \"ts\", \"tsc --ignoreConfig\"]",
             "php": "[\"PHP\", \"php\", \"php\"]",
             "perl": "[\"Perl\", \"pl\", \"perl\"]",
             "r": "[\"R\", \"r\", \"Rscript\"]",
