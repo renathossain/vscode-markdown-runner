@@ -8,23 +8,48 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    container:
+      image: archlinux:latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Update system
+        run: pacman -Syu --noconfirm
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install runtimes
+      - name: Install yay
         run: |
-          sudo apt-get update
-          sudo apt-get install -y apt-transport-https wget xvfb
-          wget -qO- https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/dart.gpg
-          echo "deb [signed-by=/usr/share/keyrings/dart.gpg] https://storage.googleapis.com/download.dartlang.org/linux/debian stable main" | sudo tee /etc/apt/sources.list.d/dart_stable.list
-          sudo apt-get update
-          sudo apt-get install -y build-essential python3 default-jdk golang-go php perl r-base groovy dart
+          git clone https://aur.archlinux.org/yay.git .
+          makepkg -si --noconfirm
+          cd ..
+
+      - name: Install base dependencies
+        run: |
+          yay -S --noconfirm \
+            git \
+            base-devel \
+            wget \
+            xorg-server-xvfb \
+            npm \
+            python \
+            nodejs \
+            ruby \
+            lua \
+            julia \
+            go \
+            groovy \
+            dart \
+            r \
+            perl \
+            php \
+            typescript \
+            gcc \
+            rustup \
+            jdk-openjdk \
+            stack-bin
+          rustup default stable
+          stack setup
+
+      - name: Checkout repository
+        run: git clone https://github.com/${{ github.repository }} .
 
       - name: Install Node dependencies
         run: npm ci
