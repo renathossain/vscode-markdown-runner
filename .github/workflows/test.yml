@@ -23,8 +23,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 24
           cache: npm
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
 
       # - name: Install system dependencies
       #   run: |

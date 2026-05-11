@@ -44,9 +44,9 @@ suite("Run on Markdown", function () {
     await ext?.activate();
   });
 
-  //   test("Python", async () => {
-  //     await runTest("python", "print(10 + 72)", result);
-  //   });
+  test("Python", async () => {
+    await runTest("python", "print(10 + 72)", result);
+  });
 
   //   test("C", async () => {
   //     await runTest(
