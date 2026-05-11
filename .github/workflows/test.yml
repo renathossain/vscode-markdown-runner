@@ -1,0 +1,29 @@
+name: Run All Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install runtimes
+        run: |
+          sudo apt-get update && \
+          sudo apt-get install -y build-essential python3 default-jdk golang-go php perl r-base groovy dart
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test
