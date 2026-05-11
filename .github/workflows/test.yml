@@ -84,11 +84,16 @@ jobs:
           choco install lua groovy haskell-stack --no-progress
           Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
           refreshenv
-          $current = $env:PATH -split ';'
-          $existing = Get-Content Env:GITHUB_PATH -ErrorAction SilentlyContinue
-          foreach ($p in $current) {
-            if ($p -and $existing -notcontains $p) {
-              echo $p >> $env:GITHUB_PATH
+          Write-Host "===== FULL PATH AFTER INSTALL + REFRESHENV ====="
+          Write-Host $env:PATH
+          Write-Host "================================================"
+          $paths = $env:PATH -split ';'
+          $filtered = $paths | Where-Object {
+            $_ -match "Lua|Groovy"
+          }
+          foreach ($p in $filtered) {
+            if ($p) {
+              Add-Content -Path $env:GITHUB_PATH -Value $p
             }
           }
 
