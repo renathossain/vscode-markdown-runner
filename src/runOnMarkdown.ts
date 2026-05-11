@@ -113,6 +113,10 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     console.error("SPAWN ERROR:", err);
   });
 
+  child.stderr.on("data", (data: Buffer) => {
+    console.error("STDERR:", data.toString());
+  });
+
   child.on("close", (c) => {
     console.error("EXIT CODE:", c);
   });
