@@ -50,6 +50,7 @@ jobs:
               rustup \
               jdk-openjdk \
               stack-bin
+          '
           su builder -c "rustup default stable"
           su builder -c "stack setup"
 
