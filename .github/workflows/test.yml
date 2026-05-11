@@ -80,17 +80,17 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $wingetFlags = @(
-            "--silent",
-            "--disable-interactivity",
-            "--accept-package-agreements",
-            "--accept-source-agreements"
-          )
-          winget source update
-          winget source accept --source msstore
-          winget install --id DEVCOM.Lua @wingetFlags
-          winget install --id commercialhaskell.stack @wingetFlags
-          winget install --id Apache.Groovy.4 @wingetFlags
+          choco feature enable -n allowGlobalConfirmation
+          choco install lua groovy haskell-stack --no-progress
+          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+          refreshenv
+          $current = $env:PATH -split ';'
+          $existing = Get-Content Env:GITHUB_PATH -ErrorAction SilentlyContinue
+          foreach ($p in $current) {
+            if ($p -and $existing -notcontains $p) {
+              echo $p >> $env:GITHUB_PATH
+            }
+          }
 
       - name: Setup Stack
         run: stack setup
