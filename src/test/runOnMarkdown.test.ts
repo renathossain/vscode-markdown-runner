@@ -143,9 +143,9 @@ suite("Run on Markdown", function () {
     );
   });
 
-  //   test("Haskell", async () => {
-  //     await runTest("haskell", `main = print (10 + 72)`, result);
-  //   });
+  test("Haskell", async () => {
+    await runTest("haskell", `main = print (10 + 72)`, result);
+  });
 
   test("Julia", async () => {
     await runTest("julia", `println(10 + 72)`, result);

@@ -60,19 +60,25 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y lua5.4 luarocks
+          sudo apt-get install -y lua5.4 luarocks haskell-stack
 
       - name: Install Dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
           brew update
-          brew install lua luarocks
+          brew install lua luarocks haskell-stack
 
       - name: Install Dependencies (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          winget install --id DEVCOM.Lua
+          $wingetFlags = "--silent --disable-interactivity --accept-source-agreements --accept-package-agreements"
+          winget source update
+          winget install --id DEVCOM.Lua $wingetFlags
+          winget install --id commercialhaskell.stack $wingetFlag
+
+      - name: Setup Stack
+        run: stack setup
 
       # - name: Install system dependencies
       #   run: |
