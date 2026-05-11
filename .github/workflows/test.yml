@@ -80,17 +80,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $wingetFlags = @(
-            "--silent",
-            "--disable-interactivity",
-            "--accept-package-agreements",
-            "--accept-source-agreements"
-          )
-          winget source update
-          winget source accept --source msstore
-          winget install --id DEVCOM.Lua @wingetFlags
-          winget install --id commercialhaskell.stack @wingetFlags
-          winget install --id Apache.Groovy.4 @wingetFlags
+          choco feature enable -n allowGlobalConfirmation
+          choco install lua groovy haskell-stack --no-progress
 
       - name: Setup Stack
         run: stack setup

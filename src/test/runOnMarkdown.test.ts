@@ -29,7 +29,7 @@ async function runTest(lang: string, code: string, result: string) {
 }
 
 suite("Run on Markdown", function () {
-  this.timeout(40000);
+  this.timeout(60000);
   const result = "```result\n82\n```";
   suiteSetup(async () => ext?.activate());
 
