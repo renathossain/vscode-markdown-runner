@@ -28,6 +28,15 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v6
 
+      - name: Setup Java
+        uses: actions/setup-java@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+
       # - name: Install system dependencies
       #   run: |
       #     sudo apt-get update

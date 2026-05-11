@@ -63,19 +63,19 @@ suite("Run on Markdown", function () {
   //     );
   //   });
 
-  //   test("Java", async () => {
-  //     await runTest(
-  //       "java",
-  //       `
-  // public class Main {
-  //   public static void main(String[] args) {
-  //     System.out.println(10 + 72);
-  //   }
-  // }
-  //       `.trim(),
-  //       result,
-  //     );
-  //   });
+  test("Java", async () => {
+    await runTest(
+      "java",
+      `
+  public class Main {
+    public static void main(String[] args) {
+      System.out.println(10 + 72);
+    }
+  }
+        `.trim(),
+      result,
+    );
+  });
 
   //   test("C++", async () => {
   //     await runTest(
@@ -128,20 +128,20 @@ suite("Run on Markdown", function () {
   //     await runTest("groovy", `println 10 + 72`, result);
   //   });
 
-  //   test("Go", async () => {
-  //     await runTest(
-  //       "go",
-  //       `
-  // package main
-  // import "fmt"
+  test("Go", async () => {
+    await runTest(
+      "go",
+      `
+  package main
+  import "fmt"
 
-  // func main() {
-  //   fmt.Println(10 + 72)
-  // }
-  //       `.trim(),
-  //       result,
-  //     );
-  //   });
+  func main() {
+    fmt.Println(10 + 72)
+  }
+        `.trim(),
+      result,
+    );
+  });
 
   //   test("Haskell", async () => {
   //     await runTest("haskell", `main = print (10 + 72)`, result);
@@ -155,9 +155,9 @@ suite("Run on Markdown", function () {
   //     await runTest("lua", `print(10 + 72)`, result);
   //   });
 
-  //   test("Ruby", async () => {
-  //     await runTest("ruby", `puts 10 + 72`, result);
-  //   });
+  test("Ruby", async () => {
+    await runTest("ruby", `puts 10 + 72`, result);
+  });
 
   test("JavaScript", async () => {
     await runTest("javascript", `console.log(10 + 72);`, result);
