@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v6
 
       - name: Setup Node.js
@@ -34,7 +34,7 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v5
         with:
-          distribution: "temurin"
+          distribution: temurin
           java-version: "25"
 
       - name: Setup Go
@@ -64,19 +64,19 @@ jobs:
         with:
           php-version: "8.5"
 
-      - name: Install Dependencies (Linux)
+      - name: Install System Dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y lua5.4 luarocks haskell-stack groovy
 
-      - name: Install Dependencies (macOS)
+      - name: Install System Dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
           brew update
           brew install lua luarocks haskell-stack groovy
 
-      - name: Install Dependencies (Windows)
+      - name: Install System Dependencies (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -95,9 +95,9 @@ jobs:
       - name: Setup Stack
         run: stack setup
 
-      - name: Install Node dependencies
+      - name: Install Node Dependencies
         run: npm ci
 
-      - name: Run tests
+      - name: Run Tests
         shell: bash
         run: if [ "$RUNNER_OS" = "Linux" ]; then xvfb-run -a npm run test; else npm run test; fi
