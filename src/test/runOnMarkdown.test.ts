@@ -116,9 +116,9 @@ suite("Run on Markdown", function () {
   //     await runTest("perl", `print 10 + 72`, result);
   //   });
 
-  //   test("R", async () => {
-  //     await runTest("r", `cat(10 + 72)`, result);
-  //   });
+  test("R", async () => {
+    await runTest("r", `cat(10 + 72)`, result);
+  });
 
   test("Dart", async () => {
     await runTest("dart", `void main() => print(10 + 72);`, result);
