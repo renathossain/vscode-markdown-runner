@@ -68,13 +68,13 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y lua5.4 luarocks haskell-stack
+          sudo apt-get install -y lua5.4 luarocks haskell-stack groovy
 
       - name: Install Dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
           brew update
-          brew install lua luarocks haskell-stack
+          brew install lua luarocks haskell-stack groovy
 
       - name: Install Dependencies (Windows)
         if: runner.os == 'Windows'
@@ -90,58 +90,18 @@ jobs:
           winget source accept --source msstore
           winget install --id DEVCOM.Lua @wingetFlags
           winget install --id commercialhaskell.stack @wingetFlags
+          winget install --id Apache.Groovy.4 @wingetFlags
 
       - name: Setup Stack
         run: stack setup
 
-      # - name: Install system dependencies
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install -y \
-      #       xvfb \
-      #       build-essential \
-      #       curl wget git ca-certificates \
-      #       python3 \
-      #       ruby-full \
-      #       lua5.4 \
-      #       golang-go \
-      #       perl \
-      #       php \
-      #       openjdk-21-jdk \
-      #       r-base \
-      #       groovy \
-      #       haskell-stack
-
-      # - name: Install Dart
-      #   run: |
-      #     wget -qO- https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/dart.gpg
-      #     echo "deb [signed-by=/usr/share/keyrings/dart.gpg] https://storage.googleapis.com/download.dartlang.org/linux/debian stable main" | sudo tee /etc/apt/sources.list.d/dart_stable.list
-      #     sudo apt-get update
-      #     sudo apt-get install -y dart
-
-      # - name: Install TypeScript
-      #   run: npm install -g typescript
-
-      # - name: Install Rust
-      #   run: |
-      #     curl https://sh.rustup.rs -sSf | sh -s -- -y
-      #     source $HOME/.cargo/env
-      #     rustup default stable
-      #     echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-      # - name: Setup Haskell Stack
-      #   run: stack setup
-
-      # - name: Install Julia
-      #   run: |
-      #     wget https://julialang-s3.julialang.org/bin/linux/x64/1.10/julia-1.10.4-linux-x86_64.tar.gz
-      #     tar -xzf julia-1.10.4-linux-x86_64.tar.gz
-      #     sudo mv julia-1.10.4 /opt/julia
-      #     echo "/opt/julia/bin" >> $GITHUB_PATH
-
       - name: Install Node dependencies
         run: npm ci
 
-      - name: Run tests
-        shell: bash
-        run: $([ "$RUNNER_OS" = Linux ] && echo "xvfb-run -a") npm run test
+      - name: Run tests (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm run test
+
+      - name: Run tests (macOS/Windows)
+        if: runner.os != 'Linux'
+        run: npm run test
