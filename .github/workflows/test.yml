@@ -82,7 +82,8 @@ jobs:
         run: |
           choco feature enable -n allowGlobalConfirmation
           choco install lua groovy haskell-stack --no-progress
-          echo "C:\ProgramData\chocolatey\bin" >> $env:GITHUB_PATH
+          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+          refreshenv
 
       - name: Setup Stack
         run: stack setup
