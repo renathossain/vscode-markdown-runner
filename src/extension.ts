@@ -66,7 +66,7 @@ const commands = {
     lang: string,
     code: string,
     range: vscode.Range,
-  ) => runOnMarkdown(await getRunCommand(lang, code), range),
+  ) => await runOnMarkdown(await getRunCommand(lang, code), range),
   "markdown.runInTerminal": runInTerminal,
   "markdown.copy": (code: string) => {
     vscode.env.clipboard.writeText(code);
