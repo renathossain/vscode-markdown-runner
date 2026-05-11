@@ -17,6 +17,7 @@ jobs:
 
       - name: Install yay
         run: |
+          pacman -S --noconfirm git base-devel
           git clone https://aur.archlinux.org/yay.git .
           makepkg -si --noconfirm
           cd ..
@@ -24,9 +25,6 @@ jobs:
       - name: Install base dependencies
         run: |
           yay -S --noconfirm \
-            git \
-            base-devel \
-            wget \
             xorg-server-xvfb \
             npm \
             python \
