@@ -92,17 +92,17 @@ suite("Run on Markdown", function () {
     );
   });
 
-  //   test("Rust", async () => {
-  //     await runTest(
-  //       "rust",
-  //       `
-  // fn main() {
-  //   println!("{}", 10 + 72);
-  // }
-  //       `.trim(),
-  //       result,
-  //     );
-  //   });
+  test("Rust", async () => {
+    await runTest(
+      "rust",
+      `
+  fn main() {
+    println!("{}", 10 + 72);
+  }
+        `.trim(),
+      result,
+    );
+  });
 
   //   test("TypeScript", async () => {
   //     await runTest("typescript", `console.log(10 + 72);`, result);

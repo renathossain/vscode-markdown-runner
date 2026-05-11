@@ -52,8 +52,12 @@ jobs:
 
       - name: Setup Lua
         uses: MunifTanjim/luver-action@v1
-        with:
-          default: 5.4.3
+        run: |
+          luver install lua 5.4.3
+          luver use 5.4.3
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
 
       # - name: Install system dependencies
       #   run: |
