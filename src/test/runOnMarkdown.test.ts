@@ -1,12 +1,13 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 
 const ext = vscode.extensions.getExtension("renathossain.markdown-runner");
 
 async function runTest(lang: string, code: string, result: string) {
-  const file = path.join(__dirname, `test-${lang}.md`);
+  const file = path.join(os.tmpdir(), `test-${lang}.md`);
   fs.writeFileSync(file, `\`\`\`${lang}\n${code}\n\`\`\`\n`);
 
   const doc = await vscode.workspace.openTextDocument(file);
