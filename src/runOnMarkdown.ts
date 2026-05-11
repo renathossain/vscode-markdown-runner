@@ -89,7 +89,8 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
   await endMutex.acquire();
 
   // Start child process
-  const child = cp.spawn(code, { shell: true });
+  const [command, ...args] = code.split(/\s+/);
+  const child = cp.spawn(command, args);
   if (child.pid == null) {
     vscode.window.showErrorMessage("Failed to start process.");
     textEditMutex.release();
