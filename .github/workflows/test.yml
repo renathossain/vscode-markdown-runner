@@ -51,7 +51,9 @@ jobs:
         uses: julia-actions/setup-julia@v2
 
       - name: Setup Lua
-        uses: leafo/gh-actions-lua@v13
+        uses: MunifTanjim/luver-action@v1
+        with:
+          default: 5.4.3
 
       # - name: Install system dependencies
       #   run: |
@@ -101,10 +103,6 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
-      - name: Run tests (Linux)
-        if: runner.os == 'Linux'
-        run: xvfb-run -a npm test
-
-      - name: Run tests (macOS/Windows)
-        if: runner.os != 'Linux'
-        run: npm run test
+      - name: Run tests
+        shell: bash
+        run: $([ "$RUNNER_OS" = Linux ] && echo "xvfb-run -a") npm run test
