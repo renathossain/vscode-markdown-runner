@@ -49,6 +49,7 @@ import {
   runOnMarkdown,
   killProcess,
   killAllProcesses,
+  runFinishedEmitter,
 } from "./runOnMarkdown";
 
 // List of temporary files
@@ -118,6 +119,8 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.commands.registerCommand(command, handler),
     ),
   );
+
+  return { runFinishedEmitter };
 }
 
 // Function that runs when extension is deactivated

@@ -21,6 +21,9 @@ import treeKill from "tree-kill";
 import { parseBlock, blockRegex } from "./codeLens";
 import { codeLensProvider } from "./extension";
 
+// For testing
+export const runFinishedEmitter = new vscode.EventEmitter<void>();
+
 // Global mutex to ensure all text insertion or deletion happens atomically
 const textEditMutex = new Mutex(1);
 
@@ -113,7 +116,7 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
   });
 
   // Runs when child process exits (but not all data may be written)
-  child.stdout.on("close", async () => {
+  child.on("exit", async () => {
     await resultMutex.acquire();
 
     // Remove process `Stop`, `Kill` and `KillAll` controls
@@ -130,6 +133,7 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
     // Refresh CodeLenses after finished process
     codeLensProvider?.refresh();
 
+    runFinishedEmitter.fire();
     textEditMutex.release();
     resultMutex.release();
   });
