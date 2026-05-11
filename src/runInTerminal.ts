@@ -96,9 +96,10 @@ export async function getRunCommand(language: string, code: string) {
   tempFilePaths.push(sourcePath);
 
   // Compilation for C, C++ and Rust
+  const execFile = basePath + (process.platform === "win32" ? ".exe" : "");
   if (["c", "cpp", "rust"].includes(language))
-    return (await compile(`${compiler} ${sourcePath} -o ${basePath}`, basePath))
-      ? basePath
+    return (await compile(`${compiler} ${sourcePath} -o ${execFile}`, execFile))
+      ? execFile
       : "";
 
   // Compilation for Java
