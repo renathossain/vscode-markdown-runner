@@ -104,17 +104,17 @@ suite("Run on Markdown", function () {
     );
   });
 
-  //   test("TypeScript", async () => {
-  //     await runTest("typescript", `console.log(10 + 72);`, result);
-  //   });
+  test("TypeScript", async () => {
+    await runTest("typescript", `console.log(10 + 72);`, result);
+  });
 
   test("PHP", async () => {
     await runTest("php", `<?php echo 10 + 72;`, result);
   });
 
-  //   test("Perl", async () => {
-  //     await runTest("perl", `print 10 + 72`, result);
-  //   });
+  test("Perl", async () => {
+    await runTest("perl", `print 10 + 72`, result);
+  });
 
   test("R", async () => {
     await runTest("r", `cat(10 + 72)`, result);
