@@ -89,8 +89,7 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
   await endMutex.acquire();
 
   // Start child process
-  const [command, ...args] = code.split(/\s+/);
-  const child = cp.spawn(command, args);
+  const child = cp.spawn(code, { shell: true });
   if (child.pid == null) {
     vscode.window.showErrorMessage("Failed to start process.");
     textEditMutex.release();
@@ -107,9 +106,22 @@ export async function runOnMarkdown(code: string, range: vscode.Range) {
   // Output child process results 3 lines below parent code block
   let outputPos = new vscode.Position(range.end.line + 3, 0);
 
+  console.log(code);
+  console.log(process.env.PATH);
+
+  child.on("error", (err) => {
+    console.error("SPAWN ERROR:", err);
+  });
+
+  child.on("close", (c) => {
+    console.error("EXIT CODE:", c);
+  });
+
   // Whenever child process outputs a new batch of data, write it
   child.stdout.on("data", async (data: Buffer) => {
     await resultMutex.acquire();
+
+    console.error("STDERR:", data.toString());
 
     const output = data.toString();
     await editor.edit((text) => text.insert(outputPos, output));
