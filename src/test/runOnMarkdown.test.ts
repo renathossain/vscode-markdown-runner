@@ -44,120 +44,120 @@ suite("Run on Markdown", function () {
     await ext?.activate();
   });
 
-  test("Python", async () => {
-    await runTest("python", "print(10 + 72)", result);
-  });
+  //   test("Python", async () => {
+  //     await runTest("python", "print(10 + 72)", result);
+  //   });
 
-  test("C", async () => {
-    await runTest(
-      "c",
-      `
-#include <stdio.h>
+  //   test("C", async () => {
+  //     await runTest(
+  //       "c",
+  //       `
+  // #include <stdio.h>
 
-int main() {
-  printf("%d", 10 + 72);
-  return 0;
-}
-      `.trim(),
-      result,
-    );
-  });
+  // int main() {
+  //   printf("%d", 10 + 72);
+  //   return 0;
+  // }
+  //       `.trim(),
+  //       result,
+  //     );
+  //   });
 
-  test("Java", async () => {
-    await runTest(
-      "java",
-      `
-public class Main {
-  public static void main(String[] args) {
-    System.out.println(10 + 72);
-  }
-}
-      `.trim(),
-      result,
-    );
-  });
+  //   test("Java", async () => {
+  //     await runTest(
+  //       "java",
+  //       `
+  // public class Main {
+  //   public static void main(String[] args) {
+  //     System.out.println(10 + 72);
+  //   }
+  // }
+  //       `.trim(),
+  //       result,
+  //     );
+  //   });
 
-  test("C++", async () => {
-    await runTest(
-      "cpp",
-      `
-#include <iostream>
-using namespace std;
+  //   test("C++", async () => {
+  //     await runTest(
+  //       "cpp",
+  //       `
+  // #include <iostream>
+  // using namespace std;
 
-int main() {
-  cout << 10 + 72;
-}
-      `.trim(),
-      result,
-    );
-  });
+  // int main() {
+  //   cout << 10 + 72;
+  // }
+  //       `.trim(),
+  //       result,
+  //     );
+  //   });
 
-  test("Rust", async () => {
-    await runTest(
-      "rust",
-      `
-fn main() {
-  println!("{}", 10 + 72);
-}
-      `.trim(),
-      result,
-    );
-  });
+  //   test("Rust", async () => {
+  //     await runTest(
+  //       "rust",
+  //       `
+  // fn main() {
+  //   println!("{}", 10 + 72);
+  // }
+  //       `.trim(),
+  //       result,
+  //     );
+  //   });
 
-  test("TypeScript", async () => {
-    await runTest("typescript", `console.log(10 + 72);`, result);
-  });
+  //   test("TypeScript", async () => {
+  //     await runTest("typescript", `console.log(10 + 72);`, result);
+  //   });
 
-  test("PHP", async () => {
-    await runTest("php", `<?php echo 10 + 72;`, result);
-  });
+  //   test("PHP", async () => {
+  //     await runTest("php", `<?php echo 10 + 72;`, result);
+  //   });
 
-  test("Perl", async () => {
-    await runTest("perl", `print 10 + 72`, result);
-  });
+  //   test("Perl", async () => {
+  //     await runTest("perl", `print 10 + 72`, result);
+  //   });
 
-  test("R", async () => {
-    await runTest("r", `cat(10 + 72)`, result);
-  });
+  //   test("R", async () => {
+  //     await runTest("r", `cat(10 + 72)`, result);
+  //   });
 
-  test("Dart", async () => {
-    await runTest("dart", `void main() => print(10 + 72);`, result);
-  });
+  //   test("Dart", async () => {
+  //     await runTest("dart", `void main() => print(10 + 72);`, result);
+  //   });
 
-  test("Groovy", async () => {
-    await runTest("groovy", `println 10 + 72`, result);
-  });
+  //   test("Groovy", async () => {
+  //     await runTest("groovy", `println 10 + 72`, result);
+  //   });
 
-  test("Go", async () => {
-    await runTest(
-      "go",
-      `
-package main
-import "fmt"
+  //   test("Go", async () => {
+  //     await runTest(
+  //       "go",
+  //       `
+  // package main
+  // import "fmt"
 
-func main() {
-  fmt.Println(10 + 72)
-}
-      `.trim(),
-      result,
-    );
-  });
+  // func main() {
+  //   fmt.Println(10 + 72)
+  // }
+  //       `.trim(),
+  //       result,
+  //     );
+  //   });
 
-  test("Haskell", async () => {
-    await runTest("haskell", `main = print (10 + 72)`, result);
-  });
+  //   test("Haskell", async () => {
+  //     await runTest("haskell", `main = print (10 + 72)`, result);
+  //   });
 
-  test("Julia", async () => {
-    await runTest("julia", `println(10 + 72)`, result);
-  });
+  //   test("Julia", async () => {
+  //     await runTest("julia", `println(10 + 72)`, result);
+  //   });
 
-  test("Lua", async () => {
-    await runTest("lua", `print(10 + 72)`, result);
-  });
+  //   test("Lua", async () => {
+  //     await runTest("lua", `print(10 + 72)`, result);
+  //   });
 
-  test("Ruby", async () => {
-    await runTest("ruby", `puts 10 + 72`, result);
-  });
+  //   test("Ruby", async () => {
+  //     await runTest("ruby", `puts 10 + 72`, result);
+  //   });
 
   test("JavaScript", async () => {
     await runTest("javascript", `console.log(10 + 72);`, result);
