@@ -48,20 +48,20 @@ suite("Run on Markdown", function () {
     await runTest("python", "print(10 + 72)", result);
   });
 
-  //   test("C", async () => {
-  //     await runTest(
-  //       "c",
-  //       `
-  // #include <stdio.h>
+  test("C", async () => {
+    await runTest(
+      "c",
+      `
+  #include <stdio.h>
 
-  // int main() {
-  //   printf("%d", 10 + 72);
-  //   return 0;
-  // }
-  //       `.trim(),
-  //       result,
-  //     );
-  //   });
+  int main() {
+    printf("%d", 10 + 72);
+    return 0;
+  }
+        `.trim(),
+      result,
+    );
+  });
 
   test("Java", async () => {
     await runTest(
@@ -77,20 +77,20 @@ suite("Run on Markdown", function () {
     );
   });
 
-  //   test("C++", async () => {
-  //     await runTest(
-  //       "cpp",
-  //       `
-  // #include <iostream>
-  // using namespace std;
+  test("C++", async () => {
+    await runTest(
+      "cpp",
+      `
+  #include <iostream>
+  using namespace std;
 
-  // int main() {
-  //   cout << 10 + 72;
-  // }
-  //       `.trim(),
-  //       result,
-  //     );
-  //   });
+  int main() {
+    cout << 10 + 72;
+  }
+        `.trim(),
+      result,
+    );
+  });
 
   //   test("Rust", async () => {
   //     await runTest(
