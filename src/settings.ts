@@ -21,27 +21,19 @@ import * as vscode from "vscode";
 // Instead of hardcoding the language configurations,
 // the user can modify the defaults in the extension settings.
 
-// Return the language configuration for a specific language
-export function getLanguageConfig(language: string, configuration: string) {
-  // Obtain config values for a specific language
-  const config = vscode.workspace.getConfiguration();
-  const languageConfig =
-    config.get<{
-      [language: string]: string;
-    }>("markdownRunner.compilerConfiguration") || {};
-  const configValues: string[] =
-    languageConfig[language] &&
-    JSON.parse(languageConfig[language].replace(/'/g, '"'));
+const INDEX: Record<string, number> = {
+  name: 0,
+  extension: 1,
+  compiler: 2,
+};
 
-  // Meaning of each item in the configValues array
-  const indexMap: { [key: string]: number } = {
-    name: 0,
-    extension: 1,
-    compiler: 2,
-  };
+export function getLanguageConfig(language: string, key: string) {
+  const raw = vscode.workspace
+    .getConfiguration()
+    .get<Record<string, string>>("markdownRunner.compilerConfiguration")?.[
+    language
+  ];
 
-  // Return the correct configuration
-  return configValues && indexMap[configuration] !== undefined
-    ? configValues[indexMap[configuration]]
-    : undefined;
+  if (!raw || INDEX[key] === undefined) return undefined;
+  return JSON.parse(raw.replace(/'/g, '"'))?.[INDEX[key]];
 }

@@ -17,7 +17,9 @@
 import * as vscode from "vscode";
 import * as cp from "child_process";
 import Mutex from "semaphore-async-await";
+import treeKill from "tree-kill";
 import { parseBlock, blockRegex } from "./codeLens";
+import { codeLensProvider } from "./extension";
 
 // Global mutex to ensure all text insertion or deletion happens atomically
 const textEditMutex = new Mutex(1);
@@ -25,19 +27,13 @@ const textEditMutex = new Mutex(1);
 // PIDs associated with `Run on Markdown` child processes
 export let childProcesses: { pid: number; line: number }[] = [];
 
-// Remove a child process from list
-export function removeChild(pid: number | undefined) {
-  childProcesses = childProcesses.filter((cp) => cp.pid !== pid);
-}
-
 // Safety button to kill all processes
 const killAllButton = vscode.window.createStatusBarItem(
-  vscode.StatusBarAlignment.Left
+  vscode.StatusBarAlignment.Left,
 );
 killAllButton.command = {
   title: "Kill All `Run on Markdown` Processes",
   command: "markdown.killAllProcesses",
-  arguments: [],
 };
 killAllButton.text = "$(stop-circle) Kill All Processes";
 
@@ -54,94 +50,132 @@ function findResultBlock(document: vscode.TextDocument, startLine: number) {
   const match = blockRegex().exec(slicedText);
   if (!match) return null;
   const { language, code } = parseBlock(document, match);
-  if (language !== `result`) return null;
+  if (language !== "result") return null;
 
   // The match must be on the first line of the sliced document
   const matchLine = slicedText.slice(0, match.index).split("\n").length;
   if (matchLine !== 1) return null;
 
   // Return range of results contents to be cleared
-  const endLine = startLine + 1 + code.split("\n").length - 1;
+  const endLine = startLine + code.split("\n").length;
   return new vscode.Range(startLine + 1, 0, endLine, 0);
 }
 
+// Delete selected range in text
+export async function deleteOnMarkdown(range: vscode.Range) {
+  if (!textEditMutex.tryAcquire()) return;
+  const editor = vscode.window.activeTextEditor;
+  if (await editor?.edit((text) => text.delete(range)))
+    await editor?.document.save();
+  textEditMutex.release();
+}
+
 // Run command on the markdown file
-export async function runOnMarkdown(code: string, range: vscode.Range) {
+export function runOnMarkdown(code: string, range: vscode.Range) {
   // TODO: implement multiple output streams at the same time
   const editor = vscode.window.activeTextEditor;
-  if (code === "" || childProcesses.length > 0 || !editor) return;
-
-  // Mutex ensures result block exists before child process inserts
-  const resultMutex = new Mutex(1);
-  await resultMutex.acquire();
+  if (!code || !editor || !textEditMutex.tryAcquire()) return;
 
   // Start child process
   const child = cp.spawn(code, { shell: true });
-
-  // Output child process results 3 lines below parent code block
-  let outputPos = new vscode.Position(range.end.line + 3, 0);
-
-  // Whenever child process outputs a new batch of data, write it
-  child.stdout.on("data", async (data: Buffer) => {
-    await resultMutex.acquire();
-    await textEditMutex.acquire();
-
-    const output = data.toString();
-    await editor.edit((text) => text.insert(outputPos, output));
-    const lines = output.split("\n");
-    const last = lines[lines.length - 1];
-    outputPos = new vscode.Position(
-      outputPos.line + lines.length - 1,
-      lines.length === 1 ? outputPos.character + last.length : last.length
-    );
-
-    resultMutex.release();
-    textEditMutex.release();
-  });
-
-  // Runs when child process has finished writing all data
-  child.stdout.on("end", async () => {
-    await resultMutex.acquire();
-    await textEditMutex.acquire();
-
-    // If output did not end on a newline, add it
-    if (outputPos.character !== 0)
-      await editor.edit((text) => text.insert(outputPos, "\n"));
-
-    // Save the document after all text deletes/inserts
-    await editor.document.save();
-
-    resultMutex.release();
-    textEditMutex.release();
-  });
-
-  // Runs when child process exits (but not all data may be written)
-  child.on("close", async () => {
-    // Remove process `Stop` and `Kill` controls
-    removeChild(child.pid);
-    if (!childProcesses.length) killAllButton.hide();
-  });
-
-  // Create buttons to stop or kill the process
-  if (child.pid != undefined) {
-    childProcesses.push({ pid: child.pid, line: range.end.line + 2 });
-    killAllButton.show();
-  } else {
+  if (child.pid == null) {
     vscode.window.showErrorMessage("Failed to start process.");
-    resultMutex.release();
+    textEditMutex.release();
     return;
   }
 
-  // Create result block that holds execution results
-  await textEditMutex.acquire();
-  const deleteRange = findResultBlock(editor.document, range.end.line + 2);
+  // Create buttons to stop or kill the process
+  childProcesses.push({ pid: child.pid, line: range.end.line + 2 });
+  killAllButton.show();
 
-  // If result block found, clear the contents inside it, otherwise create it
-  const resultBlock = "\n\n```result\n```";
-  await editor.edit((text) =>
-    deleteRange ? text.delete(deleteRange) : text.insert(range.end, resultBlock)
-  );
+  const done = (async () => {
+    // Mutex ensures result block/previous buffer is written befure next buffer starts
+    const resultMutex = new Mutex(1);
+    await resultMutex.acquire();
 
-  resultMutex.release();
-  textEditMutex.release();
+    // Mutex released when child process exits
+    const exitMutex = new Mutex(1);
+    await exitMutex.acquire();
+
+    // Mutex released when output is fully written
+    const endMutex = new Mutex(1);
+    await endMutex.acquire();
+
+    // Output child process results 3 lines below parent code block
+    let outputPos = new vscode.Position(range.end.line + 3, 0);
+
+    // Whenever child process outputs a new batch of data, write it
+    child.stdout.on("data", async (data: Buffer) => {
+      await resultMutex.acquire();
+
+      const output = data.toString();
+      await editor.edit((text) => text.insert(outputPos, output));
+      const lines = output.split("\n");
+      const last = lines[lines.length - 1];
+      outputPos = new vscode.Position(
+        outputPos.line + lines.length - 1,
+        lines.length === 1 ? outputPos.character + last.length : last.length,
+      );
+
+      resultMutex.release();
+    });
+
+    // Runs when child process exits (but not all data may be written)
+    child.on("exit", async () => {
+      // Remove process `Stop`, `Kill` and `KillAll` controls
+      childProcesses = childProcesses.filter((cp) => cp.pid !== child.pid);
+      if (!childProcesses.length) killAllButton.hide();
+
+      exitMutex.release();
+    });
+
+    // Runs when all data is written (but child process may not have exited)
+    child.stdout.on("end", async () => {
+      await resultMutex.acquire();
+
+      // If output did not end on a newline, add it
+      if (outputPos.character !== 0)
+        await editor.edit((text) => text.insert(outputPos, "\n"));
+
+      // Save the document after all text deletes/inserts
+      await editor.document.save();
+
+      resultMutex.release();
+      endMutex.release();
+    });
+
+    // If result block found, clear the contents inside it, otherwise create it
+    const deleteRange = findResultBlock(editor.document, range.end.line + 2);
+    const resultBlock = "\n\n```result\n```";
+    await editor.edit((text) =>
+      deleteRange
+        ? text.delete(deleteRange)
+        : text.insert(range.end, resultBlock),
+    );
+
+    resultMutex.release();
+    await exitMutex.acquire();
+    await endMutex.acquire();
+    textEditMutex.release();
+    exitMutex.release();
+    endMutex.release();
+
+    // Refresh CodeLenses after finished process
+    codeLensProvider?.refresh();
+  })();
+
+  return { pid: child.pid, done };
+}
+
+// Kill process
+export async function killProcess(pid: number, signal: string) {
+  childProcesses = childProcesses.filter((cp) => cp.pid !== pid);
+  treeKill(pid, signal);
+}
+
+// Kill all processes
+export async function killAllProcesses() {
+  const processes = childProcesses;
+  childProcesses = [];
+  processes.forEach(({ pid }) => treeKill(pid, "SIGKILL"));
 }

@@ -41,92 +41,65 @@
 
 import * as vscode from "vscode";
 import * as fs from "fs";
-import treeKill from "tree-kill";
 import { InlineCodeLinkProvider, InlineCodeHoverProvider } from "./codeLinks";
 import { ButtonCodeLensProvider } from "./codeLens";
 import { runInTerminal, getRunCommand } from "./runInTerminal";
-import { runOnMarkdown, childProcesses, removeChild } from "./runOnMarkdown";
-
-// List of command handlers
-export const commandHandlers = [
-  {
-    command: "markdown.runFile",
-    handler: async (language: string, code: string) =>
-      runInTerminal(await getRunCommand(language, code)),
-  },
-  {
-    command: "markdown.runOnMarkdown",
-    handler: async (language: string, code: string, range: vscode.Range) =>
-      await runOnMarkdown(await getRunCommand(language, code), range),
-  },
-  { command: "markdown.runInTerminal", handler: runInTerminal },
-  {
-    command: "markdown.copy",
-    handler: (code: string) => {
-      vscode.env.clipboard.writeText(code);
-      vscode.window.setStatusBarMessage("Copied to clipboard!", 2000);
-    },
-  },
-  {
-    command: "markdown.delete",
-    handler: (range: vscode.Range) => {
-      const editor = vscode.window.activeTextEditor;
-      if (editor?.edit((text) => text.delete(range))) editor?.document.save();
-    },
-  },
-  {
-    command: "markdown.killProcess",
-    handler: (pid: number, signal: string) => {
-      removeChild(pid);
-      treeKill(pid, signal);
-    },
-  },
-  {
-    command: "markdown.killAllProcesses",
-    handler: () => {
-      childProcesses.forEach(({ pid }) => {
-        removeChild(pid);
-        treeKill(pid, "SIGKILL");
-      });
-    },
-  },
-];
+import {
+  childProcesses,
+  deleteOnMarkdown,
+  runOnMarkdown,
+  killProcess,
+  killAllProcesses,
+} from "./runOnMarkdown";
 
 // List of temporary files
 export const tempFilePaths: string[] = [];
 
 // Providers
-let codeLensDisposable: vscode.Disposable | undefined;
-let linkProviderDisposable: vscode.Disposable | undefined;
-let hoverProviderDisposable: vscode.Disposable | undefined;
+export let codeLensProvider: ButtonCodeLensProvider | undefined;
+let disposables: vscode.Disposable[] = [];
+
+// List of command handlers
+const commands = {
+  "markdown.runFile": async (lang: string, code: string) =>
+    runInTerminal(await getRunCommand(lang, code)),
+  "markdown.runOnMarkdown": async (
+    lang: string,
+    code: string,
+    range: vscode.Range,
+  ) => runOnMarkdown(await getRunCommand(lang, code), range),
+  "markdown.runInTerminal": runInTerminal,
+  "markdown.copy": (code: string) => {
+    vscode.env.clipboard.writeText(code);
+    vscode.window.setStatusBarMessage("Copied to clipboard!", 2000);
+  },
+  "markdown.delete": deleteOnMarkdown,
+  "markdown.killProcess": killProcess,
+  "markdown.killAllProcesses": killAllProcesses,
+  "markdown._getProcesses": () => childProcesses,
+};
 
 // Register the correct providers based on configuration
 function registerProviders(context: vscode.ExtensionContext) {
   // Determine which file types to activate the extension on
+  const selector = [{ language: "markdown", scheme: "file" }];
   const config = vscode.workspace.getConfiguration();
-  const quartoEnabled = config.get<boolean>("markdownRunner.activateOnQuarto");
-  const docSelector = [{ language: "markdown", scheme: "file" }];
-  if (quartoEnabled) docSelector.push({ language: "quarto", scheme: "file" });
+  if (config.get<boolean>("markdownRunner.activateOnQuarto"))
+    selector.push({ language: "quarto", scheme: "file" });
 
   // Dispose previous providers if they exist
-  codeLensDisposable?.dispose();
-  linkProviderDisposable?.dispose();
-  hoverProviderDisposable?.dispose();
+  disposables.forEach((d) => d.dispose());
 
   // Create and register the new providers
-  codeLensDisposable = vscode.languages.registerCodeLensProvider(
-    docSelector,
-    new ButtonCodeLensProvider()
-  );
-  linkProviderDisposable = vscode.languages.registerDocumentLinkProvider(
-    docSelector,
-    new InlineCodeLinkProvider()
-  );
-  hoverProviderDisposable = vscode.languages.registerHoverProvider(
-    docSelector,
-    new InlineCodeHoverProvider()
-  );
-  context.subscriptions.push(codeLensDisposable, linkProviderDisposable);
+  codeLensProvider = new ButtonCodeLensProvider();
+  const inlineProvider = new InlineCodeLinkProvider();
+  const hoverProvider = new InlineCodeHoverProvider();
+  disposables = [
+    vscode.languages.registerCodeLensProvider(selector, codeLensProvider),
+    vscode.languages.registerDocumentLinkProvider(selector, inlineProvider),
+    vscode.languages.registerHoverProvider(selector, hoverProvider),
+  ];
+  context.subscriptions.push(...disposables);
 }
 
 // Main function that runs when extension is activated
@@ -138,14 +111,14 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("markdownRunner.activateOnQuarto"))
         registerProviders(context);
-    })
+    }),
   );
 
   // Register all command handlers
-  commandHandlers.forEach(({ command, handler }) =>
-    context.subscriptions.push(
-      vscode.commands.registerCommand(command, handler)
-    )
+  context.subscriptions.push(
+    ...Object.entries(commands).map(([command, handler]) =>
+      vscode.commands.registerCommand(command, handler),
+    ),
   );
 }
 

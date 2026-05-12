@@ -31,9 +31,7 @@ const inlineRegex = () => /(?<!`+)`([^`\n]+?)`(?!`+)/g;
 
 // DocumentLink Provider for inline code
 export class InlineCodeLinkProvider implements vscode.DocumentLinkProvider {
-  provideDocumentLinks(
-    document: vscode.TextDocument
-  ): vscode.ProviderResult<vscode.DocumentLink[]> {
+  provideDocumentLinks(document: vscode.TextDocument) {
     const inlineCodeLinks: vscode.DocumentLink[] = [];
 
     for (const match of document.getText().matchAll(inlineRegex())) {
@@ -56,10 +54,7 @@ export class InlineCodeLinkProvider implements vscode.DocumentLinkProvider {
 
 // Creates hover tooltip to copy inline code
 export class InlineCodeHoverProvider implements vscode.HoverProvider {
-  provideHover(
-    document: vscode.TextDocument,
-    position: vscode.Position
-  ): vscode.ProviderResult<vscode.Hover> {
+  provideHover(document: vscode.TextDocument, position: vscode.Position) {
     const range = document.getWordRangeAtPosition(position, inlineRegex());
     if (!range) return;
     const code = document.getText(range).replace(/`/g, "");
