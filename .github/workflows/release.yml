@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          cache: npm
+
+      - name: Install Node Dependencies
+        run: npm install
+
+      - name: Create .vsix Build
+        run: npm run build
+
+      - name: Publish VSCE
+        run: npx vsce publish -p ${{ secrets.VSCE_TOKEN }}
+
+      - name: Publish Open VSX
+        run: npx ovsx publish -p ${{ secrets.OVSX_TOKEN }}
+
+      - name: Extract Changelog
+        id: changelog
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          {
+            echo 'notes<<EOF'
+            awk "/^## ${VERSION}/{flag=1;next}/^## /{flag=0}flag" CHANGELOG.md
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.notes }}
+          files: "*.vsix"

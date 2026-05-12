@@ -109,6 +109,7 @@
     "eslint-plugin-prettier": "^5.5.5",
     "globals": "^17.6.0",
     "mocha": "^11.3.0",
+    "ovsx": "^0.10.12",
     "prettier": "^3.8.3",
     "ts-loader": "^9.5.7",
     "typescript": "^6.0.3",
