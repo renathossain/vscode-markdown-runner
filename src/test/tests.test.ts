@@ -249,9 +249,31 @@ suite("Delete", function () {
   });
 });
 
-suite("Default Codes", function () {
+suite("Code Manipulation", function () {
   this.timeout(60000);
   suiteSetup(setup);
+
+  test("Python Path", async () => {
+    const dir = path.join(os.tmpdir(), "helpers");
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, "math.py"), "def add(a,b): return a+b");
+
+    const md = path.join(os.tmpdir(), "test-python-path.md");
+    const code = `from helpers.math import add\nprint(add(10,72))`;
+    fs.writeFileSync(md, `\`\`\`python\n${code}\n\`\`\`\n`);
+
+    const doc = await vscode.workspace.openTextDocument(md);
+    await vscode.window.showTextDocument(doc);
+
+    await vscode.commands.executeCommand(
+      "markdown.runOnMarkdown",
+      "python",
+      code,
+      new vscode.Range(0, 0, 2, 3),
+    );
+
+    assert.strictEqual(doc.getText().includes("82"), true);
+  });
 
   async function run(code: string, expected: string, fileName: string) {
     const text = `\`\`\`python\n${code}\n\`\`\`\n`;
@@ -276,7 +298,7 @@ suite("Default Codes", function () {
     );
   }
 
-  test("Prepend", async () => {
+  test("Default Codes Prepend", async () => {
     await vscode.workspace
       .getConfiguration()
       .update(
@@ -288,7 +310,7 @@ suite("Default Codes", function () {
     await run(`print(result)`, "82", "test-prepend.md");
   });
 
-  test("Insert At", async () => {
+  test("Default Codes Insert At", async () => {
     await vscode.workspace
       .getConfiguration()
       .update(
