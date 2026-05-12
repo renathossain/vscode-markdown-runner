@@ -6,7 +6,8 @@ import * as path from "path";
 import { ButtonCodeLensProvider } from "../codeLens";
 import { InlineCodeLinkProvider, InlineCodeHoverProvider } from "../codeLinks";
 
-const ext = vscode.extensions.getExtension("renathossain.markdown-runner");
+const publisherId = "renathossain.markdown-runner";
+const ext = vscode.extensions.getExtension(publisherId);
 const isWindows = process.platform === "win32";
 const setup = async () => {
   await ext?.activate();
@@ -18,6 +19,29 @@ const setup = async () => {
       vscode.ConfigurationTarget.Global,
     );
 };
+
+suite("Activation", function () {
+  this.timeout(60000);
+
+  const cases: Array<[string, boolean]> = [
+    ["a.txt", false],
+    ["a.md", true],
+    ["a.qmd", true],
+  ];
+
+  test("By File Type", async () => {
+    for (const [file, expected] of cases) {
+      const filePath = path.join(os.tmpdir(), file);
+      fs.writeFileSync(filePath, "```python\nprint(10 + 72)\n```");
+
+      const doc = await vscode.workspace.openTextDocument(filePath);
+      await vscode.window.showTextDocument(doc);
+
+      await new Promise((r) => setTimeout(r, 1500));
+      assert.strictEqual(ext?.isActive, expected, file);
+    }
+  });
+});
 
 suite("CodeLens", function () {
   this.timeout(60000);
