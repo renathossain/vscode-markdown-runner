@@ -3,6 +3,8 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import { ButtonCodeLensProvider } from "../codeLens";
+import { InlineCodeLinkProvider, InlineCodeHoverProvider } from "../codeLinks";
 
 const ext = vscode.extensions.getExtension("renathossain.markdown-runner");
 const isWindows = process.platform === "win32";
@@ -11,7 +13,7 @@ suite("Run File", function () {
   this.timeout(60000);
   suiteSetup(async () => ext?.activate());
   test("Python", async () => {
-    const file = path.join(os.tmpdir(), `test-runfile.md`);
+    const file = path.join(os.tmpdir(), `test-runfile.out`);
     const code = `with open(r"${file.replace(/\\/g, "/")}", "w") as f: f.write(str(10 + 72))`;
     await vscode.commands.executeCommand("markdown.runFile", "python", code);
     const start = Date.now();
@@ -115,5 +117,120 @@ suite("Delete", function () {
 
     await vscode.commands.executeCommand("markdown.delete", range);
     assert.strictEqual(doc.getText(), "\n");
+  });
+});
+
+suite("CodeLens", function () {
+  this.timeout(60000);
+  suiteSetup(async () => ext?.activate());
+
+  test("Python", async () => {
+    const text = "```python\nprint(10 + 72)\n```\n";
+    const file = path.join(os.tmpdir(), "test-lens.md");
+    fs.writeFileSync(file, text);
+
+    const doc = await vscode.workspace.openTextDocument(file);
+    const provider = new ButtonCodeLensProvider();
+    const lenses = provider.provideCodeLenses(doc);
+
+    const range = new vscode.Range(0, 0, 2, 3);
+    const clear = new vscode.Range(1, 0, 2, 0);
+    const del = new vscode.Range(0, 0, 3, 0);
+
+    assert.deepStrictEqual(
+      lenses.map((x) => ({
+        title: x.command?.title,
+        command: x.command?.command,
+        args: x.command?.arguments,
+        range: x.range,
+      })),
+      [
+        {
+          title: "Run Python Block",
+          command: "markdown.runFile",
+          args: ["python", "print(10 + 72)\n"],
+          range,
+        },
+        {
+          title: "Run on Markdown",
+          command: "markdown.runOnMarkdown",
+          args: ["python", "print(10 + 72)\n", range],
+          range,
+        },
+        {
+          title: "Copy",
+          command: "markdown.copy",
+          args: ["print(10 + 72)\n"],
+          range,
+        },
+        {
+          title: "Clear",
+          command: "markdown.delete",
+          args: [clear],
+          range,
+        },
+        {
+          title: "Delete",
+          command: "markdown.delete",
+          args: [del],
+          range,
+        },
+      ],
+    );
+  });
+});
+
+suite("Inline Code Links", function () {
+  this.timeout(60000);
+  suiteSetup(async () => ext?.activate());
+
+  test("Link", async () => {
+    const text = "Run `node -v` now";
+    const file = path.join(os.tmpdir(), "test-link.md");
+    fs.writeFileSync(file, text);
+
+    const doc = await vscode.workspace.openTextDocument(file);
+    const provider = new InlineCodeLinkProvider();
+    const links = provider.provideDocumentLinks(doc);
+
+    const code = "node -v";
+    const command = `command:markdown.runInTerminal?${encodeURIComponent(JSON.stringify([code]))}`;
+
+    assert.deepStrictEqual(links, [
+      new vscode.DocumentLink(
+        new vscode.Range(0, 4, 0, 13),
+        vscode.Uri.parse(command),
+      ),
+    ]);
+  });
+});
+
+suite("Inline Code Hover", function () {
+  this.timeout(60000);
+  suiteSetup(async () => ext?.activate());
+
+  test("Hover", async () => {
+    const text = "Run `node -v` now";
+    const file = path.join(os.tmpdir(), "test-hover.md");
+    fs.writeFileSync(file, text);
+
+    const doc = await vscode.workspace.openTextDocument(file);
+    const provider = new InlineCodeHoverProvider();
+    const hover = provider.provideHover(doc, new vscode.Position(0, 8));
+
+    const code = "node -v";
+    const command = `[Copy to clipboard](command:markdown.copy?${encodeURIComponent(JSON.stringify([code]))})`;
+
+    assert.deepStrictEqual(
+      hover,
+      new vscode.Hover(
+        (() => {
+          const md = new vscode.MarkdownString(command);
+          md.isTrusted = true;
+          return md;
+        })(),
+        new vscode.Range(0, 4, 0, 13),
+      ),
+    );
   });
 });
