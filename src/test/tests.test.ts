@@ -22,23 +22,26 @@ const setup = async () => {
 
 suite("Activation", function () {
   this.timeout(60000);
+  suiteSetup(setup);
 
   const cases: Array<[string, boolean]> = [
-    ["a.txt", false],
     ["a.md", true],
     ["a.qmd", true],
+    ["a.txt", false],
   ];
 
   test("By File Type", async () => {
-    for (const [file, expected] of cases) {
+    for (const [file, should] of cases) {
       const filePath = path.join(os.tmpdir(), file);
       fs.writeFileSync(filePath, "```python\nprint(10 + 72)\n```");
-
       const doc = await vscode.workspace.openTextDocument(filePath);
-      await vscode.window.showTextDocument(doc);
 
-      await new Promise((r) => setTimeout(r, 1500));
-      assert.strictEqual(ext?.isActive, expected, file);
+      const lenses = await vscode.commands.executeCommand<vscode.CodeLens[]>(
+        "vscode.executeCodeLensProvider",
+        doc.uri,
+      );
+
+      assert.strictEqual((lenses?.length ?? 0) > 0, should, file);
     }
   });
 });

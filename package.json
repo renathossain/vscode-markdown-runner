@@ -71,7 +71,15 @@
           "default": true
         }
       }
-    }
+    },
+    "languages": [
+      {
+        "id": "quarto",
+        "extensions": [
+          ".qmd"
+        ]
+      }
+    ]
   },
   "scripts": {
     "build": "vsce package",
