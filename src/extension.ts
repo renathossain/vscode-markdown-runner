@@ -45,6 +45,7 @@ import { InlineCodeLinkProvider, InlineCodeHoverProvider } from "./codeLinks";
 import { ButtonCodeLensProvider } from "./codeLens";
 import { runInTerminal, getRunCommand } from "./runInTerminal";
 import {
+  childProcesses,
   deleteOnMarkdown,
   runOnMarkdown,
   killProcess,
@@ -66,7 +67,7 @@ const commands = {
     lang: string,
     code: string,
     range: vscode.Range,
-  ) => await runOnMarkdown(await getRunCommand(lang, code), range),
+  ) => runOnMarkdown(await getRunCommand(lang, code), range),
   "markdown.runInTerminal": runInTerminal,
   "markdown.copy": (code: string) => {
     vscode.env.clipboard.writeText(code);
@@ -75,6 +76,7 @@ const commands = {
   "markdown.delete": deleteOnMarkdown,
   "markdown.killProcess": killProcess,
   "markdown.killAllProcesses": killAllProcesses,
+  "markdown._getProcesses": () => childProcesses,
 };
 
 // Register the correct providers based on configuration

@@ -182,30 +182,6 @@ suite("Run File", function () {
   });
 });
 
-async function testRunOnMarkdown(lang: string, code: string, result: string) {
-  const file = path.join(os.tmpdir(), `test-${lang}.md`);
-  const codeBlock = `\`\`\`${lang}\n${code}\n\`\`\`\n`;
-  fs.writeFileSync(file, codeBlock);
-
-  const doc = await vscode.workspace.openTextDocument(file);
-  await vscode.window.showTextDocument(doc);
-
-  const text = doc.getText();
-  const range = new vscode.Range(
-    doc.positionAt(text.indexOf("```")),
-    doc.positionAt(text.lastIndexOf("```") + 3),
-  );
-
-  await vscode.commands.executeCommand(
-    "markdown.runOnMarkdown",
-    lang,
-    code,
-    range,
-  );
-
-  assert.strictEqual(doc.getText(), codeBlock + "\n" + result + "\n");
-}
-
 suite("Run on Markdown", function () {
   this.timeout(60000);
   const result = "```result\n82\n```";
@@ -232,15 +208,38 @@ suite("Run on Markdown", function () {
     ["JavaScript", "javascript", `console.log(10 + 72);`],
   ];
 
+  async function run(lang: string, code: string, result: string) {
+    const file = path.join(os.tmpdir(), `test-${lang}.md`);
+    const codeBlock = `\`\`\`${lang}\n${code}\n\`\`\`\n`;
+    fs.writeFileSync(file, codeBlock);
+
+    const doc = await vscode.workspace.openTextDocument(file);
+    await vscode.window.showTextDocument(doc);
+
+    const text = doc.getText();
+    const range = new vscode.Range(
+      doc.positionAt(text.indexOf("```")),
+      doc.positionAt(text.lastIndexOf("```") + 3),
+    );
+
+    const { done } = await vscode.commands.executeCommand<{
+      pid: number;
+      done: Promise<void>;
+    }>("markdown.runOnMarkdown", lang, code, range);
+    await done;
+
+    assert.strictEqual(doc.getText(), codeBlock + "\n" + result + "\n");
+  }
+
   cases.forEach(([name, lang, code]) => {
-    test(name, () => testRunOnMarkdown(lang, code, result));
+    test(name, () => run(lang, code, result));
   });
 
   const shellTestName = isWindows ? "PowerShell" : "Bash";
   test(shellTestName, async () => {
     const lang = isWindows ? "powershell" : "bash";
     const code = isWindows ? `Write-Output 82` : `echo 82`;
-    await testRunOnMarkdown(lang, code, result);
+    await run(lang, code, result);
   });
 });
 
@@ -276,6 +275,71 @@ suite("Delete", function () {
   });
 });
 
+suite("Kill Processes", function () {
+  this.timeout(60000);
+  suiteSetup(setup);
+
+  const pids = async () =>
+    (
+      (await vscode.commands.executeCommand<{ pid: number }[]>(
+        "markdown._getProcesses",
+      )) ?? []
+    ).map((p) => p.pid);
+
+  const run = async (file: string, command: string) => {
+    fs.writeFileSync(file, command);
+    await vscode.workspace
+      .openTextDocument(file)
+      .then(vscode.window.showTextDocument);
+    return vscode.commands.executeCommand<{ pid: number; done: Promise<void> }>(
+      "markdown.runOnMarkdown",
+      "python",
+      "while True: pass",
+      new vscode.Range(0, 0, 2, 3),
+    );
+  };
+
+  const waitDead = async (pid: number) => {
+    for (let i = 0; i < 20; i++) {
+      try {
+        process.kill(pid, 0);
+        await new Promise((r) => setTimeout(r, 100));
+      } catch {
+        return;
+      }
+    }
+    assert.fail(`${pid} still alive`);
+  };
+
+  test("One", async () => {
+    const file = path.join(os.tmpdir(), "kill-one.md");
+    const { pid } = await run(file, "```python\nwhile True: pass\n```");
+
+    assert.ok((await pids()).includes(pid));
+
+    await vscode.commands.executeCommand(
+      "markdown.killProcess",
+      pid,
+      "SIGKILL",
+    );
+
+    assert.ok(!(await pids()).includes(pid));
+    await waitDead(pid);
+  });
+
+  test("All", async () => {
+    const file = path.join(os.tmpdir(), "kill-all.md");
+    const { pid } = await run(file, "```python\nwhile True: pass\n```");
+
+    assert.ok((await pids()).length > 0);
+
+    await vscode.commands.executeCommand("markdown.killAllProcesses");
+
+    assert.ok(!(await pids()).length);
+    await waitDead(pid);
+  });
+});
+
 suite("Code Manipulation", function () {
   this.timeout(60000);
   suiteSetup(setup);
@@ -292,12 +356,11 @@ suite("Code Manipulation", function () {
     const doc = await vscode.workspace.openTextDocument(md);
     await vscode.window.showTextDocument(doc);
 
-    await vscode.commands.executeCommand(
-      "markdown.runOnMarkdown",
-      "python",
-      code,
-      new vscode.Range(0, 0, 2, 3),
-    );
+    const { done } = await vscode.commands.executeCommand<{
+      pid: number;
+      done: Promise<void>;
+    }>("markdown.runOnMarkdown", "python", code, new vscode.Range(0, 0, 2, 3));
+    await done;
 
     assert.strictEqual(doc.getText().includes("82"), true);
   });
@@ -310,14 +373,11 @@ suite("Code Manipulation", function () {
     const doc = await vscode.workspace.openTextDocument(file);
     await vscode.window.showTextDocument(doc);
 
-    const range = new vscode.Range(0, 0, 2, 3);
-
-    await vscode.commands.executeCommand(
-      "markdown.runOnMarkdown",
-      "python",
-      code,
-      range,
-    );
+    const { done } = await vscode.commands.executeCommand<{
+      pid: number;
+      done: Promise<void>;
+    }>("markdown.runOnMarkdown", "python", code, new vscode.Range(0, 0, 2, 3));
+    await done;
 
     assert.strictEqual(
       doc.getText(),
