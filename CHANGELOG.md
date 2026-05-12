@@ -5,6 +5,7 @@
 - **Bug Fix**: Prevents deletion of code blocks during "Run on Markdown", which previously caused misplaced output.
 - **Bug Fix**: Fixed lingering "Kill Process" buttons after execution completes.
 - **Bug Fix**: Fixed Python path injection order causing default code to wrap the import statement (e.g. `print(import sys ...)`) instead of prepending imports.
+- **Change**: Relaxed code block tag parsing — only the first word of the language tag is used, allowing inline metadata (e.g. `python{cmd=true}`) without affecting execution.
 
 ## 2.5.0
 

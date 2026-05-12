@@ -35,7 +35,7 @@ export const blockRegex = () => /^(`{3,})(.*?)\n(.*?)^\1$/gms;
 
 // Parses blocks
 export function parseBlock(doc: vscode.TextDocument, match: RegExpExecArray) {
-  const parsedLang = match[2].trim().toLowerCase();
+  const parsedLang = (match[2].trim().toLowerCase().match(/^\w+/) ?? [""])[0];
   const language = !parsedLang ? "bash" : parsedLang; // Treat untitled blocks as bash files
   const code = match[3];
   const start = doc.positionAt(match.index);
