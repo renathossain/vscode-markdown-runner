@@ -44,13 +44,6 @@ function injectDefaultCode(language: string, code: string) {
   const defaultCodeConfig =
     config.get<Record<string, string>>("markdownRunner.defaultCodes") || {};
 
-  // If pythonPath is enabled, inject the markdown file's path into the code
-  const editor = vscode.window.activeTextEditor;
-  if (pythonPathEnabled && editor && language === "python") {
-    const documentDirectory = path.dirname(editor.document.uri.fsPath);
-    code = `import sys\nsys.path.insert(0, r'${documentDirectory}')\n` + code;
-  }
-
   // Inject default code, if available from settings
   const newlineCode = (defaultCodeConfig[language] || "").replace(/\\n/g, "\n");
   // Explanation of regex:
@@ -59,7 +52,16 @@ function injectDefaultCode(language: string, code: string) {
   // ([\s\S]+$): 2nd capturing group that matches 1 or more (+) of any
   // characters (\s\S) and `$` means it matches to the end of the string
   const match = /^-I(.) ([\s\S]+$)/.exec(newlineCode);
-  return match ? match[2].replace(match[1], code) : newlineCode + code;
+  code = match ? match[2].replace(match[1], code) : newlineCode + code;
+
+  // If pythonPath is enabled, inject the markdown file's path into the code
+  const editor = vscode.window.activeTextEditor;
+  if (pythonPathEnabled && editor && language === "python") {
+    const documentDirectory = path.dirname(editor.document.uri.fsPath);
+    code = `import sys\nsys.path.insert(0, r'${documentDirectory}')\n` + code;
+  }
+
+  return code;
 }
 
 // Compiles a binary using the provided command

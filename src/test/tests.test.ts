@@ -8,121 +8,20 @@ import { InlineCodeLinkProvider, InlineCodeHoverProvider } from "../codeLinks";
 
 const ext = vscode.extensions.getExtension("renathossain.markdown-runner");
 const isWindows = process.platform === "win32";
-
-suite("Run File", function () {
-  this.timeout(60000);
-  suiteSetup(async () => ext?.activate());
-  test("Python", async () => {
-    const file = path.join(os.tmpdir(), `test-runfile.out`);
-    const code = `with open(r"${file.replace(/\\/g, "/")}", "w") as f: f.write(str(10 + 72))`;
-    await vscode.commands.executeCommand("markdown.runFile", "python", code);
-    const start = Date.now();
-    while (Date.now() - start < 10000) {
-      if (fs.existsSync(file) && fs.readFileSync(file, "utf-8").trim() === "82")
-        break;
-      await new Promise((r) => setTimeout(r, 100));
-    }
-    assert.strictEqual(fs.readFileSync(file, "utf-8").trim(), "82");
-  });
-});
-
-async function testRunOnMarkdown(lang: string, code: string, result: string) {
-  const file = path.join(os.tmpdir(), `test-${lang}.md`);
-  const codeBlock = `\`\`\`${lang}\n${code}\n\`\`\`\n`;
-  fs.writeFileSync(file, codeBlock);
-
-  const doc = await vscode.workspace.openTextDocument(file);
-  await vscode.window.showTextDocument(doc);
-
-  const text = doc.getText();
-  const range = new vscode.Range(
-    doc.positionAt(text.indexOf("```")),
-    doc.positionAt(text.lastIndexOf("```") + 3),
-  );
-
-  await vscode.commands.executeCommand(
-    "markdown.runOnMarkdown",
-    lang,
-    code,
-    range,
-  );
-
-  assert.strictEqual(doc.getText(), codeBlock + "\n" + result + "\n");
-}
-
-suite("Run on Markdown", function () {
-  this.timeout(60000);
-  const result = "```result\n82\n```";
-  suiteSetup(async () => ext?.activate());
-
-  const javaCode = `public class Main{public static void main(String[]a){System.out.println(10+72);}}`;
-  const cases: Array<[string, string, string]> = [
-    ["Python", "python", "print(10 + 72)"],
-    ["C", "c", `#include <stdio.h>\nint main(){printf("%d",10+72);return 0;}`],
-    ["Java", "java", javaCode],
-    ["C++", "cpp", `#include <iostream>\nint main(){std::cout<<10+72;}`],
-    ["Rust", "rust", `fn main(){println!("{}",10+72);}`],
-    ["TypeScript", "typescript", `console.log(10 + 72);`],
-    ["PHP", "php", `<?php echo 10 + 72;`],
-    ["Perl", "perl", `print 10 + 72`],
-    ["R", "r", `cat(10 + 72)`],
-    ["Dart", "dart", `void main()=>print(10+72);`],
-    ["Groovy", "groovy", `println 10 + 72`],
-    ["Go", "go", `package main\nimport "fmt"\nfunc main(){fmt.Println(10+72)}`],
-    ["Haskell", "haskell", `main = print (10 + 72)`],
-    ["Julia", "julia", `println(10 + 72)`],
-    ["Lua", "lua", `print(10 + 72)`],
-    ["Ruby", "ruby", `puts 10 + 72`],
-    ["JavaScript", "javascript", `console.log(10 + 72);`],
-  ];
-
-  cases.forEach(([name, lang, code]) => {
-    test(name, () => testRunOnMarkdown(lang, code, result));
-  });
-
-  const shellTestName = isWindows ? "PowerShell" : "Bash";
-  test(shellTestName, async () => {
-    const lang = isWindows ? "powershell" : "bash";
-    const code = isWindows ? `Write-Output 82` : `echo 82`;
-    await testRunOnMarkdown(lang, code, result);
-  });
-});
-
-suite("Copy", function () {
-  this.timeout(60000);
-  suiteSetup(async () => ext?.activate());
-  test("Code", async () => {
-    const code = `node -v`;
-    await vscode.commands.executeCommand("markdown.copy", code);
-    assert.strictEqual(await vscode.env.clipboard.readText(), code);
-  });
-});
-
-suite("Delete", function () {
-  this.timeout(60000);
-  suiteSetup(async () => ext?.activate());
-  test("Code", async () => {
-    const file = path.join(os.tmpdir(), `test-delete.md`);
-    const codeBlock = `\`\`\`python\nprint(10 + 72)\n\`\`\`\n`;
-    fs.writeFileSync(file, codeBlock);
-
-    const doc = await vscode.workspace.openTextDocument(file);
-    await vscode.window.showTextDocument(doc);
-
-    const text = doc.getText();
-    const range = new vscode.Range(
-      doc.positionAt(text.indexOf("```")),
-      doc.positionAt(text.lastIndexOf("```") + 3),
+const setup = async () => {
+  await ext?.activate();
+  await vscode.workspace
+    .getConfiguration()
+    .update(
+      "markdownRunner.defaultCodes",
+      undefined,
+      vscode.ConfigurationTarget.Global,
     );
-
-    await vscode.commands.executeCommand("markdown.delete", range);
-    assert.strictEqual(doc.getText(), "\n");
-  });
-});
+};
 
 suite("CodeLens", function () {
   this.timeout(60000);
-  suiteSetup(async () => ext?.activate());
+  suiteSetup(setup);
 
   test("Python", async () => {
     const text = "```python\nprint(10 + 72)\n```\n";
@@ -182,7 +81,7 @@ suite("CodeLens", function () {
 
 suite("Inline Code Links", function () {
   this.timeout(60000);
-  suiteSetup(async () => ext?.activate());
+  suiteSetup(setup);
 
   test("Link", async () => {
     const text = "Run `node -v` now";
@@ -207,7 +106,7 @@ suite("Inline Code Links", function () {
 
 suite("Inline Code Hover", function () {
   this.timeout(60000);
-  suiteSetup(async () => ext?.activate());
+  suiteSetup(setup);
 
   test("Hover", async () => {
     const text = "Run `node -v` now";
@@ -232,5 +131,172 @@ suite("Inline Code Hover", function () {
         new vscode.Range(0, 4, 0, 13),
       ),
     );
+  });
+});
+
+suite("Run File", function () {
+  this.timeout(60000);
+  suiteSetup(setup);
+  test("Python", async () => {
+    const file = path.join(os.tmpdir(), `test-runfile.out`);
+    const code = `with open(r"${file.replace(/\\/g, "/")}", "w") as f: f.write(str(10 + 72))`;
+
+    await vscode.commands.executeCommand("markdown.runFile", "python", code);
+
+    for (
+      let i = 0;
+      i < 100 &&
+      (!fs.existsSync(file) || fs.readFileSync(file, "utf8") !== "82");
+      i++
+    )
+      await new Promise((r) => setTimeout(r, 100));
+
+    assert.strictEqual(fs.readFileSync(file, "utf-8").trim(), "82");
+  });
+});
+
+async function testRunOnMarkdown(lang: string, code: string, result: string) {
+  const file = path.join(os.tmpdir(), `test-${lang}.md`);
+  const codeBlock = `\`\`\`${lang}\n${code}\n\`\`\`\n`;
+  fs.writeFileSync(file, codeBlock);
+
+  const doc = await vscode.workspace.openTextDocument(file);
+  await vscode.window.showTextDocument(doc);
+
+  const text = doc.getText();
+  const range = new vscode.Range(
+    doc.positionAt(text.indexOf("```")),
+    doc.positionAt(text.lastIndexOf("```") + 3),
+  );
+
+  await vscode.commands.executeCommand(
+    "markdown.runOnMarkdown",
+    lang,
+    code,
+    range,
+  );
+
+  assert.strictEqual(doc.getText(), codeBlock + "\n" + result + "\n");
+}
+
+suite("Run on Markdown", function () {
+  this.timeout(60000);
+  const result = "```result\n82\n```";
+  suiteSetup(setup);
+
+  const javaCode = `public class Main{public static void main(String[]a){System.out.println(10+72);}}`;
+  const cases: Array<[string, string, string]> = [
+    ["Python", "python", "print(10 + 72)"],
+    ["C", "c", `#include <stdio.h>\nint main(){printf("%d",10+72);return 0;}`],
+    ["Java", "java", javaCode],
+    ["C++", "cpp", `#include <iostream>\nint main(){std::cout<<10+72;}`],
+    ["Rust", "rust", `fn main(){println!("{}",10+72);}`],
+    ["TypeScript", "typescript", `console.log(10 + 72);`],
+    ["PHP", "php", `<?php echo 10 + 72;`],
+    ["Perl", "perl", `print 10 + 72`],
+    ["R", "r", `cat(10 + 72)`],
+    ["Dart", "dart", `void main()=>print(10+72);`],
+    ["Groovy", "groovy", `println 10 + 72`],
+    ["Go", "go", `package main\nimport "fmt"\nfunc main(){fmt.Println(10+72)}`],
+    ["Haskell", "haskell", `main = print (10 + 72)`],
+    ["Julia", "julia", `println(10 + 72)`],
+    ["Lua", "lua", `print(10 + 72)`],
+    ["Ruby", "ruby", `puts 10 + 72`],
+    ["JavaScript", "javascript", `console.log(10 + 72);`],
+  ];
+
+  cases.forEach(([name, lang, code]) => {
+    test(name, () => testRunOnMarkdown(lang, code, result));
+  });
+
+  const shellTestName = isWindows ? "PowerShell" : "Bash";
+  test(shellTestName, async () => {
+    const lang = isWindows ? "powershell" : "bash";
+    const code = isWindows ? `Write-Output 82` : `echo 82`;
+    await testRunOnMarkdown(lang, code, result);
+  });
+});
+
+suite("Copy", function () {
+  this.timeout(60000);
+  suiteSetup(setup);
+  test("Code", async () => {
+    const code = `node -v`;
+    await vscode.commands.executeCommand("markdown.copy", code);
+    assert.strictEqual(await vscode.env.clipboard.readText(), code);
+  });
+});
+
+suite("Delete", function () {
+  this.timeout(60000);
+  suiteSetup(setup);
+  test("Code", async () => {
+    const file = path.join(os.tmpdir(), `test-delete.md`);
+    const codeBlock = `\`\`\`python\nprint(10 + 72)\n\`\`\`\n`;
+    fs.writeFileSync(file, codeBlock);
+
+    const doc = await vscode.workspace.openTextDocument(file);
+    await vscode.window.showTextDocument(doc);
+
+    const text = doc.getText();
+    const range = new vscode.Range(
+      doc.positionAt(text.indexOf("```")),
+      doc.positionAt(text.lastIndexOf("```") + 3),
+    );
+
+    await vscode.commands.executeCommand("markdown.delete", range);
+    assert.strictEqual(doc.getText(), "\n");
+  });
+});
+
+suite("Default Codes", function () {
+  this.timeout(60000);
+  suiteSetup(setup);
+
+  async function run(code: string, expected: string, fileName: string) {
+    const text = `\`\`\`python\n${code}\n\`\`\`\n`;
+    const file = path.join(os.tmpdir(), fileName);
+    fs.writeFileSync(file, text);
+
+    const doc = await vscode.workspace.openTextDocument(file);
+    await vscode.window.showTextDocument(doc);
+
+    const range = new vscode.Range(0, 0, 2, 3);
+
+    await vscode.commands.executeCommand(
+      "markdown.runOnMarkdown",
+      "python",
+      code,
+      range,
+    );
+
+    assert.strictEqual(
+      doc.getText(),
+      text + `\n\`\`\`result\n${expected}\n\`\`\`\n`,
+    );
+  }
+
+  test("Prepend", async () => {
+    await vscode.workspace
+      .getConfiguration()
+      .update(
+        "markdownRunner.defaultCodes",
+        { python: "result = 10 + 72\n" },
+        vscode.ConfigurationTarget.Global,
+      );
+
+    await run(`print(result)`, "82", "test-prepend.md");
+  });
+
+  test("Insert At", async () => {
+    await vscode.workspace
+      .getConfiguration()
+      .update(
+        "markdownRunner.defaultCodes",
+        { python: "-I@ print(@)" },
+        vscode.ConfigurationTarget.Global,
+      );
+
+    await run("10 + 72", "82", "test-insert-at.md");
   });
 });
