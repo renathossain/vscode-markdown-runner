@@ -16,6 +16,7 @@
 
 import * as vscode from "vscode";
 import * as cp from "child_process";
+import iconv from "iconv-lite";
 import Mutex from "semaphore-async-await";
 import treeKill from "tree-kill";
 import { parseBlock, blockRegex } from "./codeLens";
@@ -105,11 +106,16 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
     // Output child process 3 lines below parent code block
     let outputPos = new vscode.Position(range.end.line + 3, 0);
 
+    // Obtain correct encoder
+    const encoding = vscode.workspace
+      .getConfiguration()
+      .get<string>("markdownRunner.outputEncoding", "utf8");
+
     // Whenever child process outputs a new batch of data, write it
     const writer = async (data: Buffer) => {
       await outputMutex.acquire();
 
-      const output = data.toString();
+      const output = iconv.decode(data, encoding);
       await editor.edit((text) => text.insert(outputPos, output));
       const lines = output.split("\n");
       const last = lines[lines.length - 1];

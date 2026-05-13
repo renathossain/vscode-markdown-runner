@@ -102,6 +102,10 @@ cout << 456 << endl;
 
 Enable to activate the extension on Quarto (.qmd) files.
 
+### Output Encoding
+
+Encoding used to decode `Run on Markdown` process output. Supports `utf8`, `utf16le`, `latin1`, `ascii`, `base64`, `hex`, and `gbk`. Change this if non-ASCII characters appear corrupted (e.g. change to `gbk` on some Windows systems).
+
 ## Future Development
 
 Planned features (no guarantee):
