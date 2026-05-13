@@ -170,13 +170,11 @@ suite("Run File", function () {
 
     await vscode.commands.executeCommand("markdown.runFile", "python", code);
 
-    for (
-      let i = 0;
-      i < 100 &&
-      (!fs.existsSync(file) || fs.readFileSync(file, "utf8") !== "82");
-      i++
-    )
+    for (let i = 0; i < 100; i++) {
+      if (fs.existsSync(file) && fs.readFileSync(file, "utf8").trim() === "82")
+        break;
       await new Promise((r) => setTimeout(r, 100));
+    }
 
     assert.strictEqual(fs.readFileSync(file, "utf-8").trim(), "82");
   });
