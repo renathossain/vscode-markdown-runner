@@ -2,7 +2,11 @@
 
 ## 2.7.0
 
+- **New Feature**: Added configurable "**Output Encoding**" setting to control how process output is decoded in "Run on Markdown". Supports `utf8`, `utf16le`, `latin1`, `ascii`, `base64`, `hex`, and `gbk`, helping fix corrupted non-ASCII output on some systems (e.g. `gbk` on certain Windows setups).
+- **New Feature**: Added support for capturing and displaying `stderr` output in addition to `stdout` when using "Run on Markdown".
 - **Change**: Renamed `result` code block tag to `output` for more conventional naming. Existing `result` blocks are not automatically migrated; users can update them manually using global search and replace (Ctrl + Shift + F).
+- **Bug Fix**: Removed hardcoded `java` command and now derive runtime from the configured `compiler` path.
+- **Bug Fix**: Fixed duplicated compiler error messages.
 
 ## 2.6.0
 

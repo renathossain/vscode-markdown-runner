@@ -26,7 +26,7 @@
       "properties": {
         "markdownRunner.compilerConfiguration": {
           "type": "object",
-          "description": "Configure language compilers by specifying for each `Language (Code Block Tag)`, the following value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added.",
+          "description": "Configure language compilers by specifying for each `Language (Code Block Tag)`, the following value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added. Reset settings using the ↻ icons that appear when hovering on each setting.",
           "additionalProperties": {
             "type": "string"
           },
@@ -69,6 +69,20 @@
           "type": "boolean",
           "description": "Enable to activate the extension on Quarto (.qmd) files.",
           "default": true
+        },
+        "markdownRunner.outputEncoding": {
+          "type": "string",
+          "enum": [
+            "utf8",
+            "utf16le",
+            "latin1",
+            "ascii",
+            "base64",
+            "hex",
+            "gbk"
+          ],
+          "default": "utf8",
+          "description": "Encoding used to decode `Run on Markdown` process output. Supports `utf8`, `utf16le`, `latin1`, `ascii`, `base64`, `hex`, and `gbk`. Change this if non-ASCII characters appear corrupted (e.g. change to `gbk` on some Windows systems)."
         }
       }
     },
@@ -119,6 +133,7 @@
     "webpack-cli": "^7.0.2"
   },
   "dependencies": {
+    "iconv-lite": "^0.7.2",
     "semaphore-async-await": "^1.5.1",
     "tree-kill": "^1.2.2"
   }

@@ -16,6 +16,7 @@
 
 import * as vscode from "vscode";
 import * as cp from "child_process";
+import iconv from "iconv-lite";
 import Mutex from "semaphore-async-await";
 import treeKill from "tree-kill";
 import { parseBlock, blockRegex } from "./codeLens";
@@ -36,6 +37,16 @@ killAllButton.command = {
   command: "markdown.killAllProcesses",
 };
 killAllButton.text = "$(stop-circle) Kill All Processes";
+
+// Delete selected range in text
+export async function deleteOnMarkdown(range: vscode.Range) {
+  if (!textEditMutex.tryAcquire()) return;
+  const editor = vscode.window.activeTextEditor;
+  if (await editor?.edit((text) => text.delete(range)))
+    await editor?.document.save();
+  codeLensProvider?.refresh();
+  textEditMutex.release();
+}
 
 // Used for `Run on Markdown`
 function findOutputBlock(document: vscode.TextDocument, startLine: number) {
@@ -59,15 +70,6 @@ function findOutputBlock(document: vscode.TextDocument, startLine: number) {
   // Return range of output block's contents to be cleared
   const endLine = startLine + code.split("\n").length;
   return new vscode.Range(startLine + 1, 0, endLine, 0);
-}
-
-// Delete selected range in text
-export async function deleteOnMarkdown(range: vscode.Range) {
-  if (!textEditMutex.tryAcquire()) return;
-  const editor = vscode.window.activeTextEditor;
-  if (await editor?.edit((text) => text.delete(range)))
-    await editor?.document.save();
-  textEditMutex.release();
 }
 
 // Run command on the markdown file
@@ -104,11 +106,16 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
     // Output child process 3 lines below parent code block
     let outputPos = new vscode.Position(range.end.line + 3, 0);
 
+    // Obtain correct encoder
+    const encoding = vscode.workspace
+      .getConfiguration()
+      .get<string>("markdownRunner.outputEncoding", "utf8");
+
     // Whenever child process outputs a new batch of data, write it
-    child.stdout.on("data", async (data: Buffer) => {
+    const writer = async (data: Buffer) => {
       await outputMutex.acquire();
 
-      const output = data.toString();
+      const output = iconv.decode(data, encoding);
       await editor.edit((text) => text.insert(outputPos, output));
       const lines = output.split("\n");
       const last = lines[lines.length - 1];
@@ -118,7 +125,10 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
       );
 
       outputMutex.release();
-    });
+    };
+
+    child.stdout.on("data", writer);
+    child.stderr.on("data", writer);
 
     // Runs when child process exits (but not all data may be written)
     child.on("exit", async () => {
@@ -156,12 +166,13 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
     outputMutex.release();
     await exitMutex.acquire();
     await endMutex.acquire();
-    textEditMutex.release();
-    exitMutex.release();
-    endMutex.release();
 
     // Refresh CodeLenses after finished process
     codeLensProvider?.refresh();
+
+    textEditMutex.release();
+    exitMutex.release();
+    endMutex.release();
   })();
 
   return { pid: child.pid, done };
