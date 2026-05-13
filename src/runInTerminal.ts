@@ -70,11 +70,10 @@ function injectDefaultCode(language: string, code: string) {
 const compile = (cmd: string, out: string) => (
   tempFilePaths.push(out),
   new Promise<boolean>((resolve) =>
-    // e - error, s - stdout, se - stderr
-    cp.exec(cmd, (e, s, se) => {
-      if (e || se)
-        vscode.window.showErrorMessage(`${e ?? ""}${s ?? ""}${se ?? ""}`);
-      resolve(!e);
+    cp.exec(cmd, (error, _, stderr) => {
+      const errorMsg = stderr || error?.message;
+      if (errorMsg) vscode.window.showErrorMessage(errorMsg);
+      resolve(!error);
     }),
   )
 );

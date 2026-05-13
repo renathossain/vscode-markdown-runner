@@ -3,7 +3,9 @@
 ## 2.7.0
 
 - **Bug Fix**: Removed hardcoded `java` command and now derive runtime from the configured `compiler` path.
+- **Bug Fix**: Fixed duplicated compiler error messages.
 - **Change**: Renamed `result` code block tag to `output` for more conventional naming. Existing `result` blocks are not automatically migrated; users can update them manually using global search and replace (Ctrl + Shift + F).
+- **New Feature**: Added support for capturing and displaying `stderr` output in addition to `stdout` when using "Run on Markdown".
 
 ## 2.6.0
 

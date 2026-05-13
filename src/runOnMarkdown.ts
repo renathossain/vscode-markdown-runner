@@ -106,7 +106,7 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
     let outputPos = new vscode.Position(range.end.line + 3, 0);
 
     // Whenever child process outputs a new batch of data, write it
-    child.stdout.on("data", async (data: Buffer) => {
+    const writer = async (data: Buffer) => {
       await outputMutex.acquire();
 
       const output = data.toString();
@@ -119,7 +119,10 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
       );
 
       outputMutex.release();
-    });
+    };
+
+    child.stdout.on("data", writer);
+    child.stderr.on("data", writer);
 
     // Runs when child process exits (but not all data may be written)
     child.on("exit", async () => {

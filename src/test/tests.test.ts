@@ -184,7 +184,7 @@ suite("Run File", function () {
 
 suite("Run on Markdown", function () {
   this.timeout(60000);
-  const output = "```output\n82\n```";
+  const output = "82";
   suiteSetup(setup);
 
   const javaCode = `public class Main{public static void main(String[]a){System.out.println(10+72);}}`;
@@ -228,7 +228,10 @@ suite("Run on Markdown", function () {
     }>("markdown.runOnMarkdown", lang, code, range);
     await done;
 
-    assert.strictEqual(doc.getText(), codeBlock + "\n" + output + "\n");
+    assert.match(
+      doc.getText(),
+      new RegExp(`\n\`\`\`output\n(.*)${output}\n\`\`\`\n`, "s"),
+    );
   }
 
   cases.forEach(([name, lang, code]) => {
