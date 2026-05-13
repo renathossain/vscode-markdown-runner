@@ -299,21 +299,25 @@ suite("Kill Processes", function () {
     );
   };
 
-  const waitDead = async (pid: number) => {
-    for (let i = 0; i < 20; i++) {
-      try {
-        process.kill(pid, 0);
-        await new Promise((r) => setTimeout(r, 100));
-      } catch {
-        return;
+  const waitDead = async (pid: number, done: Promise<void>) => {
+    try {
+      for (let i = 0; i < 20; i++) {
+        try {
+          process.kill(pid, 0);
+          await new Promise((r) => setTimeout(r, 100));
+        } catch {
+          return;
+        }
       }
+      assert.fail(`${pid} still alive`);
+    } finally {
+      await done;
     }
-    assert.fail(`${pid} still alive`);
   };
 
   test("One", async () => {
     const file = path.join(os.tmpdir(), "kill-one.md");
-    const { pid } = await run(file, "```python\nwhile True: pass\n```");
+    const { pid, done } = await run(file, "```python\nwhile True: pass\n```");
 
     assert.ok((await pids()).includes(pid));
 
@@ -324,19 +328,19 @@ suite("Kill Processes", function () {
     );
 
     assert.ok(!(await pids()).includes(pid));
-    await waitDead(pid);
+    await waitDead(pid, done);
   });
 
   test("All", async () => {
     const file = path.join(os.tmpdir(), "kill-all.md");
-    const { pid } = await run(file, "```python\nwhile True: pass\n```");
+    const { pid, done } = await run(file, "```python\nwhile True: pass\n```");
 
     assert.ok((await pids()).length > 0);
 
     await vscode.commands.executeCommand("markdown.killAllProcesses");
 
     assert.ok(!(await pids()).length);
-    await waitDead(pid);
+    await waitDead(pid, done);
   });
 });
 
