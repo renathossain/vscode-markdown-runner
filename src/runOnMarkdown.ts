@@ -37,6 +37,16 @@ killAllButton.command = {
 };
 killAllButton.text = "$(stop-circle) Kill All Processes";
 
+// Delete selected range in text
+export async function deleteOnMarkdown(range: vscode.Range) {
+  if (!textEditMutex.tryAcquire()) return;
+  const editor = vscode.window.activeTextEditor;
+  if (await editor?.edit((text) => text.delete(range)))
+    await editor?.document.save();
+  codeLensProvider?.refresh();
+  textEditMutex.release();
+}
+
 // Used for `Run on Markdown`
 function findOutputBlock(document: vscode.TextDocument, startLine: number) {
   // Check if startLine is out of bounds
@@ -59,15 +69,6 @@ function findOutputBlock(document: vscode.TextDocument, startLine: number) {
   // Return range of output block's contents to be cleared
   const endLine = startLine + code.split("\n").length;
   return new vscode.Range(startLine + 1, 0, endLine, 0);
-}
-
-// Delete selected range in text
-export async function deleteOnMarkdown(range: vscode.Range) {
-  if (!textEditMutex.tryAcquire()) return;
-  const editor = vscode.window.activeTextEditor;
-  if (await editor?.edit((text) => text.delete(range)))
-    await editor?.document.save();
-  textEditMutex.release();
 }
 
 // Run command on the markdown file
@@ -156,12 +157,13 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
     outputMutex.release();
     await exitMutex.acquire();
     await endMutex.acquire();
-    textEditMutex.release();
-    exitMutex.release();
-    endMutex.release();
 
     // Refresh CodeLenses after finished process
     codeLensProvider?.refresh();
+
+    textEditMutex.release();
+    exitMutex.release();
+    endMutex.release();
   })();
 
   return { pid: child.pid, done };

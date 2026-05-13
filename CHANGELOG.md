@@ -2,6 +2,7 @@
 
 ## 2.7.0
 
+- **Bug Fix**: Removed hardcoded `java` command and now derive runtime from the configured `compiler` path.
 - **Change**: Renamed `result` code block tag to `output` for more conventional naming. Existing `result` blocks are not automatically migrated; users can update them manually using global search and replace (Ctrl + Shift + F).
 
 ## 2.6.0
