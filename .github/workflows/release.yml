@@ -24,6 +24,9 @@ jobs:
       - name: Install Node Dependencies
         run: npm install
 
+      - name: Ensure Version Bump
+        run: npx tsx src/scripts/check-version.ts
+
       - name: Create .vsix Build
         run: npm run build
 

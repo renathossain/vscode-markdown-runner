@@ -3,7 +3,6 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import * as https from "https";
 import { ButtonCodeLensProvider } from "../codeLens";
 import { InlineCodeLinkProvider, InlineCodeHoverProvider } from "../codeLinks";
 
@@ -412,12 +411,12 @@ suite("Code Manipulation", function () {
 });
 
 suite("Version Checks", function () {
-  const root = path.join(__dirname, "../../");
-  const pkg = JSON.parse(
-    fs.readFileSync(path.join(root, "package.json"), "utf8"),
-  );
-
   test("Consistency", () => {
+    const root = path.join(__dirname, "../../");
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(root, "package.json"), "utf8"),
+    );
+
     const lock = JSON.parse(
       fs.readFileSync(path.join(root, "package-lock.json"), "utf8"),
     );
@@ -434,27 +433,6 @@ suite("Version Checks", function () {
     assert.strictEqual(
       changelog.match(/^##\s+([0-9]+\.[0-9]+\.[0-9]+)/m)?.[1],
       pkg.version,
-    );
-  });
-
-  test("Version bump", async () => {
-    const latest = await new Promise<string>((res, rej) => {
-      https
-        .get("https://open-vsx.org/api/renathossain/markdown-runner", (r) => {
-          let d = "";
-          r.on("data", (c) => (d += c));
-          r.on("end", () => res(JSON.parse(d).version));
-        })
-        .on("error", rej);
-    });
-
-    const v = (s: string) => s.split(".").map(Number);
-    const [a, b] = [v(pkg.version), v(latest)];
-
-    assert.ok(
-      a[0] > b[0] ||
-        (a[0] === b[0] && a[1] > b[1]) ||
-        (a[0] === b[0] && a[1] === b[1] && a[2] > b[2]),
     );
   });
 });

@@ -112,6 +112,7 @@
     "ovsx": "^0.10.12",
     "prettier": "^3.8.3",
     "ts-loader": "^9.5.7",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.3",
     "webpack": "^5.106.2",
