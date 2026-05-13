@@ -184,7 +184,7 @@ suite("Run File", function () {
 
 suite("Run on Markdown", function () {
   this.timeout(60000);
-  const result = "```result\n82\n```";
+  const output = "```output\n82\n```";
   suiteSetup(setup);
 
   const javaCode = `public class Main{public static void main(String[]a){System.out.println(10+72);}}`;
@@ -208,7 +208,7 @@ suite("Run on Markdown", function () {
     ["JavaScript", "javascript", `console.log(10 + 72);`],
   ];
 
-  async function run(lang: string, code: string, result: string) {
+  async function run(lang: string, code: string, output: string) {
     const file = path.join(os.tmpdir(), `test-${lang}.md`);
     const codeBlock = `\`\`\`${lang}\n${code}\n\`\`\`\n`;
     fs.writeFileSync(file, codeBlock);
@@ -228,18 +228,18 @@ suite("Run on Markdown", function () {
     }>("markdown.runOnMarkdown", lang, code, range);
     await done;
 
-    assert.strictEqual(doc.getText(), codeBlock + "\n" + result + "\n");
+    assert.strictEqual(doc.getText(), codeBlock + "\n" + output + "\n");
   }
 
   cases.forEach(([name, lang, code]) => {
-    test(name, () => run(lang, code, result));
+    test(name, () => run(lang, code, output));
   });
 
   const shellTestName = isWindows ? "PowerShell" : "Bash";
   test(shellTestName, async () => {
     const lang = isWindows ? "powershell" : "bash";
     const code = isWindows ? `Write-Output 82` : `echo 82`;
-    await run(lang, code, result);
+    await run(lang, code, output);
   });
 });
 
@@ -385,7 +385,7 @@ suite("Code Manipulation", function () {
 
     assert.strictEqual(
       doc.getText(),
-      text + `\n\`\`\`result\n${expected}\n\`\`\`\n`,
+      text + `\n\`\`\`output\n${expected}\n\`\`\`\n`,
     );
   }
 
@@ -394,11 +394,11 @@ suite("Code Manipulation", function () {
       .getConfiguration()
       .update(
         "markdownRunner.defaultCodes",
-        { python: "result = 10 + 72\n" },
+        { python: "output = 10 + 72\n" },
         vscode.ConfigurationTarget.Global,
       );
 
-    await run(`print(result)`, "82", "test-prepend.md");
+    await run(`print(output)`, "82", "test-prepend.md");
   });
 
   test("Default Codes Insert At", async () => {

@@ -38,7 +38,7 @@ killAllButton.command = {
 killAllButton.text = "$(stop-circle) Kill All Processes";
 
 // Used for `Run on Markdown`
-function findResultBlock(document: vscode.TextDocument, startLine: number) {
+function findOutputBlock(document: vscode.TextDocument, startLine: number) {
   // Check if startLine is out of bounds
   if (startLine < 0 || startLine >= document.lineCount) return null;
 
@@ -46,17 +46,17 @@ function findResultBlock(document: vscode.TextDocument, startLine: number) {
   const startOffset = document.offsetAt(new vscode.Position(startLine, 0));
   const slicedText = document.getText().slice(startOffset);
 
-  // Find first match for a result block within the sliced document
+  // Find first match for a output block within the sliced document
   const match = blockRegex().exec(slicedText);
   if (!match) return null;
   const { language, code } = parseBlock(document, match);
-  if (language !== "result") return null;
+  if (language !== "output") return null;
 
   // The match must be on the first line of the sliced document
   const matchLine = slicedText.slice(0, match.index).split("\n").length;
   if (matchLine !== 1) return null;
 
-  // Return range of results contents to be cleared
+  // Return range of output block's contents to be cleared
   const endLine = startLine + code.split("\n").length;
   return new vscode.Range(startLine + 1, 0, endLine, 0);
 }
@@ -89,9 +89,9 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
   killAllButton.show();
 
   const done = (async () => {
-    // Mutex ensures result block/previous buffer is written befure next buffer starts
-    const resultMutex = new Mutex(1);
-    await resultMutex.acquire();
+    // Mutex ensures output block/previous buffer is written befure next buffer starts
+    const outputMutex = new Mutex(1);
+    await outputMutex.acquire();
 
     // Mutex released when child process exits
     const exitMutex = new Mutex(1);
@@ -101,12 +101,12 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
     const endMutex = new Mutex(1);
     await endMutex.acquire();
 
-    // Output child process results 3 lines below parent code block
+    // Output child process 3 lines below parent code block
     let outputPos = new vscode.Position(range.end.line + 3, 0);
 
     // Whenever child process outputs a new batch of data, write it
     child.stdout.on("data", async (data: Buffer) => {
-      await resultMutex.acquire();
+      await outputMutex.acquire();
 
       const output = data.toString();
       await editor.edit((text) => text.insert(outputPos, output));
@@ -117,7 +117,7 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
         lines.length === 1 ? outputPos.character + last.length : last.length,
       );
 
-      resultMutex.release();
+      outputMutex.release();
     });
 
     // Runs when child process exits (but not all data may be written)
@@ -131,7 +131,7 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
 
     // Runs when all data is written (but child process may not have exited)
     child.stdout.on("end", async () => {
-      await resultMutex.acquire();
+      await outputMutex.acquire();
 
       // If output did not end on a newline, add it
       if (outputPos.character !== 0)
@@ -140,20 +140,20 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
       // Save the document after all text deletes/inserts
       await editor.document.save();
 
-      resultMutex.release();
+      outputMutex.release();
       endMutex.release();
     });
 
-    // If result block found, clear the contents inside it, otherwise create it
-    const deleteRange = findResultBlock(editor.document, range.end.line + 2);
-    const resultBlock = "\n\n```result\n```";
+    // If output block found, clear the contents inside it, otherwise create it
+    const deleteRange = findOutputBlock(editor.document, range.end.line + 2);
+    const outputBlock = "\n\n```output\n```";
     await editor.edit((text) =>
       deleteRange
         ? text.delete(deleteRange)
-        : text.insert(range.end, resultBlock),
+        : text.insert(range.end, outputBlock),
     );
 
-    resultMutex.release();
+    outputMutex.release();
     await exitMutex.acquire();
     await endMutex.acquire();
     textEditMutex.release();

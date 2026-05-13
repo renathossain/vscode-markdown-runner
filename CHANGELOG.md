@@ -1,5 +1,9 @@
 # Change Log
 
+## 2.7.0
+
+- **Change**: Renamed `result` code block tag to `output` for more conventional naming. Existing `result` blocks are not automatically migrated; users can update them manually using global search and replace (Ctrl + Shift + F).
+
 ## 2.6.0
 
 - **Bug Fix**: Prevents deletion of code blocks during "Run on Markdown", which previously caused misplaced output.
