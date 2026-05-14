@@ -1,5 +1,10 @@
 # Change Log
 
+## 2.8.0
+
+- **Bug Fix**: Compiler paths now correctly support escaped characters (e.g. `\ ` for spaces), preventing crashes caused by invalid path parsing.
+- **Bug Fix**: Restored support for compiler arguments in Java execution paths.
+
 ## 2.7.0
 
 - **New Feature**: Added configurable "**Output Encoding**" setting to control how process output is decoded in "Run on Markdown". Supports `utf8`, `utf16le`, `latin1`, `ascii`, `base64`, `hex`, and `gbk`, helping fix corrupted non-ASCII output on some systems (e.g. `gbk` on certain Windows setups).

@@ -35,5 +35,6 @@ export function getLanguageConfig(language: string, key: string) {
   ];
 
   if (!raw || INDEX[key] === undefined) return undefined;
-  return JSON.parse(raw.replace(/'/g, '"'))?.[INDEX[key]];
+  const san = raw.replace(/'/g, '"').replace(/\\/g, "\\\\");
+  return JSON.parse(san)?.[INDEX[key]].trim();
 }

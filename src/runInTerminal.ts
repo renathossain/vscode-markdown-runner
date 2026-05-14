@@ -106,7 +106,7 @@ export async function getRunCommand(language: string, code: string) {
   // Compilation for Java
   if (language === "java")
     return (await compile(`${compiler} ${sourcePath}`, `${basePath}.class`))
-      ? `${compiler.replace(/javac$/, "java")} -cp ${os.tmpdir()} ${baseName}`
+      ? `${compiler.replace(/^(.*\/)?javac(\s|$).*/, "$1java")} -cp ${os.tmpdir()} ${baseName}`
       : "";
 
   // Compilation for TypeScript
