@@ -102,7 +102,7 @@ jobs:
           }
 
       - name: Setup Stack
-        run: stack setup
+        run: stack setup --system-ghc
 
       - name: Cache Stack
         uses: actions/cache@v5
