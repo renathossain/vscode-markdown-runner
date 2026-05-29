@@ -35,7 +35,6 @@ jobs:
         with:
           distribution: temurin
           java-version: "25"
-          cache: gradle
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -54,6 +53,9 @@ jobs:
 
       - name: Setup Julia
         uses: julia-actions/setup-julia@v2
+
+      - name: Cache Julia
+        uses: julia-actions/cache@v3
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
