@@ -101,15 +101,16 @@ jobs:
             }
           }
 
-      - name: Setup Stack
-        run: stack setup --system-ghc
-
       - name: Cache Stack
         uses: actions/cache@v5
         with:
           path: |
             ~/.stack
-          key: ${{ runner.os }}-stack-${{ hashFiles('**/*.cabal', '**/stack.yaml') }}
+            ~/.ghc
+          key: ${{ runner.os }}-stack-ghc-${{ hashFiles('**/stack.yaml.lock') }}
+
+      - name: Setup Stack
+        run: stack setup --system-ghc
 
       - name: Install Node Dependencies
         run: npm ci
