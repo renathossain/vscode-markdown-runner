@@ -25,6 +25,7 @@ Before running a code block:
 - Add compilers to the PATH environment variable if necessary to enable global access to installed languages.
 - For Quarto Support, also download the [Quarto VS Code Extension](https://marketplace.visualstudio.com/items?itemName=quarto.quarto).
 
+// TODO: Remove winget, stack and switch to choco, ghc
 On Windows 11, install all supported languages in PowerShell using `winget`. When prompted during installation, always check the "Add to PATH" option.
 
 ```powershell
@@ -48,10 +49,8 @@ stack setup
 On Arch Linux, install all supported languages with:
 
 ```bash
-sudo pacman --needed -S bash python nodejs ruby lua julia go groovy dart r perl php typescript gcc rustup jdk-openjdk
+sudo pacman --needed -S bash python nodejs ruby lua julia ghc go groovy dart r perl php typescript gcc rustup jdk-openjdk
 rustup default stable
-yay --needed -S stack-bin
-stack setup
 ```
 
 For other systems, research language installation or use the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install).

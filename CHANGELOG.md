@@ -1,5 +1,9 @@
 # Change Log
 
+## 2.9.0
+
+- **Change**: Switched the default Haskell compiler back to `ghc`.
+
 ## 2.8.0
 
 - **Bug Fix**: Compiler paths now correctly support escaped characters (e.g. `\ ` for spaces), preventing crashes caused by invalid path parsing.
