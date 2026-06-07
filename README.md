@@ -10,40 +10,32 @@ This extension allows you to execute code blocks in any programming language dir
 
 ## Features
 
-- **Execute Code Blocks**: CodeLens Buttons appear above each code block (```) for running or copying the code. Temporary files are created for execution and are cleaned up afterward.
-- **Execute Code Snippets**: Run code snippets (enclosed in `) with Ctrl + Click. Results appear in the terminal. Copy snippets using the hover tooltip.
-- **Save Execution Results**: Capture the output of executing a code block directly within the Markdown document.
-- **Broad Language Support**: Supports a wide range of languages, including C, Rust, C++, Java, TypeScript, PHP, Perl, R, Dart, Groovy, Go, Haskell, Julia, Lua, Ruby, JavaScript, Python, Bash, PowerShell. Add non-compiled languages via settings.
+- **Execute Code Blocks**: Run or copy code using CodeLens buttons displayed above each code block (```).
+- **Execute Code Snippets**: Run terminal commands (enclosed in `) using Ctrl + Click, or copy them via the hover tooltip.
+- **Save Execution Results**: Use "Run on Markdown" to capture and insert the output of executed code blocks directly into the Markdown document.
+- **Broad Language Support**: Supports a wide range of languages, including C, Rust, C++, Java, TypeScript, PHP, Perl, R, Dart, Groovy, Go, Haskell, Julia, Lua, Ruby, JavaScript, Python, Bash, and PowerShell. Additional languages can be added via settings.
 
 ## Requirements
 
 Before running a code block:
 
-- Verify "Compiler Configuration" settings are correct.
+- Install the required languages and dependencies.
+- Ensure all required executables are available on your system PATH if they are not automatically detected.
+- Verify that the **Compiler Configuration** settings are correctly configured.
 - Ensure your code is correct.
-- Install necessary languages and dependencies.
-- Add compilers to the PATH environment variable if necessary to enable global access to installed languages.
-- For Quarto Support, also download the [Quarto VS Code Extension](https://marketplace.visualstudio.com/items?itemName=quarto.quarto).
+- For Quarto support, install the [Quarto VS Code Extension](https://marketplace.visualstudio.com/items?itemName=quarto.quarto).
 
-// TODO: Remove winget, stack and switch to choco, ghc
-On Windows 11, install all supported languages in PowerShell using `winget`. When prompted during installation, always check the "Add to PATH" option.
+On Windows 11, install all supported languages in PowerShell using [Chocolatey](https://chocolatey.org/install):
 
 ```powershell
-$pkgs = "Python", "OpenJS.NodeJS", "RubyInstallerTeam.Ruby.3.4", "rjpcomputing.luaforwindows", "commercialhaskell.stack", "GoLang.Go", "Apache.Groovy.4", "Google.DartSDK", "RProject.R", "StrawberryPerl.StrawberryPerl", "PHP.PHP.8.4", "MartinStorsjo.LLVM-MinGW.UCRT", "Rustlang.Rustup", "EclipseAdoptium.Temurin.17.JDK"
-$pkgs | ForEach-Object { winget install $_ --accept-package-agreements --accept-source-agreements }
-winget install "JuliaLang.Julia" --interactive # Check "Add to PATH" checkbox
+choco install -y python nodejs ruby lua julia ghc golang groovy dart-sdk r.project strawberryperl php mingw rustup.install openjdk
+refreshenv
+npm install -g typescript
+rustup default stable-x86_64-pc-windows-gnu
 
 # Add R to PATH variable
 $rBin = Get-ChildItem "C:\Program Files\R" -Directory | Sort-Object Name -Descending | Select-Object -First 1 | ForEach-Object { Join-Path $_.FullName "bin" }
 if (-not ($env:PATH.Split(';') -contains $rBin)) { [Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";$rBin", [EnvironmentVariableTarget]::User) }
-```
-
-Relaunch Powershell and continue installing:
-
-```powershell
-rustup default stable-x86_64-pc-windows-gnu
-npm install -g typescript
-stack setup
 ```
 
 On Arch Linux, install all supported languages with:
