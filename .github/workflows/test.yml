@@ -61,29 +61,24 @@ jobs:
         with:
           php-version: "8.5"
 
-      - name: Setup Haskell
-        uses: haskell-actions/setup@v2
-        with:
-          ghc-version: "9.12"
-
       - name: Install System Dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y lua5.4 groovy
+          sudo apt-get install -y lua5.4 groovy ghc
 
       - name: Install System Dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
           brew update
-          brew install lua groovy
+          brew install lua groovy ghc
 
       - name: Install System Dependencies (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           choco feature enable -n allowGlobalConfirmation
-          choco install lua groovy --no-progress
+          choco install lua groovy ghc --no-progress
           Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
           refreshenv
           $paths = $env:PATH -split ';'
