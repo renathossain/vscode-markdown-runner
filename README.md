@@ -53,16 +53,23 @@ Download or copy [DEMO.md](DEMO.md)/[DEMO.qmd](DEMO.qmd) and the [demo_helpers](
 
 ## Extension Settings
 
-### Compiler Configuration
+### Compiler & Interpreter Settings
 
-Configure language compilers by specifying for each `Language (Code Block Tag)`, the following value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added.
+- **Compiler commands** are optional and run before interpreter commands.
+- **Interpreter commands** are mandatory and run after compiler commands. The first tag in each language list is used for the CodeLens button.
 
-```plaintext
-// Example
-Item: `python`, Value: `["Python", "py", "python"]`
+Enter the temporary file extension, then the compile command. Available placeholders: `${path}`, `${dir}`, `${name}`, `${ext}`. Click ↻ to restore defaults. Example:
+
+```json
+"markdownRunner.compilerSettings": {
+  "C": ".c; gcc ${path} -o ${dir}/${name}",
+  "TypeScript, ts": ".ts; tsc --ignoreConfig ${path}"
+},
+"markdownRunner.interpreterSettings": {
+  "C": "; ${path}",
+  "TypeScript, ts": ".js; node ${path}",
+}
 ```
-
-Reset settings using the ↻ icons or remove the `markdownRunner.compilerConfiguration` entry from VSCode's `settings.json` to restore to default if any issues occur.
 
 ### Python Path
 

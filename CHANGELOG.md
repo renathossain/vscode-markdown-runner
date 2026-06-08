@@ -1,7 +1,8 @@
 # Change Log
 
-## 2.9.0
+## 3.0.0
 
+- **New Feature**: Replaced the old `compilerConfiguration` setting with separate `compilerSettings` and `interpreterSettings`. Commands now support `${path}`, `${dir}`, `${name}`, and `${ext}` placeholders anywhere in the command string, and a single configuration entry can be shared across multiple code block tags (e.g. `php`, `php3`, `php4`, `php5`), making language configuration significantly more flexible.
 - **New Feature**: Added built-in encoding options for `Shift_JIS`, `Big5`, and `Windows-1252`. Advanced users can also specify any encoding supported by `iconv-lite` directly in `settings.json`.
 - **Change**: Lowered the minimum supported VS Code version from `^1.116.0` to `^1.65.0` for broader compatibility with VS Code forks (e.g. VSCodium, Cursor).
 - **Change**: Untitled code blocks (no language tag) are no longer treated as Bash blocks; only Copy, Clear, and Delete CodeLens buttons are shown for them.

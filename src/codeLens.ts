@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import * as vscode from "vscode";
-import { getLanguageConfig } from "./settings";
+import { getLanguageConfig } from "./runInTerminal";
 import { childProcesses } from "./runOnMarkdown";
 
 // Regex to parse blocks delimited with at least 3 ticks `:
@@ -68,10 +68,10 @@ function provideCodeLenses(document: vscode.TextDocument) {
   // Loop through all parsed code blocks and generate buttons
   for (const match of document.getText().matchAll(blockRegex())) {
     const { language, code, range } = parseBlock(document, match);
-    const name = getLanguageConfig(language, "name");
+    const name = getLanguageConfig(language, "interpreter")?.name || "";
 
     // For all supported languages, provide options to run the code block
-    if (name !== undefined) {
+    if (name) {
       // Provide `Run {Language} Block` option
       const argsRun = [language, code];
       add(lenses, range, `Run ${name} Block`, "markdown.runFile", argsRun);

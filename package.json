@@ -4,7 +4,7 @@
   "description": "Enables the seamless execution of code blocks in any language within Markdown files in VS Code",
   "publisher": "renathossain",
   "icon": "Icon.png",
-  "version": "2.9.0",
+  "version": "3.0.0",
   "engines": {
     "vscode": "^1.65.0"
   },
@@ -24,32 +24,46 @@
     "configuration": {
       "title": "Markdown Code Block Runner",
       "properties": {
-        "markdownRunner.compilerConfiguration": {
+        "markdownRunner.compilerSettings": {
           "type": "object",
-          "markdownDescription": "Configure language compilers by specifying for each `Language (Code Block Tag)`, the following value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added. Reset settings using the ↻ icons that appear when hovering on each setting.",
+          "markdownDescription": "Compiler commands are optional and run before interpreter commands. Enter the temporary file extension, then the compile command. Available placeholders: `${path}`, `${dir}`, `${name}`, `${ext}`. Click ↻ to restore defaults.",
           "additionalProperties": {
             "type": "string"
           },
           "default": {
-            "python": "[\"Python\", \"py\", \"python\"]",
-            "c": "[\"C\", \"c\", \"gcc\"]",
-            "java": "[\"Java\", \"java\", \"javac\"]",
-            "cpp": "[\"C++\", \"cpp\", \"g++\"]",
-            "rust": "[\"Rust\", \"rs\", \"rustc\"]",
-            "typescript": "[\"TypeScript\", \"ts\", \"tsc --ignoreConfig\"]",
-            "php": "[\"PHP\", \"php\", \"php\"]",
-            "perl": "[\"Perl\", \"pl\", \"perl\"]",
-            "r": "[\"R\", \"r\", \"Rscript\"]",
-            "dart": "[\"Dart\", \"dart\", \"dart\"]",
-            "groovy": "[\"Groovy\", \"groovy\", \"groovy\"]",
-            "go": "[\"Go\", \"go\", \"go run\"]",
-            "haskell": "[\"Haskell\", \"hs\", \"runghc\"]",
-            "julia": "[\"Julia\", \"jl\", \"julia\"]",
-            "lua": "[\"Lua\", \"lua\", \"lua\"]",
-            "ruby": "[\"Ruby\", \"rb\", \"ruby\"]",
-            "javascript": "[\"JavaScript\", \"js\", \"node\"]",
-            "bash": "[\"Bash\", \"sh\", \"bash\"]",
-            "powershell": "[\"Powershell\", \"ps1\", \"powershell\"]"
+            "C": ".c; gcc ${path} -o ${dir}/${name}",
+            "C++, cpp, cxx": ".cpp; g++ ${path} -o ${dir}/${name}",
+            "Rust, rs": ".rs; rustc ${path} -o ${dir}/${name}",
+            "Java": ".java; javac ${path}",
+            "TypeScript, ts": ".ts; tsc --ignoreConfig ${path}"
+          }
+        },
+        "markdownRunner.interpreterSettings": {
+          "type": "object",
+          "markdownDescription": "Interpreter commands are mandatory and run after compiler commands. Enter the temporary file extension, then the interpreter command. Available placeholders: `${path}`, `${dir}`, `${name}`, `${ext}`. The first tag in each language list is used for the CodeLens button. Click ↻ to restore defaults.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {
+            "Python, py, py3": ".py; python ${path}",
+            "C": "; ${path}",
+            "Java": ".class; java -cp ${dir} ${name}",
+            "C++, cpp, cxx": "; ${path}",
+            "Rust, rs": "; ${path}",
+            "TypeScript, ts": ".js; node ${path}",
+            "PHP, php3, php4, php5": ".php; php ${path}",
+            "Perl, pl, perl6": ".pl; perl ${path}",
+            "R, s": ".r; Rscript ${path}",
+            "Dart": ".dart; dart ${path}",
+            "Groovy": ".groovy; groovy ${path}",
+            "Go, golang": ".go; go run ${path}",
+            "Haskell, hs": ".hs; runghc ${path}",
+            "Julia": ".jl; julia ${path}",
+            "Lua": ".lua; lua ${path}",
+            "Ruby, rb": ".rb; ruby ${path}",
+            "JavaScript, js, mjs, cjs": ".js; node ${path}",
+            "Bash, sh, shell, zsh": ".sh; bash ${path}",
+            "Powershell, ps1, pwsh": ".ps1; powershell -File ${path}"
           }
         },
         "markdownRunner.pythonPath": {

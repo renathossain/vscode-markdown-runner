@@ -35,8 +35,6 @@
 // - `runOnMarkdown.ts`: Handlers for writing the output of an executing process
 //   directly onto the markdown file.
 //
-// - `settings.ts`: Provides an API to access extension settings.
-//
 // ************************************************************************
 
 import * as vscode from "vscode";

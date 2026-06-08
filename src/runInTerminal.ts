@@ -19,8 +19,41 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as cp from "child_process";
-import { getLanguageConfig } from "./settings";
 import { tempFilePaths } from "./extension";
+
+// Get the configuration for the given language and type
+export function getLanguageConfig(
+  language: string,
+  type: "compiler" | "interpreter",
+): { name: string; extension: string; command: string } | null {
+  const config = vscode.workspace
+    .getConfiguration()
+    .get<Record<string, string>>(`markdownRunner.${type}Settings`);
+  if (!config) return null;
+
+  const target = language.trim().toLowerCase();
+  for (const [key, value] of Object.entries(config)) {
+    const aliases = key
+      .split(",")
+      .map((a) => a.trim())
+      .filter(Boolean);
+
+    const match = aliases.some((a) => a.toLowerCase() === target);
+    if (!match) continue;
+
+    const name = aliases[0];
+    const [extensionRaw, commandRaw] = value.split(";", 2);
+    const extension = (extensionRaw ?? "").trim();
+    const command = (commandRaw ?? "").trim();
+    return {
+      name,
+      extension,
+      command,
+    };
+  }
+
+  return null;
+}
 
 // Obtain the correct executable name given language and code
 const getBaseName = (lang: string, code: string) =>
@@ -64,59 +97,59 @@ function injectDefaultCode(language: string, code: string) {
   return code;
 }
 
-// Compiles a binary using the provided command
-// Pushes the binary path to temporary files to be deleted
-// Throws an error message if unsuccessful
-const compile = (cmd: string, out: string) => (
-  tempFilePaths.push(out),
+// Compile a binary using the provided command
+const compile = (cmd: string) =>
   new Promise<boolean>((resolve) =>
     cp.exec(cmd, (error, _, stderr) => {
       const errorMsg = stderr || error?.message;
       if (errorMsg) vscode.window.showErrorMessage(errorMsg);
       resolve(!error);
     }),
-  )
-);
+  );
 
 // Save code to a temporary file, and compile it if necessary
 // Return the string to be run in the terminal to execute the binary/code
-export async function getRunCommand(language: string, code: string) {
+export async function getRunCommand(
+  language: string,
+  code: string,
+): Promise<string> {
   // Obtain info to create the run command
-  const baseName = getBaseName(language, code);
-  const extension = getLanguageConfig(language, "extension");
+  const name = getBaseName(language, code);
+  if (!name) return "";
   const compiler = getLanguageConfig(language, "compiler");
-  if (!baseName || !compiler || !extension) return "";
-
-  // Construct sourcePath
-  code = injectDefaultCode(language, code);
-  const basePath = path.join(os.tmpdir(), baseName);
-  const sourcePath = `${basePath}.${extension}`;
+  const interpreter = getLanguageConfig(language, "interpreter");
+  if (!interpreter) return "";
+  const dir = os.tmpdir();
+  const commonPath = path.join(dir, name);
 
   // Write code to a file, SECURITY: Only Owner Read and Write
-  fs.writeFileSync(sourcePath, code, { mode: 0o600 });
-  tempFilePaths.push(sourcePath);
+  const compilerPath = compiler ? commonPath + compiler.extension : "";
+  const interpreterPath = commonPath + interpreter.extension;
+  const file = compiler ? compilerPath : interpreterPath;
+  code = injectDefaultCode(language, code);
+  fs.writeFileSync(file, code, { mode: 0o600 });
+  tempFilePaths.push(file);
+  const interpreterCommand = interpreter.command
+    .replace(/\$\{path\}/g, interpreterPath)
+    .replace(/\$\{dir\}/g, dir)
+    .replace(/\$\{name\}/g, name)
+    .replace(/\$\{ext\}/g, interpreter.extension);
 
-  // Compilation for C, C++ and Rust
-  const execFile = basePath + (process.platform === "win32" ? ".exe" : "");
-  if (["c", "cpp", "rust"].includes(language))
-    return (await compile(`${compiler} ${sourcePath} -o ${execFile}`, execFile))
-      ? execFile
-      : "";
-
-  // Compilation for Java
-  if (language === "java")
-    return (await compile(`${compiler} ${sourcePath}`, `${basePath}.class`))
-      ? `${compiler.replace(/^(.*\/)?javac(\s|$).*/, "$1java")} -cp ${os.tmpdir()} ${baseName}`
-      : "";
-
-  // Compilation for TypeScript
-  if (language === "typescript")
-    return (await compile(`${compiler} ${sourcePath}`, `${basePath}.js`))
-      ? `${getLanguageConfig("javascript", "compiler")} ${basePath}.js`
-      : "";
+  // Compile file if compiler available
+  if (compiler) {
+    const compileCommand = compiler.command
+      .replace(/\$\{path\}/g, compilerPath)
+      .replace(/\$\{dir\}/g, dir)
+      .replace(/\$\{name\}/g, name)
+      .replace(/\$\{ext\}/g, compiler.extension);
+    if (await compile(compileCommand)) {
+      tempFilePaths.push(interpreterPath);
+      return interpreterCommand;
+    } else return "";
+  }
 
   // If not a compiled language, run the source code
-  return `${compiler} ${sourcePath}`;
+  return interpreterCommand;
 }
 
 // Run command in the terminal
