@@ -78,12 +78,23 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
   const editor = vscode.window.activeTextEditor;
   if (!code || !editor || !textEditMutex.tryAcquire()) return;
 
+  const encoding = vscode.workspace
+    .getConfiguration()
+    .get<string>("markdownRunner.outputEncoding", "utf8");
+
+  if (!iconv.encodingExists(encoding)) {
+    const errorMessage = `Invalid output encoding "${encoding}". See https://github.com/pillarjs/iconv-lite/wiki/Supported-Encodings`;
+    vscode.window.showErrorMessage(errorMessage);
+    textEditMutex.release();
+    return { pid: -1, done: async () => {} };
+  }
+
   // Start child process
   const child = cp.spawn(code, { shell: true });
   if (child.pid == null) {
     vscode.window.showErrorMessage("Failed to start process.");
     textEditMutex.release();
-    return;
+    return { pid: -1, done: async () => {} };
   }
 
   // Create buttons to stop or kill the process
@@ -91,7 +102,7 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
   killAllButton.show();
 
   const done = (async () => {
-    // Mutex ensures output block/previous buffer is written befure next buffer starts
+    // Mutex ensures output block/previous buffer is written before next buffer starts
     const outputMutex = new Mutex(1);
     await outputMutex.acquire();
 
@@ -105,11 +116,6 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
 
     // Output child process 3 lines below parent code block
     let outputPos = new vscode.Position(range.end.line + 3, 0);
-
-    // Obtain correct encoder
-    const encoding = vscode.workspace
-      .getConfiguration()
-      .get<string>("markdownRunner.outputEncoding", "utf8");
 
     // Whenever child process outputs a new batch of data, write it
     const writer = async (data: Buffer) => {

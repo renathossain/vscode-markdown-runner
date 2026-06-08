@@ -26,7 +26,7 @@
       "properties": {
         "markdownRunner.compilerConfiguration": {
           "type": "object",
-          "description": "Configure language compilers by specifying for each `Language (Code Block Tag)`, the following value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added. Reset settings using the ↻ icons that appear when hovering on each setting.",
+          "markdownDescription": "Configure language compilers by specifying for each `Language (Code Block Tag)`, the following value: `[Language Name, File Extension, Compiler Command/Path]`. Only non-compiled languages can be added. Reset settings using the ↻ icons that appear when hovering on each setting.",
           "additionalProperties": {
             "type": "string"
           },
@@ -54,12 +54,12 @@
         },
         "markdownRunner.pythonPath": {
           "type": "boolean",
-          "description": "Enable to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.",
+          "markdownDescription": "Enable to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.",
           "default": true
         },
         "markdownRunner.defaultCodes": {
           "type": "object",
-          "description": "Prepend or wrap your code blocks with default code to improve readability, by specifying for each `language (Code Block Tag)`, either the string to be prepended or the `-I@` (insert at) flag followed by whitespace and a string containing the `@` symbol where you want to insert the code. Examples:\nItem: `bash`, Value: `var=123\\n`\nItem: `cpp`, Value: `-I@ #include <bits/stdc++.h>\\nusing namespace std;\\nint main(){\\n@}\\n`",
+          "markdownDescription": "Prepend or wrap your code blocks with default code to improve readability, by specifying for each `language (Code Block Tag)`, either the string to be prepended or the `-I@` (insert at) flag followed by whitespace and a string containing the `@` symbol where you want to insert the code. Examples:\nItem: `bash`, Value: `var=123\\n`\nItem: `cpp`, Value: `-I@ #include <bits/stdc++.h>\\nusing namespace std;\\nint main(){\\n@}\\n`",
           "additionalProperties": {
             "type": "string"
           },
@@ -67,11 +67,12 @@
         },
         "markdownRunner.activateOnQuarto": {
           "type": "boolean",
-          "description": "Enable to activate the extension on Quarto (.qmd) files.",
+          "markdownDescription": "Enable to activate the extension on Quarto (.qmd) files.",
           "default": true
         },
         "markdownRunner.outputEncoding": {
           "type": "string",
+          "default": "utf8",
           "enum": [
             "utf8",
             "utf16le",
@@ -79,10 +80,12 @@
             "ascii",
             "base64",
             "hex",
-            "gbk"
+            "gbk",
+            "shiftjis",
+            "big5",
+            "windows1252"
           ],
-          "default": "utf8",
-          "description": "Encoding used to decode `Run on Markdown` process output. Supports `utf8`, `utf16le`, `latin1`, `ascii`, `base64`, `hex`, and `gbk`. Change this if non-ASCII characters appear corrupted (e.g. change to `gbk` on some Windows systems)."
+          "markdownDescription": "Encoding used to decode `Run on Markdown` process output via [iconv-lite](https://github.com/pillarjs/iconv-lite). Pick a common value from the list, or set any other [supported encoding](https://github.com/pillarjs/iconv-lite/wiki/Supported-Encodings) directly in `settings.json`. Change to `gbk` if non-ASCII characters appear corrupted on some Windows systems."
         }
       }
     },
