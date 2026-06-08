@@ -2,7 +2,9 @@
 
 ## 2.9.0
 
-- **Change**: Switched the default Haskell compiler back to `ghc`.
+- **Change**: Lowered the minimum supported VS Code version from `^1.116.0` to `^1.65.0` for broader compatibility with VS Code forks (e.g. VSCodium, Cursor).
+- **Change**: Untitled code blocks (no language tag) are no longer treated as Bash blocks; only Copy, Clear, and Delete CodeLens buttons are shown for them.
+- **Change**: Switched the default Haskell compiler from Stack back to `runghc`, removing the Stack project requirement for Haskell code blocks.
 
 ## 2.8.0
 

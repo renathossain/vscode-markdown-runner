@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# VSCode Version
-version="1.116.0"
+# Minimum VS Code API version
+version="1.65.0"
 
 # Clean workspace
 set -e
