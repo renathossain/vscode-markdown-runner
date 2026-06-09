@@ -26,30 +26,30 @@
       "properties": {
         "markdownRunner.compilerSettings": {
           "type": "object",
-          "markdownDescription": "Compiler commands are optional and run before interpreter commands. Enter the temporary file extension, then the compile command. Available placeholders: `${path}`, `${dir}`, `${name}`, `${ext}`. Click ↻ to restore defaults.",
+          "markdownDescription": "Compiler commands are optional and run before interpreter commands. Enter the temporary file extension, then the compile command. Available placeholders: `${path}`, `${dir}`, `${name}`, `${ext}`, `${exe}`. Click ↻ to restore defaults.",
           "additionalProperties": {
             "type": "string"
           },
           "default": {
-            "C": ".c; gcc ${path} -o ${dir}/${name}",
-            "C++, cpp, cxx": ".cpp; g++ ${path} -o ${dir}/${name}",
-            "Rust, rs": ".rs; rustc ${path} -o ${dir}/${name}",
+            "C": ".c; gcc ${path} -o ${dir}/${name}${exe}",
+            "C++, cpp, cxx": ".cpp; g++ ${path} -o ${dir}/${name}${exe}",
+            "Rust, rs": ".rs; rustc ${path} -o ${dir}/${name}${exe}",
             "Java": ".java; javac ${path}",
             "TypeScript, ts": ".ts; tsc --ignoreConfig ${path}"
           }
         },
         "markdownRunner.interpreterSettings": {
           "type": "object",
-          "markdownDescription": "Interpreter commands are mandatory and run after compiler commands. Enter the temporary file extension, then the interpreter command. Available placeholders: `${path}`, `${dir}`, `${name}`, `${ext}`. The first tag in each language list is used for the CodeLens button. Click ↻ to restore defaults.",
+          "markdownDescription": "Interpreter commands are mandatory and run after compiler commands. Enter the temporary file extension, then the interpreter command. Available placeholders: `${path}`, `${dir}`, `${name}`, `${ext}`, `${exe}`. The first tag in each language list is used for the CodeLens button. Click ↻ to restore defaults.",
           "additionalProperties": {
             "type": "string"
           },
           "default": {
             "Python, py, py3": ".py; python ${path}",
-            "C": "; ${path}",
+            "C": "; ${path}${exe}",
             "Java": ".class; java -cp ${dir} ${name}",
-            "C++, cpp, cxx": "; ${path}",
-            "Rust, rs": "; ${path}",
+            "C++, cpp, cxx": "; ${path}${exe}",
+            "Rust, rs": "; ${path}${exe}",
             "TypeScript, ts": ".js; node ${path}",
             "PHP, php3, php4, php5": ".php; php ${path}",
             "Perl, pl, perl6": ".pl; perl ${path}",

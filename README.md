@@ -58,7 +58,7 @@ Download or copy [DEMO.md](DEMO.md)/[DEMO.qmd](DEMO.qmd) and the [demo_helpers](
 - **Compiler commands** are optional and run before interpreter commands.
 - **Interpreter commands** are mandatory and run after compiler commands. The first tag in each language list is used for the CodeLens button.
 
-Enter the temporary file extension, then the compile command. Available placeholders: `${path}`, `${dir}`, `${name}`, `${ext}`. Click ↻ to restore defaults. Example:
+Enter the temporary file extension, then the compile command. Available placeholders: `${path}`, `${dir}`, `${name}`, `${ext}`, `${exe}`. Click ↻ to restore defaults. Example:
 
 ```json
 "markdownRunner.compilerSettings": {

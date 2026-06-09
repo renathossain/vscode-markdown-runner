@@ -121,6 +121,7 @@ export async function getRunCommand(
   if (!interpreter) return "";
   const dir = os.tmpdir();
   const commonPath = path.join(dir, name);
+  const exe = process.platform === "win32" ? ".exe" : "";
 
   // Write code to a file, SECURITY: Only Owner Read and Write
   const compilerPath = compiler ? commonPath + compiler.extension : "";
@@ -133,7 +134,8 @@ export async function getRunCommand(
     .replace(/\$\{path\}/g, interpreterPath)
     .replace(/\$\{dir\}/g, dir)
     .replace(/\$\{name\}/g, name)
-    .replace(/\$\{ext\}/g, interpreter.extension);
+    .replace(/\$\{ext\}/g, interpreter.extension)
+    .replace(/\$\{exe\}/g, exe);
 
   // Compile file if compiler available
   if (compiler) {
@@ -141,7 +143,8 @@ export async function getRunCommand(
       .replace(/\$\{path\}/g, compilerPath)
       .replace(/\$\{dir\}/g, dir)
       .replace(/\$\{name\}/g, name)
-      .replace(/\$\{ext\}/g, compiler.extension);
+      .replace(/\$\{ext\}/g, compiler.extension)
+      .replace(/\$\{exe\}/g, exe);
     if (await compile(compileCommand)) {
       tempFilePaths.push(interpreterPath);
       return interpreterCommand;
