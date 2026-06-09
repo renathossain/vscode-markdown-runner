@@ -64,12 +64,12 @@ Example:
 
 ```json
 "markdownRunner.compilerSettings": {
-  "C": ".c; gcc ${path} -o ${dir}/${name}",
+  "C": ".c; gcc ${path} -o ${dir}/${name}${exe}",
   "TypeScript, ts": ".ts; tsc --ignoreConfig ${path}"
 },
 "markdownRunner.interpreterSettings": {
-  "C": "; ${path}",
-  "TypeScript, ts": ".js; node ${path}",
+  "C": "; ${path}${exe}",
+  "TypeScript, ts": ".js; node ${path}"
 }
 ```
 
