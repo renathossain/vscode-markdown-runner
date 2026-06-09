@@ -25,30 +25,23 @@ import { tempFilePaths } from "./extension";
 export function getLanguageConfig(
   language: string,
   type: "compiler" | "interpreter",
-): { name: string; extension: string; command: string } | null {
-  const config = vscode.workspace
-    .getConfiguration()
-    .get<Record<string, string>>(`markdownRunner.${type}Settings`);
-  if (!config) return null;
+) {
+  const config =
+    vscode.workspace
+      .getConfiguration()
+      .get<Record<string, string>>(`markdownRunner.${type}Settings`) ?? {};
 
   const target = language.trim().toLowerCase();
+
   for (const [key, value] of Object.entries(config)) {
-    const aliases = key
-      .split(",")
-      .map((a) => a.trim())
-      .filter(Boolean);
+    const aliases = key.split(",").map((a) => a.trim());
+    if (!aliases.map((a) => a.toLowerCase()).includes(target)) continue;
+    const [extension = "", command = ""] = value.split(";", 2);
 
-    const match = aliases.some((a) => a.toLowerCase() === target);
-    if (!match) continue;
-
-    const name = aliases[0];
-    const [extensionRaw, commandRaw] = value.split(";", 2);
-    const extension = (extensionRaw ?? "").trim();
-    const command = (commandRaw ?? "").trim();
     return {
-      name,
-      extension,
-      command,
+      name: aliases[0],
+      extension: extension.trim(),
+      command: command.trim(),
     };
   }
 
@@ -105,50 +98,45 @@ const compile = (cmd: string) =>
 
 // Save code to a temporary file, and compile it if necessary
 // Return the string to be run in the terminal to execute the binary/code
-export async function getRunCommand(
-  language: string,
-  code: string,
-): Promise<string> {
-  // Obtain info to create the run command
+export async function getRunCommand(language: string, code: string) {
   const name = getBaseName(language, code);
   if (!name) return "";
+
   const compiler = getLanguageConfig(language, "compiler");
-  const interpreter = getLanguageConfig(language, "interpreter");
-  if (!interpreter) return "";
+  const interp = getLanguageConfig(language, "interpreter");
+  if (!interp) return "";
+
   const dir = os.tmpdir();
-  const commonPath = path.join(dir, name);
+  const base = path.join(dir, name);
   const exe = process.platform === "win32" ? ".exe" : "";
 
-  // Write code to a file, SECURITY: Only Owner Read and Write
-  const compilerPath = compiler ? commonPath + compiler.extension : "";
-  const interpreterPath = commonPath + interpreter.extension;
-  const file = compiler ? compilerPath : interpreterPath;
   code = injectDefaultCode(language, code);
+
+  const compilerPath = compiler ? base + compiler.extension : "";
+  const interpPath = base + interp.extension;
+  const file = compiler ? compilerPath : interpPath;
+
+  // Write code to a file, SECURITY: Only Owner Read and Write
   fs.writeFileSync(file, code, { mode: 0o600 });
   tempFilePaths.push(file);
-  const interpreterCommand = interpreter.command
-    .replace(/\$\{path\}/g, interpreterPath)
-    .replace(/\$\{dir\}/g, dir)
-    .replace(/\$\{name\}/g, name)
-    .replace(/\$\{ext\}/g, interpreter.extension)
-    .replace(/\$\{exe\}/g, exe);
 
-  // Compile file if compiler available
-  if (compiler) {
-    const compileCommand = compiler.command
-      .replace(/\$\{path\}/g, compilerPath)
+  const fill = (s: string, path: string, ext: string) =>
+    s
+      .replace(/\$\{path\}/g, path)
       .replace(/\$\{dir\}/g, dir)
       .replace(/\$\{name\}/g, name)
-      .replace(/\$\{ext\}/g, compiler.extension)
+      .replace(/\$\{ext\}/g, ext)
       .replace(/\$\{exe\}/g, exe);
-    if (await compile(compileCommand)) {
-      tempFilePaths.push(interpreterPath);
-      return interpreterCommand;
-    } else return "";
+
+  const runCmd = fill(interp.command, interpPath, interp.extension);
+  if (!compiler) return runCmd;
+
+  if (await compile(fill(compiler.command, compilerPath, compiler.extension))) {
+    tempFilePaths.push(interpPath);
+    return runCmd;
   }
 
-  // If not a compiled language, run the source code
-  return interpreterCommand;
+  return "";
 }
 
 // Run command in the terminal

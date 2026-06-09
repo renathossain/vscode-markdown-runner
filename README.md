@@ -21,7 +21,7 @@ Before running a code block:
 
 - Install the required languages and dependencies.
 - Ensure all required executables are available on your system PATH if they are not automatically detected.
-- Verify that the **Compiler Configuration** settings are correctly configured.
+- Verify that the **[Compiler & Interpreter Settings](#compiler--interpreter-settings)** are correctly configured.
 - Ensure your code is correct.
 - For Quarto support, install the [Quarto VS Code Extension](https://marketplace.visualstudio.com/items?itemName=quarto.quarto).
 

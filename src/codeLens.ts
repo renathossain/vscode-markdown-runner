@@ -35,7 +35,8 @@ export const blockRegex = () => /^(`{3,})(.*?)\n(.*?)^\1$/gms;
 
 // Parses blocks
 export function parseBlock(doc: vscode.TextDocument, match: RegExpExecArray) {
-  const language = (match[2].trim().toLowerCase().match(/^\w+/) ?? [""])[0];
+  const cleaned = match[2].trim().toLowerCase();
+  const language = (cleaned.match(/^[\w+#]+/) ?? [""])[0];
   const code = match[3];
   const start = doc.positionAt(match.index);
   const end = doc.positionAt(match.index + match[0].length);
