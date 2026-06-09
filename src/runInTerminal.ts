@@ -104,7 +104,12 @@ export async function getRunCommand(language: string, code: string) {
 
   const compiler = getLanguageConfig(language, "compiler");
   const interp = getLanguageConfig(language, "interpreter");
-  if (!interp) return "";
+  if (!interp) {
+    vscode.window.showErrorMessage(
+      `No interpreter configured for "${language}".`,
+    );
+    return "";
+  }
 
   const dir = os.tmpdir();
   const base = path.join(dir, name);
@@ -129,9 +134,22 @@ export async function getRunCommand(language: string, code: string) {
       .replace(/\$\{exe\}/g, exe);
 
   const runCmd = fill(interp.command, interpPath, interp.extension);
+  if (!runCmd) {
+    vscode.window.showErrorMessage(
+      `No interpreter configured for "${language}".`,
+    );
+    return "";
+  }
+
   if (!compiler) return runCmd;
 
-  if (await compile(fill(compiler.command, compilerPath, compiler.extension))) {
+  const compCmd = fill(compiler.command, compilerPath, compiler.extension);
+  if (!compCmd) {
+    vscode.window.showErrorMessage(`No compiler configured for "${language}".`);
+    return "";
+  }
+
+  if (await compile(compCmd)) {
     tempFilePaths.push(interpPath);
     return runCmd;
   }
@@ -140,10 +158,10 @@ export async function getRunCommand(language: string, code: string) {
 }
 
 // Run command in the terminal
-export function runInTerminal(code: string) {
-  if (!code) return;
+export function runInTerminal(command: string) {
+  if (!command) return;
   const terminal =
     vscode.window.activeTerminal || vscode.window.createTerminal();
   terminal.show();
-  terminal.sendText(code);
+  terminal.sendText(command);
 }

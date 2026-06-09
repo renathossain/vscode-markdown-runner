@@ -73,10 +73,11 @@ function findOutputBlock(document: vscode.TextDocument, startLine: number) {
 }
 
 // Run command on the markdown file
-export function runOnMarkdown(code: string, range: vscode.Range) {
+export function runOnMarkdown(command: string, range: vscode.Range) {
   // TODO: implement multiple output streams at the same time
+  const failed = { pid: -1, done: async () => {} };
   const editor = vscode.window.activeTextEditor;
-  if (!code || !editor || !textEditMutex.tryAcquire()) return;
+  if (!command || !editor || !textEditMutex.tryAcquire()) return failed;
 
   const encoding = vscode.workspace
     .getConfiguration()
@@ -86,15 +87,15 @@ export function runOnMarkdown(code: string, range: vscode.Range) {
     const errorMessage = `Invalid output encoding "${encoding}". See https://github.com/pillarjs/iconv-lite/wiki/Supported-Encodings`;
     vscode.window.showErrorMessage(errorMessage);
     textEditMutex.release();
-    return { pid: -1, done: async () => {} };
+    return failed;
   }
 
   // Start child process
-  const child = cp.spawn(code, { shell: true });
+  const child = cp.spawn(command, { shell: true });
   if (child.pid == null) {
     vscode.window.showErrorMessage("Failed to start process.");
     textEditMutex.release();
-    return { pid: -1, done: async () => {} };
+    return failed;
   }
 
   // Create buttons to stop or kill the process
