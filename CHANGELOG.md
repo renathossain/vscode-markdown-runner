@@ -2,8 +2,9 @@
 
 ## 3.0.0
 
-- **New Feature**: Replaced the old `compilerConfiguration` setting with separate `compilerSettings` and `interpreterSettings`. Commands now support `${path}`, `${dir}`, `${name}`, and `${ext}` placeholders anywhere in the command string, and a single configuration entry can be shared across multiple code block tags (e.g. `php`, `php3`, `php4`, `php5`), making language configuration significantly more flexible.
+- **New Feature**: Replaced the old `compilerConfiguration` setting with separate `compilerSettings` and `interpreterSettings`. Commands now support `${path}`, `${dir}`, `${name}`, `${ext}`, and `${exe}` placeholders anywhere in the command string, and a single configuration entry can be shared across multiple code block tags (e.g. `php`, `php3`, `php4`, `php5`), making language configuration significantly more flexible.
 - **New Feature**: Added built-in encoding options for `Shift_JIS`, `Big5`, and `Windows-1252`. Advanced users can also specify any encoding supported by `iconv-lite` directly in `settings.json`.
+- **Change**: Default code injection system (`defaultCodes`) now uses the `${code}` placeholder instead of legacy insertion markers, and treats templates without `${code}` as full overrides rather than appending user code.
 - **Change**: Lowered the minimum supported VS Code version from `^1.116.0` to `^1.65.0` for broader compatibility with VS Code forks (e.g. VSCodium, Cursor).
 - **Change**: Untitled code blocks (no language tag) are no longer treated as Bash blocks; only Copy, Clear, and Delete CodeLens buttons are shown for them.
 - **Change**: Switched the default Haskell compiler from Stack back to `runghc`, removing the Stack project requirement for Haskell code blocks.

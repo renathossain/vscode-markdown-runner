@@ -395,7 +395,7 @@ suite("Code Manipulation", function () {
       .getConfiguration()
       .update(
         "markdownRunner.defaultCodes",
-        { python: "output = 10 + 72\n" },
+        { python: "output = 10 + 72\n${code}" },
         vscode.ConfigurationTarget.Global,
       );
 
@@ -407,7 +407,7 @@ suite("Code Manipulation", function () {
       .getConfiguration()
       .update(
         "markdownRunner.defaultCodes",
-        { python: "-I@ print(@)" },
+        { python: "print(${code})" },
         vscode.ConfigurationTarget.Global,
       );
 

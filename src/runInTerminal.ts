@@ -77,15 +77,11 @@ function injectDefaultCode(language: string, code: string) {
   const defaultCodeConfig =
     config.get<Record<string, string>>("markdownRunner.defaultCodes") || {};
 
-  // Inject default code, if available from settings
-  const newlineCode = (defaultCodeConfig[language] || "").replace(/\\n/g, "\n");
-  // Explanation of regex:
-  // ^: anchors search to beginning, `-I` must appear in the beginning of string
-  // (.): 1st capturing group, match 1 character (like `@` in the example)
-  // ([\s\S]+$): 2nd capturing group that matches 1 or more (+) of any
-  // characters (\s\S) and `$` means it matches to the end of the string
-  const match = /^-I(.) ([\s\S]+$)/.exec(newlineCode);
-  code = match ? match[2].replace(match[1], code) : newlineCode + code;
+  // Inject default code, if available
+  if (defaultCodeConfig[language])
+    code = defaultCodeConfig[language]
+      .replace(/\\n/g, "\n")
+      .replace(/\$\{code\}/g, code);
 
   // If pythonPath is enabled, inject the markdown file's path into the code
   const editor = vscode.window.activeTextEditor;

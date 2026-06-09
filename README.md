@@ -58,7 +58,9 @@ Download or copy [DEMO.md](DEMO.md)/[DEMO.qmd](DEMO.qmd) and the [demo_helpers](
 - **Compiler commands** are optional and run before interpreter commands.
 - **Interpreter commands** are mandatory and run after compiler commands. The first tag in each language list is used for the CodeLens button.
 
-Enter the temporary file extension, then the compile command. Available placeholders: `${path}`, `${dir}`, `${name}`, `${ext}`, `${exe}`. Click ↻ to restore defaults. Example:
+Enter the temporary file extension, then the compile command. Available placeholders: `${path}`, `${dir}`, `${name}`, `${ext}`, `${exe}`. Click ↻ to restore defaults.
+
+Example:
 
 ```json
 "markdownRunner.compilerSettings": {
@@ -77,24 +79,23 @@ Enable to add the Markdown file's parent directory to Python's `sys.path`, allow
 
 ### Default Codes
 
-Prepend or wrap your code blocks with default code to improve readability, by specifying for each `language (Code Block Tag)`, either the string to be prepended or the `-I@` (insert at) flag followed by whitespace and a string containing the `@` symbol where you want to insert the code.
+To avoid repetitive boilerplate, prepend, wrap, or append default code to parsed code blocks, and use the placeholder `${code}` to indicate where the parsed code should be inserted.
 
-```plaintext
-// Example
-Item: `python`, Value: `var = 123\n`
-Item: `cpp`, Value: `-I@ #include <bits/stdc++.h>\nusing namespace std;\nint main(){\n@}\n`
-```
+If `${code}` is not present in the template, the default code is treated as a complete program and will run as-is, ignoring the parsed code block.
 
-- The Python code `print(var)` is preceded by `var = 123\n`, forming `var = 123\nprint(var)`, which results in the output `123`.
-- The code `cout << 456 << endl;` is transformed to the following, which outputs `456`:
+Example:
 
-```cpp
-#include <bits/stdc++.h>
-using namespace std;
-int main(){
-cout << 456 << endl;
+```json
+"markdownRunner.defaultCodes": {
+  "cpp": "#include <bits/stdc++.h>\\nusing namespace std;\\nint main(){\\n${code}}\\n",
+  "python": "var = 123\\n${code}",
 }
 ```
+
+With the added default codes:
+
+- the Python code `print(var)` outputs `123`.
+- the C++ code `cout << 456 << endl;` outputs `456`.
 
 ### Activate On Quarto
 
