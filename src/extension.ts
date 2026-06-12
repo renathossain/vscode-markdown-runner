@@ -59,14 +59,14 @@ let disposables: vscode.Disposable[] = [];
 
 // List of command handlers
 const commands = {
-  "markdown.runFile": async (lang: string, code: string) =>
+  "markdown.runBlock": async (lang: string, code: string) =>
     runInTerminal(await getRunCommand(lang, code)),
+  "markdown.runInTerminal": runInTerminal,
   "markdown.runOnMarkdown": async (
     lang: string,
     code: string,
     range: vscode.Range,
   ) => runOnMarkdown(await getRunCommand(lang, code), range),
-  "markdown.runInTerminal": runInTerminal,
   "markdown.copy": (code: string) => {
     vscode.env.clipboard.writeText(code);
     vscode.window.setStatusBarMessage("Copied to clipboard!", 2000);
@@ -109,6 +109,8 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("markdownRunner.activateOnQuarto"))
         registerProviders(context);
+      if (e.affectsConfiguration("markdownRunner.enabledButtons"))
+        codeLensProvider?.refresh();
     }),
   );
 

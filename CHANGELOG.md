@@ -1,5 +1,9 @@
 # Change Log
 
+## 3.1.0
+
+- **New Feature**: Added configurable CodeLens button visibility through the `enabledButtons` setting. Users can hide Run Block, Run in Terminal, Run on Markdown, Copy, Clear, and Delete buttons to reduce clutter, while Kill process controls always remain available for safety.
+
 ## 3.0.0
 
 - **New Feature**: Replaced the old `compilerConfiguration` setting with separate `compilerSettings` and `interpreterSettings`. Commands now support `${path}`, `${dir}`, `${name}`, `${ext}`, and `${exe}` placeholders anywhere in the command string, and a single configuration entry can be shared across multiple code block tags (e.g. `php`, `php3`, `php4`, `php5`), making language configuration significantly more flexible.

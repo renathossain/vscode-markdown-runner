@@ -56,6 +56,9 @@ function add(
 // Implementation for ButtonCodeLensProvider
 function provideCodeLenses(document: vscode.TextDocument) {
   const lenses: vscode.CodeLens[] = [];
+  const enabledButtons = vscode.workspace
+    .getConfiguration()
+    .get<Record<string, boolean>>("markdownRunner.enabledButtons", {});
 
   // Generate buttons to stop `Run on Markdown` processes
   for (const { pid, line } of childProcesses) {
@@ -73,23 +76,32 @@ function provideCodeLenses(document: vscode.TextDocument) {
     if (name) {
       // Provide `Run {Language} Block` option
       const argsRun = [language, code];
-      add(lenses, range, `Run ${name} Block`, "markdown.runFile", argsRun);
+      if (enabledButtons["runBlock"])
+        add(lenses, range, `Run ${name} Block`, "markdown.runBlock", argsRun);
 
       // Only for bash code blocks, provide `Run in Terminal (line by line)` option
-      if (language === "bash" || language === "powershell")
+      if (
+        enabledButtons["runInTerminal"] &&
+        (language === "bash" || language === "powershell")
+      )
         add(lenses, range, "Run in Terminal", "markdown.runInTerminal", [code]);
 
       // Provide `Run on Markdown` option
       const argsMark = [language, code, range];
-      add(lenses, range, "Run on Markdown", "markdown.runOnMarkdown", argsMark);
+      const cmdMark = "markdown.runOnMarkdown";
+      if (enabledButtons["runOnMarkdown"])
+        add(lenses, range, "Run on Markdown", cmdMark, argsMark);
     }
 
-    // Always provide buttons to copy, clear or delete code blocks
+    // Provide buttons to copy, clear or delete code blocks
     const clear = new vscode.Range(range.start.line + 1, 0, range.end.line, 0);
     const del = new vscode.Range(range.start.line, 0, range.end.line + 1, 0);
-    add(lenses, range, "Copy", "markdown.copy", [code]);
-    add(lenses, range, "Clear", "markdown.delete", [clear]);
-    add(lenses, range, "Delete", "markdown.delete", [del]);
+    if (enabledButtons["copy"])
+      add(lenses, range, "Copy", "markdown.copy", [code]);
+    if (enabledButtons["clear"])
+      add(lenses, range, "Clear", "markdown.delete", [clear]);
+    if (enabledButtons["delete"])
+      add(lenses, range, "Delete", "markdown.delete", [del]);
   }
 
   return lenses;

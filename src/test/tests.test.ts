@@ -18,6 +18,13 @@ const setup = async () => {
       undefined,
       vscode.ConfigurationTarget.Global,
     );
+  await vscode.workspace
+    .getConfiguration()
+    .update(
+      "markdownRunner.enabledButtons",
+      undefined,
+      vscode.ConfigurationTarget.Global,
+    );
 };
 
 suite("Activation", function () {
@@ -73,7 +80,7 @@ suite("CodeLens", function () {
       [
         {
           title: "Run Python Block",
-          command: "markdown.runFile",
+          command: "markdown.runBlock",
           args: ["python", "print(10 + 72)\n"],
           range,
         },
@@ -103,6 +110,38 @@ suite("CodeLens", function () {
         },
       ],
     );
+  });
+
+  test("Enabled Buttons", async () => {
+    await vscode.workspace
+      .getConfiguration()
+      .update(
+        "markdownRunner.enabledButtons",
+        { runBlock: false, copy: false, delete: false },
+        vscode.ConfigurationTarget.Global,
+      );
+
+    try {
+      const text = "```python\nprint(10 + 72)\n```\n";
+      const file = path.join(os.tmpdir(), "test-enabled-buttons.md");
+      fs.writeFileSync(file, text);
+
+      const doc = await vscode.workspace.openTextDocument(file);
+      const provider = new ButtonCodeLensProvider();
+
+      assert.deepStrictEqual(
+        provider.provideCodeLenses(doc).map((lens) => lens.command?.title),
+        ["Run on Markdown", "Clear"],
+      );
+    } finally {
+      await vscode.workspace
+        .getConfiguration()
+        .update(
+          "markdownRunner.enabledButtons",
+          undefined,
+          vscode.ConfigurationTarget.Global,
+        );
+    }
   });
 });
 
@@ -165,10 +204,10 @@ suite("Run File", function () {
   this.timeout(60000);
   suiteSetup(setup);
   test("Python", async () => {
-    const file = path.join(os.tmpdir(), `test-runfile.out`);
+    const file = path.join(os.tmpdir(), `test-runblock.out`);
     const code = `with open(r"${file.replace(/\\/g, "/")}", "w") as f: f.write(str(10 + 72))`;
 
-    await vscode.commands.executeCommand("markdown.runFile", "python", code);
+    await vscode.commands.executeCommand("markdown.runBlock", "python", code);
 
     for (let i = 0; i < 100; i++) {
       if (fs.existsSync(file) && fs.readFileSync(file, "utf8").trim() === "82")
@@ -399,7 +438,17 @@ suite("Code Manipulation", function () {
         vscode.ConfigurationTarget.Global,
       );
 
-    await run(`print(output)`, "82", "test-prepend.md");
+    try {
+      await run(`print(output)`, "82", "test-prepend.md");
+    } finally {
+      await vscode.workspace
+        .getConfiguration()
+        .update(
+          "markdownRunner.defaultCodes",
+          undefined,
+          vscode.ConfigurationTarget.Global,
+        );
+    }
   });
 
   test("Default Codes Insert At", async () => {
@@ -411,7 +460,17 @@ suite("Code Manipulation", function () {
         vscode.ConfigurationTarget.Global,
       );
 
-    await run("10 + 72", "82", "test-insert-at.md");
+    try {
+      await run("10 + 72", "82", "test-insert-at.md");
+    } finally {
+      await vscode.workspace
+        .getConfiguration()
+        .update(
+          "markdownRunner.defaultCodes",
+          undefined,
+          vscode.ConfigurationTarget.Global,
+        );
+    }
   });
 });
 

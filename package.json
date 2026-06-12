@@ -4,7 +4,7 @@
   "description": "Enables the seamless execution of code blocks in any language within Markdown files in VS Code",
   "publisher": "renathossain",
   "icon": "Icon.png",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "engines": {
     "vscode": "^1.65.0"
   },
@@ -100,6 +100,51 @@
             "windows1252"
           ],
           "markdownDescription": "Encoding used to decode `Run on Markdown` process output via [iconv-lite](https://github.com/pillarjs/iconv-lite). Pick a common value from the list, or set any other [supported encoding](https://github.com/pillarjs/iconv-lite/wiki/Supported-Encodings) directly in `settings.json`. Change to `gbk` if non-ASCII characters appear corrupted on some Windows systems."
+        },
+        "markdownRunner.enabledButtons": {
+          "type": "object",
+          "markdownDescription": "Controls which CodeLens buttons are shown above code blocks. Disable buttons you do not use to reduce clutter. Stop, Kill, and Kill All process controls are always shown when needed for safety.",
+          "properties": {
+            "runBlock": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show the \"Run Block\" button."
+            },
+            "runInTerminal": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show the \"Run in Terminal\" button for Bash and PowerShell blocks."
+            },
+            "runOnMarkdown": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show the \"Run on Markdown\" button."
+            },
+            "copy": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show the \"Copy\" button."
+            },
+            "clear": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show the \"Clear\" button."
+            },
+            "delete": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show the \"Delete\" button."
+            }
+          },
+          "additionalProperties": false,
+          "default": {
+            "runBlock": true,
+            "runInTerminal": true,
+            "runOnMarkdown": true,
+            "copy": true,
+            "clear": true,
+            "delete": true
+          }
         }
       }
     },

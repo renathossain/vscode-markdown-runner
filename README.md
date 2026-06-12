@@ -105,6 +105,10 @@ Enable to activate the extension on Quarto (.qmd) files.
 
 Encoding used to decode `Run on Markdown` process output via [iconv-lite](https://github.com/pillarjs/iconv-lite). Pick a common value from the list, or set any other [supported encoding](https://github.com/pillarjs/iconv-lite/wiki/Supported-Encodings) directly in `settings.json`. Change to `gbk` if non-ASCII characters appear corrupted on some Windows systems.
 
+### Enabled Buttons
+
+Controls which CodeLens buttons are shown above code blocks. Disable buttons you do not use to reduce clutter. Stop, Kill, and Kill All process controls are always shown when needed for safety.
+
 ## Future Development
 
 Planned features (no guarantee):
