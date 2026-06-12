@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2025 Renat Hossain
+
 import * as assert from "assert";
 import * as vscode from "vscode";
 import * as fs from "fs";

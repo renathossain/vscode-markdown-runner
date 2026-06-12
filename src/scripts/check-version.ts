@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2025 Renat Hossain
+
 import https from "https";
 import * as fs from "fs";
 import * as path from "path";

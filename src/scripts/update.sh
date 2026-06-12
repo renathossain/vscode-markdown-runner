@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2025 Renat Hossain
 
 # Minimum VS Code API version
 version="1.65.0"
