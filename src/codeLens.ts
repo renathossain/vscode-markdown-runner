@@ -37,11 +37,9 @@ export const blockRegex = () => /^(`{3,})(.*?)\n(.*?)^\1$/gms;
 export function parseBlock(doc: vscode.TextDocument, match: RegExpExecArray) {
   const cleaned = match[2].trim().toLowerCase();
   const language = (cleaned.match(/^[\w+#]+/) ?? [""])[0];
-  const code = match[3];
   const start = doc.positionAt(match.index);
   const end = doc.positionAt(match.index + match[0].length);
-  const range = new vscode.Range(start, end);
-  return { language, code, range };
+  return { language, code: match[3], range: new vscode.Range(start, end) };
 }
 
 // Generate the code lens with the required parameters and push it to the list

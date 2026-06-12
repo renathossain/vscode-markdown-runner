@@ -86,7 +86,7 @@ function registerProviders(context: vscode.ExtensionContext) {
     selector.push({ language: "quarto", scheme: "file" });
 
   // Dispose previous providers if they exist
-  disposables.forEach((d) => d.dispose());
+  disposables.forEach((disposable) => disposable.dispose());
 
   // Create and register the new providers
   codeLensProvider = new ButtonCodeLensProvider();

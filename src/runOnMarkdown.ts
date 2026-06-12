@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import * as vscode from "vscode";
-import * as cp from "child_process";
+import * as childProcess from "child_process";
 import iconv from "iconv-lite";
 import Mutex from "semaphore-async-await";
 import treeKill from "tree-kill";
@@ -91,7 +91,7 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
   }
 
   // Start child process
-  const child = cp.spawn(command, { shell: true });
+  const child = childProcess.spawn(command, { shell: true });
   if (child.pid == null) {
     vscode.window.showErrorMessage("Failed to start process.");
     textEditMutex.release();
@@ -140,7 +140,7 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
     // Runs when child process exits (but not all data may be written)
     child.on("exit", async () => {
       // Remove process `Stop`, `Kill` and `KillAll` controls
-      childProcesses = childProcesses.filter((cp) => cp.pid !== child.pid);
+      childProcesses = childProcesses.filter(({ pid }) => pid !== child.pid);
       if (!childProcesses.length) killAllButton.hide();
 
       exitMutex.release();
@@ -163,11 +163,10 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
 
     // If output block found, clear the contents inside it, otherwise create it
     const deleteRange = findOutputBlock(editor.document, range.end.line + 2);
-    const outputBlock = "\n\n```output\n```";
     await editor.edit((text) =>
       deleteRange
         ? text.delete(deleteRange)
-        : text.insert(range.end, outputBlock),
+        : text.insert(range.end, "\n\n```output\n```"),
     );
 
     outputMutex.release();
@@ -187,7 +186,7 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
 
 // Kill process
 export async function killProcess(pid: number, signal: string) {
-  childProcesses = childProcesses.filter((cp) => cp.pid !== pid);
+  childProcesses = childProcesses.filter((process) => process.pid !== pid);
   treeKill(pid, signal);
 }
 

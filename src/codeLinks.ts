@@ -32,9 +32,7 @@ const inlineRegex = () => /(?<!`+)`([^`\n]+?)`(?!`+)/g;
 // DocumentLink Provider for inline code
 export class InlineCodeLinkProvider implements vscode.DocumentLinkProvider {
   provideDocumentLinks(document: vscode.TextDocument) {
-    const inlineCodeLinks: vscode.DocumentLink[] = [];
-
-    for (const match of document.getText().matchAll(inlineRegex())) {
+    return [...document.getText().matchAll(inlineRegex())].map((match) => {
       // Parse inline code (code within ` delimiters)
       const code = match[1]; // First capturing group ([^`\n]+?)
       const start = document.positionAt(match.index);
@@ -44,11 +42,8 @@ export class InlineCodeLinkProvider implements vscode.DocumentLinkProvider {
       // Generate Document Links that run code with Ctrl+click
       const codeString = encodeURIComponent(JSON.stringify([code]));
       const command = `command:markdown.runInTerminal?${codeString}`;
-      const link = new vscode.DocumentLink(range, vscode.Uri.parse(command));
-      inlineCodeLinks.push(link);
-    }
-
-    return inlineCodeLinks;
+      return new vscode.DocumentLink(range, vscode.Uri.parse(command));
+    });
   }
 }
 

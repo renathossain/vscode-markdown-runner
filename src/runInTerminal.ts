@@ -18,7 +18,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import * as cp from "child_process";
+import * as childProcess from "child_process";
 import { tempFilePaths } from "./extension";
 
 // Get the configuration for the given language and type
@@ -26,23 +26,18 @@ export function getLanguageConfig(
   language: string,
   type: "compiler" | "interpreter",
 ) {
+  const target = language.trim().toLowerCase();
   const config =
     vscode.workspace
       .getConfiguration()
       .get<Record<string, string>>(`markdownRunner.${type}Settings`) ?? {};
 
-  const target = language.trim().toLowerCase();
-
   for (const [key, value] of Object.entries(config)) {
-    const aliases = key.split(",").map((a) => a.trim());
-    if (!aliases.map((a) => a.toLowerCase()).includes(target)) continue;
-    const [extension = "", command = ""] = value.split(";", 2);
+    const aliases = key.split(",").map((alias) => alias.trim());
+    if (!aliases.some((alias) => alias.toLowerCase() === target)) continue;
+    const [ext = "", command = ""] = value.split(";", 2);
 
-    return {
-      name: aliases[0],
-      extension: extension.trim(),
-      command: command.trim(),
-    };
+    return { name: aliases[0], extension: ext.trim(), command: command.trim() };
   }
 
   return null;
@@ -89,7 +84,7 @@ function injectDefaultCode(language: string, code: string) {
 // Compile a binary using the provided command
 const compile = (cmd: string) =>
   new Promise<boolean>((resolve) =>
-    cp.exec(cmd, (error, _, stderr) => {
+    childProcess.exec(cmd, (error, _, stderr) => {
       const errorMsg = stderr || error?.message;
       if (errorMsg) vscode.window.showErrorMessage(errorMsg);
       resolve(!error);
