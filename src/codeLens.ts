@@ -1,26 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025 Renat Hossain
 
+// Provides CodeLens buttons (Run, Copy, Clear, Delete, Stop/Kill) for fenced
+// code blocks in Markdown documents.
+
 import * as vscode from "vscode";
 import { getLanguageConfig } from "./runInTerminal";
 import { childProcesses } from "./runOnMarkdown";
 
-// Regex to parse blocks delimited with at least 3 ticks `:
-// (`{3,}) matches at 3 or more backticks ` (first capturing group)
-// \1$ ensures that the closing backticks match the same length as the opening ones
-// . matches any character, so .* matches any number of any characters
-// .*? matches lazily (least amount of char to satisfy the regex),
-// Without ?, it matches greedily by default (max chars to satisfy regex)
-// (.*?)\n(.*?) - the brackets the denote the individual "capturing groups" (2 of them)
-// The second capturing group captures the code block type (e.g. python, rust, etc.)
-// The third capturing group captures the code itself
-// Flags: g searches the text globally (all occurrences)
-// Flags: m makes the ^ match the start of a line (by default it is start of the text)
-// m and ^ ensures the codeblock delims ``` always start at the beginning of the line
-// Flags: s makes the . match newline characters as well (by default it does not)
+// Matches fenced code blocks. Each group is enclosed within brackets e.g. (`{3,}).
+// Group 1 captures the opening fence (3+ backticks) and \1 backreferences it to
+// ensure the ending fence matches the opening fence length. Group 2 captures
+// the language (e.g. "python"), and Group 3 the code body. Flags: g = global
+// (find all occurrences), m = ^ matches start of line (fence must begin
+// at column 0), s = . matches newlines (enabling multi-line body capture).
 export const blockRegex = () => /^(`{3,})(.*?)\n(.*?)^\1$/gms;
 
-// Parses blocks
+// Extract language, code content, and document range from a block regex match.
 export function parseBlock(doc: vscode.TextDocument, match: RegExpExecArray) {
   const cleaned = match[2].trim().toLowerCase();
   const language = (cleaned.match(/^[\w+#]+/) ?? [""])[0];
@@ -29,7 +25,7 @@ export function parseBlock(doc: vscode.TextDocument, match: RegExpExecArray) {
   return { language, code: match[3], range: new vscode.Range(start, end) };
 }
 
-// Generate the code lens with the required parameters and push it to the list
+// Convenience helper to create and append a CodeLens.
 function add(
   lenses: vscode.CodeLens[],
   range: vscode.Range,
@@ -40,47 +36,43 @@ function add(
   lenses.push(new vscode.CodeLens(range, { title, command, arguments: args }));
 }
 
-// Implementation for ButtonCodeLensProvider
+// Build the full list of CodeLenses for the active document.
 function provideCodeLenses(document: vscode.TextDocument) {
   const lenses: vscode.CodeLens[] = [];
   const enabledButtons = vscode.workspace
     .getConfiguration()
     .get<Record<string, boolean>>("markdownRunner.enabledButtons", {});
 
-  // Generate buttons to stop `Run on Markdown` processes
+  // Stop/kill buttons for any running child processes.
   for (const { pid, line } of childProcesses) {
     const range = new vscode.Range(line, 0, line, 0);
     add(lenses, range, "Stop", "markdown.killProcess", [pid, "SIGINT"]);
     add(lenses, range, "Kill", "markdown.killProcess", [pid, "SIGKILL"]);
   }
 
-  // Loop through all parsed code blocks and generate buttons
+  // Buttons for each fenced code block in the document.
   for (const match of document.getText().matchAll(blockRegex())) {
     const { language, code, range } = parseBlock(document, match);
     const name = getLanguageConfig(language, "interpreter")?.name || "";
 
-    // For all supported languages, provide options to run the code block
     if (name) {
-      // Provide `Run {Language} Block` option
       const argsRun = [language, code];
       if (enabledButtons["runBlock"])
         add(lenses, range, `Run ${name} Block`, "markdown.runBlock", argsRun);
 
-      // Only for bash code blocks, provide `Run in Terminal (line by line)` option
       if (
         enabledButtons["runInTerminal"] &&
         (language === "bash" || language === "powershell")
       )
         add(lenses, range, "Run in Terminal", "markdown.runInTerminal", [code]);
 
-      // Provide `Run on Markdown` option
       const argsMark = [language, code, range];
       const cmdMark = "markdown.runOnMarkdown";
       if (enabledButtons["runOnMarkdown"])
         add(lenses, range, "Run on Markdown", cmdMark, argsMark);
     }
 
-    // Provide buttons to copy, clear or delete code blocks
+    // Utility buttons available for every block regardless of language.
     const clear = new vscode.Range(range.start.line + 1, 0, range.end.line, 0);
     const del = new vscode.Range(range.start.line, 0, range.end.line + 1, 0);
     if (enabledButtons["copy"])
@@ -94,12 +86,12 @@ function provideCodeLenses(document: vscode.TextDocument) {
   return lenses;
 }
 
-// CodeLens buttons provider for parsed code blocks
+// CodeLens provider overlaying action buttons on fenced code blocks.
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
   private _emitter = new vscode.EventEmitter<void>();
   onDidChangeCodeLenses = this._emitter.event;
   provideCodeLenses = provideCodeLenses;
 
-  // Expose method to refresh CodeLenses on-demand
+  // Force the editor to regenerate lenses (e.g. after a process starts/stops).
   public refresh = () => this._emitter.fire();
 }

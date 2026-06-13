@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025 Renat Hossain
 
+// Spawns child processes and streams their output into the document as fenced
+// ```output blocks. Provides lifecycle management: Delete, Kill, Kill All.
+
 import * as vscode from "vscode";
 import * as childProcess from "child_process";
 import iconv from "iconv-lite";
@@ -9,13 +12,15 @@ import treeKill from "tree-kill";
 import { parseBlock, blockRegex } from "./codeLens";
 import { codeLensProvider } from "./extension";
 
-// Global mutex to ensure all text insertion or deletion happens atomically
+// Global mutex ensuring only one edit operation (delete or run) is in flight
+// at a time, preventing interleaved writes to the document.
 const textEditMutex = new Mutex(1);
 
-// PIDs associated with `Run on Markdown` child processes
+// Tracks active child PIDs and the document line where their output starts
+// (used by codeLens.ts to place Stop/Kill buttons).
 export let childProcesses: { pid: number; line: number }[] = [];
 
-// Safety button to kill all processes
+// Status bar button to kill all running output processes at once.
 const killAllButton = vscode.window.createStatusBarItem(
   vscode.StatusBarAlignment.Left,
 );
@@ -25,7 +30,8 @@ killAllButton.command = {
 };
 killAllButton.text = "$(stop-circle) Kill All Processes";
 
-// Delete selected range in text
+// Delete text in a range (Clear / Delete CodeLens). Acquires textEditMutex to
+// avoid racing with an active output stream. Silently skips if mutex is busy.
 export async function deleteOnMarkdown(range: vscode.Range) {
   if (!textEditMutex.tryAcquire()) return;
   const editor = vscode.window.activeTextEditor;
@@ -35,33 +41,31 @@ export async function deleteOnMarkdown(range: vscode.Range) {
   textEditMutex.release();
 }
 
-// Used for `Run on Markdown`
+// Starting from startLine, check if the first fenced code block is an ``output``
+// block. If so, return the range of its content (excluding the fences). Returns
+// null if no matching block is found or it is not immediately adjacent.
 function findOutputBlock(document: vscode.TextDocument, startLine: number) {
-  // Check if startLine is out of bounds
   if (startLine < 0 || startLine >= document.lineCount) return null;
 
-  // Obtain the sliced document at `startLine`
   const startOffset = document.offsetAt(new vscode.Position(startLine, 0));
   const slicedText = document.getText().slice(startOffset);
 
-  // Find first match for a output block within the sliced document
   const match = blockRegex().exec(slicedText);
   if (!match) return null;
   const { language, code } = parseBlock(document, match);
   if (language !== "output") return null;
 
-  // The match must be on the first line of the sliced document
   const matchLine = slicedText.slice(0, match.index).split("\n").length;
   if (matchLine !== 1) return null;
 
-  // Return range of output block's contents to be cleared
   const endLine = startLine + code.split("\n").length;
   return new vscode.Range(startLine + 1, 0, endLine, 0);
 }
 
-// Run command on the markdown file
+// Spawn a child process and stream its stdout/stderr into a ``output`` fenced
+// block below the source code block. Returns { pid, done } where done resolves
+// when the process exits and all output has been written.
 export function runOnMarkdown(command: string, range: vscode.Range) {
-  // TODO: implement multiple output streams at the same time
   const failed = { pid: -1, done: async () => {} };
   const editor = vscode.window.activeTextEditor;
   if (!command || !editor || !textEditMutex.tryAcquire()) return failed;
@@ -77,7 +81,6 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
     return failed;
   }
 
-  // Start child process
   const child = childProcess.spawn(command, { shell: true });
   if (child.pid == null) {
     vscode.window.showErrorMessage("Failed to start process.");
@@ -85,27 +88,25 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
     return failed;
   }
 
-  // Create buttons to stop or kill the process
   childProcesses.push({ pid: child.pid, line: range.end.line + 2 });
   killAllButton.show();
 
+  // Orchestrates all output writing and cleanup. Three mutexes coordinate the
+  // async pipeline: outputMutex serialises edits, exitMutex waits for the
+  // process to exit, endMutex waits for the stdout stream to close.
   const done = (async () => {
-    // Mutex ensures output block/previous buffer is written before next buffer starts
     const outputMutex = new Mutex(1);
     await outputMutex.acquire();
 
-    // Mutex released when child process exits
     const exitMutex = new Mutex(1);
     await exitMutex.acquire();
 
-    // Mutex released when output is fully written
     const endMutex = new Mutex(1);
     await endMutex.acquire();
 
-    // Output child process 3 lines below parent code block
     let outputPos = new vscode.Position(range.end.line + 3, 0);
 
-    // Whenever child process outputs a new batch of data, write it
+    // Decode a data chunk and insert it at the current output position.
     const writer = async (data: Buffer) => {
       await outputMutex.acquire();
 
@@ -124,31 +125,27 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
     child.stdout.on("data", writer);
     child.stderr.on("data", writer);
 
-    // Runs when child process exits (but not all data may be written)
     child.on("exit", async () => {
-      // Remove process `Stop`, `Kill` and `KillAll` controls
       childProcesses = childProcesses.filter(({ pid }) => pid !== child.pid);
       if (!childProcesses.length) killAllButton.hide();
 
       exitMutex.release();
     });
 
-    // Runs when all data is written (but child process may not have exited)
     child.stdout.on("end", async () => {
       await outputMutex.acquire();
 
-      // If output did not end on a newline, add it
       if (outputPos.character !== 0)
         await editor.edit((text) => text.insert(outputPos, "\n"));
 
-      // Save the document after all text deletes/inserts
       await editor.document.save();
 
       outputMutex.release();
       endMutex.release();
     });
 
-    // If output block found, clear the contents inside it, otherwise create it
+    // Delete any existing output block for this code block, or insert a new
+    // ``output`` fence header if none exists.
     const deleteRange = findOutputBlock(editor.document, range.end.line + 2);
     await editor.edit((text) =>
       deleteRange
@@ -160,7 +157,6 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
     await exitMutex.acquire();
     await endMutex.acquire();
 
-    // Refresh CodeLenses after finished process
     codeLensProvider?.refresh();
 
     textEditMutex.release();
@@ -171,13 +167,13 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
   return { pid: child.pid, done };
 }
 
-// Kill process
+// Remove a PID from tracking and kill it with the given signal.
 export async function killProcess(pid: number, signal: string) {
   childProcesses = childProcesses.filter((process) => process.pid !== pid);
   treeKill(pid, signal);
 }
 
-// Kill all processes
+// Clear all tracked PIDs and kill every process with SIGKILL.
 export async function killAllProcesses() {
   const processes = childProcesses;
   childProcesses = [];

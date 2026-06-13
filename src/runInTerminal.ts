@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025 Renat Hossain
 
+// Looks up language configs (compiler/interpreter) and resolves run commands.
+// Supports default boilerplate injection, compilation, and terminal execution.
+
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as os from "os";
@@ -8,7 +11,9 @@ import * as path from "path";
 import * as childProcess from "child_process";
 import { tempFilePaths } from "./extension";
 
-// Get the configuration for the given language and type
+// Look up a language's compiler or interpreter config from settings. The
+// setting key is a comma-separated list of aliases, the value is "ext;command".
+// Returns the first matching alias as the display name.
 export function getLanguageConfig(
   language: string,
   type: "compiler" | "interpreter",
@@ -30,12 +35,9 @@ export function getLanguageConfig(
   return null;
 }
 
-// Obtain the correct executable name given language and code
+// Extract the class name from Java code (public class ...) for the source
+// filename. For other languages, generate a unique temp name.
 const getBaseName = (lang: string, code: string) =>
-  // Java requires executable name match the class name, which is parsed using regex
-  // Match the exact words `public` and `class`, where:
-  // \s+ - Matches one or more whitespace characters (spaces, tabs, etc.)
-  // (\w+) - Capturing group for class name, matches one or more "word" characters
   lang === "java"
     ? (code.match(/public\s+class\s+(\w+)/)?.[1] ??
       (vscode.window.showErrorMessage(
@@ -44,21 +46,20 @@ const getBaseName = (lang: string, code: string) =>
       ""))
     : `temp_${Date.now()}`;
 
-// Inject all enabled default codes into the code string
+// Inject default boilerplate code from markdownRunner.defaultCodes.
+// Replaces \n with real newlines and ${code} with the user's snippet.
+// If pythonPath is enabled, prepends sys.path.insert for the document dir.
 function injectDefaultCode(language: string, code: string) {
-  // Read the configuration for pythonPath and defaultCodes
   const config = vscode.workspace.getConfiguration();
   const pythonPathEnabled = config.get<boolean>("markdownRunner.pythonPath");
   const defaultCodeConfig =
     config.get<Record<string, string>>("markdownRunner.defaultCodes") || {};
 
-  // Inject default code, if available
   if (defaultCodeConfig[language])
     code = defaultCodeConfig[language]
       .replace(/\\n/g, "\n")
       .replace(/\$\{code\}/g, code);
 
-  // If pythonPath is enabled, inject the markdown file's path into the code
   const editor = vscode.window.activeTextEditor;
   if (pythonPathEnabled && editor && language === "python") {
     const documentDirectory = path.dirname(editor.document.uri.fsPath);
@@ -68,7 +69,8 @@ function injectDefaultCode(language: string, code: string) {
   return code;
 }
 
-// Compile a binary using the provided command
+// Run a compiler command and return whether it succeeded. Shows errors via
+// vscode.window.showErrorMessage on failure.
 const compile = (cmd: string) =>
   new Promise<boolean>((resolve) =>
     childProcess.exec(cmd, (error, _, stderr) => {
@@ -78,8 +80,10 @@ const compile = (cmd: string) =>
     }),
   );
 
-// Save code to a temporary file, and compile it if necessary
-// Return the string to be run in the terminal to execute the binary/code
+// Resolve the full run command for a language+code pair. Writes the code to a
+// temp file, injects default boilerplate, compiles if a compiler is configured,
+// and returns the final interpreter/run command with template placeholders
+// (${path}, ${dir}, ${name}, ${ext}, ${exe}) filled in.
 export async function getRunCommand(language: string, code: string) {
   const name = getBaseName(language, code);
   if (!name) return "";
@@ -103,10 +107,10 @@ export async function getRunCommand(language: string, code: string) {
   const interpPath = base + interp.extension;
   const file = compiler ? compilerPath : interpPath;
 
-  // Write code to a file, SECURITY: Only Owner Read and Write
   fs.writeFileSync(file, code, { mode: 0o600 });
   tempFilePaths.push(file);
 
+  // Template fill: replaces ${path}, ${dir}, ${name}, ${ext}, ${exe}.
   const fill = (s: string, path: string, ext: string) =>
     s
       .replace(/\$\{path\}/g, path)
@@ -139,7 +143,7 @@ export async function getRunCommand(language: string, code: string) {
   return "";
 }
 
-// Run command in the terminal
+// Send a command to the terminal (creating one if none is active).
 export function runInTerminal(command: string) {
   if (!command) return;
   const terminal =

@@ -7,20 +7,21 @@
 //   codeLens.ts ---+--> extension.ts --+--> runInTerminal.ts
 //   codeLinks.ts --|                   |--> runOnMarkdown.ts
 //
-// - `extension.ts`: Activates and deactivates the extension, loads
-//   codeLinks and codeLens buttons, and registers their handlers.
+// - `extension.ts`: Activates and deactivates the extension, loads providers
+//   from codeLinks and codeLens, and registers their commands and handlers.
 //
-// - `codeLinks.ts`: Turns all strings enclosed with single ` delimiters into
-//   clickable links that run in the terminal when clicked.
+// - `codeLinks.ts`: Wraps inline `code` spans with clickable "Run in Terminal"
+//   DocumentLinks and "Copy to clipboard" hover actions.
 //
-// - `codeLens.ts`: Puts buttons that perform various actions like copying and
-//   running code above all code blocks enclosed with at least 3 ` delimiters.
+// - `codeLens.ts`: Adds CodeLens buttons (Run, Copy, Clear, Delete, Stop/Kill)
+//   above fenced code blocks (enclosed by 3+ backticks).
 //
-// - `runInTerminal.ts`: Handlers for either running code directly in the terminal
-//   line by line or writing code to a file and compiling/running the file.
+// - `runInTerminal.ts`: Runs code in the terminal — either line-by-line or by
+//   writing to a file and compiling/executing it.
 //
-// - `runOnMarkdown.ts`: Handlers for writing the output of an executing process
-//   directly onto the markdown file.
+// - `runOnMarkdown.ts`: Spawns child processes, streams their output into the
+//   document in a ```output block, manages process lifecycle (kill, delete),
+//   and tracks active PIDs for stop/kill CodeLens buttons.
 //
 // ************************************************************************
 
@@ -37,14 +38,16 @@ import {
   killAllProcesses,
 } from "./runOnMarkdown";
 
-// List of temporary files
+// Temp files created for compilation/execution; cleaned up on deactivation.
 export const tempFilePaths: string[] = [];
 
-// Providers
+// Retained to call .refresh() when enabledButtons config changes.
 export let codeLensProvider: ButtonCodeLensProvider | undefined;
+
+// Tracked disposables (providers) so they can be disposed on re-registration.
 let disposables: vscode.Disposable[] = [];
 
-// List of command handlers
+// Maps command IDs to their implementations.
 const commands = {
   "markdown.runBlock": async (lang: string, code: string) =>
     runInTerminal(await getRunCommand(lang, code)),
@@ -64,18 +67,16 @@ const commands = {
   "markdown._getProcesses": () => childProcesses,
 };
 
-// Register the correct providers based on configuration
+// Register CodeLens, DocumentLink, and Hover providers for all enabled languages.
+// Disposes previous instances on re-registration (e.g. on config change).
 function registerProviders(context: vscode.ExtensionContext) {
-  // Determine which file types to activate the extension on
   const selector = [{ language: "markdown", scheme: "file" }];
   const config = vscode.workspace.getConfiguration();
   if (config.get<boolean>("markdownRunner.activateOnQuarto"))
     selector.push({ language: "quarto", scheme: "file" });
 
-  // Dispose previous providers if they exist
   disposables.forEach((disposable) => disposable.dispose());
 
-  // Create and register the new providers
   codeLensProvider = new ButtonCodeLensProvider();
   const inlineProvider = new InlineCodeLinkProvider();
   const hoverProvider = new InlineCodeHoverProvider();
@@ -87,11 +88,11 @@ function registerProviders(context: vscode.ExtensionContext) {
   context.subscriptions.push(...disposables);
 }
 
-// Main function that runs when extension is activated
+// Extension entry point: register providers, listen for config changes, and
+// register all commands.
 export function activate(context: vscode.ExtensionContext) {
   registerProviders(context);
 
-  // Re-register providers on a configuration change
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("markdownRunner.activateOnQuarto"))
@@ -101,7 +102,6 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
 
-  // Register all command handlers
   context.subscriptions.push(
     ...Object.entries(commands).map(([command, handler]) =>
       vscode.commands.registerCommand(command, handler),
@@ -109,8 +109,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 }
 
-// Function that runs when extension is deactivated
+// Clean up temp files on deactivation.
 export function deactivate() {
-  // Deletes temporary files created for code block execution
   tempFilePaths.forEach(fs.unlinkSync);
 }

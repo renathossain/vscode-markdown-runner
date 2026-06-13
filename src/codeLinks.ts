@@ -1,32 +1,27 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025 Renat Hossain
 
+// Provides clickable links and hover actions for inline code spans (`code`).
+
 import * as vscode from "vscode";
 
-// Explanation of regex:
-// [^`\n] means match all any character that is not ` or \n (negated class)
-// ([^`\n]+?) capturing group will then match one or more of that class
-// It will also do so lazily, instead of greedily because of the ?
-// Thus, `([^`\n]+?)` effectively matches an inline code block, with the
-// capturing group matching the code itself (non ` or \n characters)
-// Finally, we add some extra validation using look ahead and look behind:
-// (?<!`+) means negative look behind of at least one `
-// (?!`+) means negative look ahead of at least one `
-// This means that if there are multiple consecutive ` before and/or after
-// the code block, then we reject it.
+// Matches inline code spans in the format `code`. Lookbehind (?<!`+) and
+// lookahead (?!`+) prevent matching inside longer backtick sequences
+// (e.g. ``` ``inner`` ```). Group 1 ([^`\n]+?) captures the code content.
+// [^`\n]+ matches one or more characters that are neither a backtick nor
+// a newline, so the code cannot contain inner backticks or span multiple lines.
+// Flags: g = global (find all occurrences).
 const inlineRegex = () => /(?<!`+)`([^`\n]+?)`(?!`+)/g;
 
-// DocumentLink Provider for inline code
+// Adds a clickable DocumentLink to each inline code span that runs the code
+// in the terminal when clicked.
 export class InlineCodeLinkProvider implements vscode.DocumentLinkProvider {
   provideDocumentLinks(document: vscode.TextDocument) {
     return [...document.getText().matchAll(inlineRegex())].map((match) => {
-      // Parse inline code (code within ` delimiters)
-      const code = match[1]; // First capturing group ([^`\n]+?)
+      const code = match[1];
       const start = document.positionAt(match.index);
       const end = document.positionAt(match.index + match[0].length);
       const range = new vscode.Range(start, end);
-
-      // Generate Document Links that run code with Ctrl+click
       const codeString = encodeURIComponent(JSON.stringify([code]));
       const command = `command:markdown.runInTerminal?${codeString}`;
       return new vscode.DocumentLink(range, vscode.Uri.parse(command));
@@ -34,7 +29,8 @@ export class InlineCodeLinkProvider implements vscode.DocumentLinkProvider {
   }
 }
 
-// Creates hover tooltip to copy inline code
+// Adds a hover action to each inline code span that copies the code to the
+// clipboard.
 export class InlineCodeHoverProvider implements vscode.HoverProvider {
   provideHover(document: vscode.TextDocument, position: vscode.Position) {
     const range = document.getWordRangeAtPosition(position, inlineRegex());
