@@ -11,6 +11,7 @@ import Mutex from "semaphore-async-await";
 import treeKill from "tree-kill";
 import { parseBlock, blockRegex } from "./codeLens";
 import { codeLensProvider } from "./extension";
+import { VirtualTerminal } from "./virtualTerminal";
 
 // Global mutex ensuring only one edit operation (delete or run) is in flight
 // at a time, preventing interleaved writes to the document.
@@ -104,21 +105,12 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
     const endMutex = new Mutex(1);
     await endMutex.acquire();
 
-    let outputPos = new vscode.Position(range.end.line + 3, 0);
+    const terminal = new VirtualTerminal(editor, range.end.line + 3, 0);
 
     // Decode a data chunk and insert it at the current output position.
     const writer = async (data: Buffer) => {
       await outputMutex.acquire();
-
-      const output = iconv.decode(data, encoding);
-      await editor.edit((text) => text.insert(outputPos, output));
-      const lines = output.split("\n");
-      const last = lines[lines.length - 1];
-      outputPos = new vscode.Position(
-        outputPos.line + lines.length - 1,
-        lines.length === 1 ? outputPos.character + last.length : last.length,
-      );
-
+      await terminal.write(iconv.decode(data, encoding));
       outputMutex.release();
     };
 
@@ -128,18 +120,13 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
     child.on("exit", async () => {
       childProcesses = childProcesses.filter(({ pid }) => pid !== child.pid);
       if (!childProcesses.length) killAllButton.hide();
-
       exitMutex.release();
     });
 
     child.stdout.on("end", async () => {
       await outputMutex.acquire();
-
-      if (outputPos.character !== 0)
-        await editor.edit((text) => text.insert(outputPos, "\n"));
-
+      await terminal.end();
       await editor.document.save();
-
       outputMutex.release();
       endMutex.release();
     });
