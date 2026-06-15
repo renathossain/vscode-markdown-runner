@@ -26,15 +26,14 @@ export function parseBlock(doc: vscode.TextDocument, match: RegExpExecArray) {
 }
 
 // Convenience helper to create and append a CodeLens.
-function add(
+const add = (
   lenses: vscode.CodeLens[],
   range: vscode.Range,
   title: string,
   command: string,
   args: unknown[],
-) {
+) =>
   lenses.push(new vscode.CodeLens(range, { title, command, arguments: args }));
-}
 
 // Build the full list of CodeLenses for the active document.
 function provideCodeLenses(document: vscode.TextDocument) {

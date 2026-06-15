@@ -18,11 +18,10 @@ const inlineRegex = () => /(?<!`+)`([^`\n]+?)`(?!`+)/g;
 export class InlineCodeLinkProvider implements vscode.DocumentLinkProvider {
   provideDocumentLinks(document: vscode.TextDocument) {
     return [...document.getText().matchAll(inlineRegex())].map((match) => {
-      const code = match[1];
       const start = document.positionAt(match.index);
       const end = document.positionAt(match.index + match[0].length);
       const range = new vscode.Range(start, end);
-      const codeString = encodeURIComponent(JSON.stringify([code]));
+      const codeString = encodeURIComponent(JSON.stringify([match[1]]));
       const command = `command:markdown.runInTerminal?${codeString}`;
       return new vscode.DocumentLink(range, vscode.Uri.parse(command));
     });
@@ -36,9 +35,9 @@ export class InlineCodeHoverProvider implements vscode.HoverProvider {
     const range = document.getWordRangeAtPosition(position, inlineRegex());
     if (!range) return;
     const code = document.getText(range).replace(/`/g, "");
-    const codeString = encodeURIComponent(JSON.stringify([code]));
-    const command = `[Copy to clipboard](command:markdown.copy?${codeString})`;
-    const contents = new vscode.MarkdownString(command);
+    const contents = new vscode.MarkdownString(
+      `[Copy to clipboard](command:markdown.copy?${encodeURIComponent(JSON.stringify([code]))})`,
+    );
     contents.isTrusted = true;
     return new vscode.Hover(contents, range);
   }

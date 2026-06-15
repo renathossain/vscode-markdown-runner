@@ -69,9 +69,8 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
   const editor = vscode.window.activeTextEditor;
   if (!command || !editor || !textEditMutex.tryAcquire()) return failed;
 
-  const encoding = vscode.workspace
-    .getConfiguration()
-    .get<string>("markdownRunner.outputEncoding", "utf8");
+  const config = vscode.workspace.getConfiguration();
+  const encoding = config.get<string>("markdownRunner.outputEncoding", "utf8");
 
   if (!iconv.encodingExists(encoding)) {
     const errorMessage = `Invalid output encoding "${encoding}". See https://github.com/pillarjs/iconv-lite/wiki/Supported-Encodings`;
