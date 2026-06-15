@@ -161,6 +161,5 @@ export async function killProcess(pid: number, signal: string) {
 }
 
 // Clear all tracked PIDs and kill every process with SIGKILL.
-export async function killAllProcesses() {
+export const killAllProcesses = () =>
   childProcesses.splice(0).forEach(({ pid }) => treeKill(pid, "SIGKILL"));
-}
