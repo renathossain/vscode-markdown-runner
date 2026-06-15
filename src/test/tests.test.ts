@@ -66,8 +66,6 @@ suite("CodeLens", function () {
     const provider = new ButtonCodeLensProvider();
     const lenses = provider.provideCodeLenses(doc);
     const range = new vscode.Range(0, 0, 2, 3);
-    const clear = new vscode.Range(1, 0, 2, 0);
-    const del = new vscode.Range(0, 0, 3, 0);
     assert.deepStrictEqual(
       lenses.map((x) => ({
         title: x.command?.title,
@@ -94,8 +92,8 @@ suite("CodeLens", function () {
           args: ["print(10 + 72)\n"],
           range,
         },
-        { title: "Clear", command: "markdown.delete", args: [clear], range },
-        { title: "Delete", command: "markdown.delete", args: [del], range },
+        { title: "Clear", command: "markdown.clear", args: [range], range },
+        { title: "Delete", command: "markdown.delete", args: [range], range },
       ],
     );
   });
@@ -287,13 +285,9 @@ suite("Delete", function () {
     write("test-delete.md", "```python\nprint(10 + 72)\n```\n");
     const doc = await open("test-delete.md");
     await vscode.window.showTextDocument(doc);
-    const text = doc.getText();
-    const range = new vscode.Range(
-      doc.positionAt(text.indexOf("```")),
-      doc.positionAt(text.lastIndexOf("```") + 3),
-    );
+    const range = new vscode.Range(0, 0, 2, 3);
     await vscode.commands.executeCommand("markdown.delete", range);
-    assert.strictEqual(doc.getText(), "\n");
+    assert.strictEqual(doc.getText(), "");
   });
 });
 

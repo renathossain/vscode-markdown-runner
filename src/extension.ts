@@ -63,74 +63,50 @@ function getCurrentBlock() {
 // Maps command IDs to their implementations.
 const commands = {
   "markdown.runBlock": async (lang?: string, code?: string) => {
-    if (!lang || !code) {
-      const block = getCurrentBlock();
-      if (!block) return;
-      lang = block.lang;
-      code = block.code;
-    }
+    const block = lang && code ? null : getCurrentBlock();
+    if (!(lang ||= block?.lang) || !(code ||= block?.code)) return;
     return runInTerminal(await getRunCommand(lang, code));
   },
   "markdown.runInTerminal": (code?: string) => {
-    if (!code) {
-      const block = getCurrentBlock();
-      if (!block) return;
-      code = block.code;
-    }
-    runInTerminal(code);
+    const block = code ? null : getCurrentBlock();
+    if (block && !(block.lang === "bash" || block.lang === "powershell"))
+      return;
+    if (!(code ||= block?.code)) return;
+    return runInTerminal(code);
   },
   "markdown.runOnMarkdown": async (
     lang?: string,
     code?: string,
     range?: vscode.Range,
   ) => {
-    if (!lang || !code || !range) {
-      const block = getCurrentBlock();
-      if (!block) return;
-      lang = block.lang;
-      code = block.code;
-      range = block.range;
-    }
+    const block = lang && code && range ? null : getCurrentBlock();
+    if (!(lang ||= block?.lang) || !(code ||= block?.code)) return;
+    if (!(range ||= block?.range)) return;
     return runOnMarkdown(await getRunCommand(lang, code), range);
   },
   "markdown.copy": (code?: string) => {
-    if (!code) {
-      const block = getCurrentBlock();
-      if (!block) return;
-      code = block.code;
-    }
+    const block = code ? null : getCurrentBlock();
+    if (!(code ||= block?.code)) return;
     vscode.env.clipboard.writeText(code);
     vscode.window.setStatusBarMessage("Copied to clipboard!", 2000);
   },
-  "markdown.clear": () => {
-    const block = getCurrentBlock();
-    if (!block) return;
-    const clearRange = new vscode.Range(
-      block.range.start.line + 1,
-      0,
-      block.range.end.line,
-      0,
+  "markdown.clear": (range?: vscode.Range) => {
+    const block = range ? null : getCurrentBlock();
+    if (!(range ||= block?.range)) return;
+    return deleteOnMarkdown(
+      new vscode.Range(range.start.line + 1, 0, range.end.line, 0),
     );
-    return deleteOnMarkdown(clearRange);
   },
   "markdown.delete": (range?: vscode.Range) => {
-    if (!range) {
-      const block = getCurrentBlock();
-      if (!block) return;
-      range = new vscode.Range(
-        block.range.start.line,
-        0,
-        block.range.end.line + 1,
-        0,
-      );
-    }
-    return deleteOnMarkdown(range);
+    const block = range ? null : getCurrentBlock();
+    if (!(range ||= block?.range)) return;
+    return deleteOnMarkdown(
+      new vscode.Range(range.start.line, 0, range.end.line + 1, 0),
+    );
   },
   "markdown.killProcess": (pid?: number, signal?: string) => {
-    if (pid !== undefined && signal !== undefined) {
-      killProcess(pid, signal);
-      return;
-    }
+    if (pid !== undefined && signal !== undefined)
+      return killProcess(pid, signal);
     const block = getCurrentBlock();
     if (!block) return;
     const outputLine =

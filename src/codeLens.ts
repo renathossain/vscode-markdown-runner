@@ -72,14 +72,12 @@ function provideCodeLenses(document: vscode.TextDocument) {
     }
 
     // Utility buttons available for every block regardless of language.
-    const clear = new vscode.Range(range.start.line + 1, 0, range.end.line, 0);
-    const del = new vscode.Range(range.start.line, 0, range.end.line + 1, 0);
     if (enabledButtons["copy"])
       add(lenses, range, "Copy", "markdown.copy", [code]);
     if (enabledButtons["clear"])
-      add(lenses, range, "Clear", "markdown.delete", [clear]);
+      add(lenses, range, "Clear", "markdown.clear", [range]);
     if (enabledButtons["delete"])
-      add(lenses, range, "Delete", "markdown.delete", [del]);
+      add(lenses, range, "Delete", "markdown.delete", [range]);
   }
 
   return lenses;

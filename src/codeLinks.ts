@@ -23,7 +23,7 @@ export class InlineCodeLinkProvider implements vscode.DocumentLinkProvider {
         ({ index }) =>
           ![...document.getText().matchAll(blockRegex())]
             .map(({ index, 0: { length } }) => [index, index + length])
-            .some((fence) => index >= fence[0] && index < fence[1]),
+            .some(([start, end]) => index >= start && index < end),
       )
       .map((match) => {
         const start = document.positionAt(match.index);

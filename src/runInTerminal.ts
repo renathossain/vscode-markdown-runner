@@ -34,15 +34,15 @@ export function getLanguageConfig(
   return null;
 }
 
+// Helper: show an error message and return empty string for early-exit patterns.
+const showErr = (msg: string) => (vscode.window.showErrorMessage(msg), "");
+
 // Extract the class name from Java code (public class ...) for the source
 // filename. For other languages, generate a unique temp name.
 const getBaseName = (lang: string, code: string) =>
   lang === "java"
     ? (code.match(/public\s+class\s+(\w+)/)?.[1] ??
-      (vscode.window.showErrorMessage(
-        "Compilation failed: No public class found.",
-      ),
-      ""))
+      showErr("Compilation failed: No public class found."))
     : `temp_${Date.now()}`;
 
 // Inject default boilerplate code from markdownRunner.defaultCodes.
@@ -89,12 +89,7 @@ export async function getRunCommand(language: string, code: string) {
 
   const compiler = getLanguageConfig(language, "compiler");
   const interp = getLanguageConfig(language, "interpreter");
-  if (!interp) {
-    vscode.window.showErrorMessage(
-      `No interpreter configured for "${language}".`,
-    );
-    return "";
-  }
+  if (!interp) return showErr(`No interpreter configured for "${language}".`);
 
   const dir = os.tmpdir();
   const base = path.join(dir, name);
@@ -118,27 +113,15 @@ export async function getRunCommand(language: string, code: string) {
       .replace(/\$\{exe\}/g, process.platform === "win32" ? ".exe" : "");
 
   const runCmd = fill(interp.command, interpPath, interp.extension);
-  if (!runCmd) {
-    vscode.window.showErrorMessage(
-      `No interpreter configured for "${language}".`,
-    );
-    return "";
-  }
-
+  if (!runCmd) return showErr(`No interpreter configured for "${language}".`);
   if (!compiler) return runCmd;
 
   const compCmd = fill(compiler.command, compilerPath, compiler.extension);
-  if (!compCmd) {
-    vscode.window.showErrorMessage(`No compiler configured for "${language}".`);
-    return "";
-  }
+  if (!compCmd) return showErr(`No compiler configured for "${language}".`);
 
-  if (await compile(compCmd)) {
-    tempFilePaths.push(interpPath);
-    return runCmd;
-  }
-
-  return "";
+  return (await compile(compCmd))
+    ? (tempFilePaths.push(interpPath), runCmd)
+    : "";
 }
 
 // Send a command to the terminal (creating one if none is active).
