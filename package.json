@@ -63,7 +63,8 @@
             "Ruby, rb": ".rb; ruby ${path}",
             "JavaScript, js, mjs, cjs": ".js; node ${path}",
             "Bash, sh, shell, zsh": ".sh; bash ${path}",
-            "Powershell, ps1, pwsh": ".ps1; powershell -File ${path}"
+            "Powershell, ps1, pwsh": ".ps1; powershell -File ${path}",
+            "Ollama, llm": ".txt; ollama run qwen2.5-coder < ${path}"
           }
         },
         "markdownRunner.pythonPath": {
