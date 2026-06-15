@@ -405,6 +405,138 @@ suite("Code Manipulation", function () {
   });
 });
 
+suite("Keyboard Shortcuts", function () {
+  this.timeout(60000);
+  suiteSetup(setup);
+
+  test("Ctrl+Alt+Enter: runBlock", async () => {
+    write(
+      "test-kb-runblock.md",
+      "```python\nimport sys\nsys.stdout.write(str(10 + 72))\n```\n",
+    );
+    const doc = await open("test-kb-runblock.md");
+    await vscode.window.showTextDocument(doc);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    await vscode.commands.executeCommand("markdown.runBlock");
+    assert.ok(
+      vscode.window.terminals.length > 0,
+      "terminal should exist after runBlock",
+    );
+  });
+
+  test("Ctrl+Alt+T: runInTerminal", async () => {
+    const shell = isWindows ? "powershell" : "bash";
+    const command = isWindows ? "Write-Output 82" : "echo 82";
+    write("test-kb-terminal.md", "```" + shell + "\n" + command + "\n```\n");
+    const doc = await open("test-kb-terminal.md");
+    await vscode.window.showTextDocument(doc);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    await vscode.commands.executeCommand("markdown.runInTerminal");
+    assert.ok(
+      vscode.window.terminals.length > 0,
+      "terminal should exist after runInTerminal",
+    );
+  });
+
+  test("Ctrl+Alt+M: runOnMarkdown", async () => {
+    write("test-kb-runon.md", "```python\nprint(10 + 72)\n```\n");
+    const doc = await open("test-kb-runon.md");
+    await vscode.window.showTextDocument(doc);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    const { done } =
+      await vscode.commands.executeCommand<{ done: Promise<void> }>(
+        "markdown.runOnMarkdown",
+      );
+    await done;
+    assert.match(doc.getText(), /```output\n[^]*82\n```/);
+  });
+
+  test("Ctrl+Alt+C: copy", async () => {
+    write("test-kb-copy.md", "```python\nprint(10 + 72)\n```\n");
+    const doc = await open("test-kb-copy.md");
+    await vscode.window.showTextDocument(doc);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    await vscode.commands.executeCommand("markdown.copy");
+    assert.strictEqual(
+      await vscode.env.clipboard.readText(),
+      "print(10 + 72)\n",
+    );
+  });
+
+  test("Ctrl+Alt+Shift+D: clear", async () => {
+    write("test-kb-clear.md", "```python\nprint(10 + 72)\n```\n");
+    const doc = await open("test-kb-clear.md");
+    await vscode.window.showTextDocument(doc);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    await vscode.commands.executeCommand("markdown.clear");
+    assert.strictEqual(doc.getText(), "```python\n```\n");
+  });
+
+  test("Ctrl+Alt+D: delete", async () => {
+    write("test-kb-delete.md", "```python\nprint(10 + 72)\n```\n");
+    const doc = await open("test-kb-delete.md");
+    await vscode.window.showTextDocument(doc);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    await vscode.commands.executeCommand("markdown.delete");
+    assert.strictEqual(doc.getText(), "");
+  });
+
+  test("Ctrl+Alt+K: killProcess", async () => {
+    write("test-kb-kill.md", "```python\nwhile True: pass\n```\n");
+    const doc = await open("test-kb-kill.md");
+    await vscode.window.showTextDocument(doc);
+    const { pid, done } = await runOnMarkdown(
+      "python",
+      "while True: pass",
+      new vscode.Range(0, 0, 2, 3),
+    );
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    await vscode.commands.executeCommand("markdown.killProcess");
+    await done;
+    for (let i = 0; i < 20; i++) {
+      try {
+        process.kill(pid, 0);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      } catch {
+        break;
+      }
+    }
+    try {
+      process.kill(pid, 0);
+      assert.fail("process should have been killed");
+    } catch {
+      assert.ok(true, "process exited");
+    }
+  });
+
+  test("Ctrl+Alt+Shift+K: killAllProcesses", async () => {
+    write("test-kb-killall.md", "```python\nwhile True: pass\n```\n");
+    const doc = await open("test-kb-killall.md");
+    await vscode.window.showTextDocument(doc);
+    const { pid, done } = await runOnMarkdown(
+      "python",
+      "while True: pass",
+      new vscode.Range(0, 0, 2, 3),
+    );
+    await vscode.commands.executeCommand("markdown.killAllProcesses");
+    await done;
+    for (let i = 0; i < 20; i++) {
+      try {
+        process.kill(pid, 0);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      } catch {
+        break;
+      }
+    }
+    try {
+      process.kill(pid, 0);
+      assert.fail("process should have been killed");
+    } catch {
+      assert.ok(true, "all processes exited");
+    }
+  });
+});
+
 suite("Version Checks", function () {
   test("Consistency", () => {
     const root = path.join(__dirname, "../../");
