@@ -170,6 +170,18 @@
         }
       }
     },
+    "keybindings": [
+      {
+        "command": "markdown.runBlock",
+        "key": "ctrl+alt+enter",
+        "when": "editorLangId == markdown || editorLangId == quarto"
+      },
+      {
+        "command": "markdown.runOnMarkdown",
+        "key": "ctrl+alt+m",
+        "when": "editorLangId == markdown || editorLangId == quarto"
+      }
+    ],
     "languages": [
       {
         "id": "quarto",

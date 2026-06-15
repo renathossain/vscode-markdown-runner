@@ -28,7 +28,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import { InlineCodeLinkProvider, InlineCodeHoverProvider } from "./codeLinks";
-import { ButtonCodeLensProvider } from "./codeLens";
+import { ButtonCodeLensProvider, blockRegex, parseBlock } from "./codeLens";
 import { runInTerminal, getRunCommand } from "./runInTerminal";
 import {
   childProcesses,
@@ -47,16 +47,46 @@ export let codeLensProvider: ButtonCodeLensProvider | undefined;
 // Tracked disposables (providers) so they can be disposed on re-registration.
 let disposables: vscode.Disposable[] = [];
 
+// Find the fenced code block at the cursor position in the active editor.
+// Returns null when no block is found or no editor is active.
+function getCurrentCodeBlock() {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return null;
+  const cursor = editor.selection.active;
+  for (const match of editor.document.getText().matchAll(blockRegex())) {
+    const { language, code, range } = parseBlock(editor.document, match);
+    if (language && range.contains(cursor))
+      return { lang: language, code, range };
+  }
+  return null;
+}
+
 // Maps command IDs to their implementations.
 const commands = {
-  "markdown.runBlock": async (lang: string, code: string) =>
-    runInTerminal(await getRunCommand(lang, code)),
+  "markdown.runBlock": async (lang?: string, code?: string) => {
+    if (!lang || !code) {
+      const block = getCurrentCodeBlock();
+      if (!block) return;
+      lang = block.lang;
+      code = block.code;
+    }
+    return runInTerminal(await getRunCommand(lang, code));
+  },
   "markdown.runInTerminal": runInTerminal,
   "markdown.runOnMarkdown": async (
-    lang: string,
-    code: string,
-    range: vscode.Range,
-  ) => runOnMarkdown(await getRunCommand(lang, code), range),
+    lang?: string,
+    code?: string,
+    range?: vscode.Range,
+  ) => {
+    if (!lang || !code || !range) {
+      const block = getCurrentCodeBlock();
+      if (!block) return;
+      lang = block.lang;
+      code = block.code;
+      range = block.range;
+    }
+    return runOnMarkdown(await getRunCommand(lang, code), range);
+  },
   "markdown.copy": (code: string) => {
     vscode.env.clipboard.writeText(code);
     vscode.window.setStatusBarMessage("Copied to clipboard!", 2000);

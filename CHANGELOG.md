@@ -2,6 +2,7 @@
 
 ## 3.1.0
 
+- **New Feature**: Added keyboard shortcuts for "Run Block" (`Ctrl+Alt+Enter`) and "Run on Markdown" (`Ctrl+Alt+M`). The cursor must be inside a code block for these shortcuts to work. Can be customized in the Keyboard Shortcuts editor (`Ctrl+K Ctrl+S`).
 - **New Feature**: "Run on Markdown" output now processes ANSI escape sequences through a virtual terminal, eliminating unintelligible control characters from commands like `ollama run`. Cursor movement (`\x1b[nD`, `\x1b[nG`, `\x1b[nA`), line clearing (`\x1b[K`, `\x1b[2K`), carriage returns, backspaces, and spinner animations are all rendered into clean plain text.
 - **New Feature**: Added configurable terminal dimensions through the `terminalDimensions` setting. Users can adjust virtual terminal `cols` and `rows` to control line wrapping and buffered line count in `Run on Markdown` output.
 - **New Feature**: Added configurable CodeLens button visibility through the `enabledButtons` setting. Users can hide Run Block, Run in Terminal, Run on Markdown, Copy, Clear, and Delete buttons to reduce clutter, while Kill process controls always remain available for safety.

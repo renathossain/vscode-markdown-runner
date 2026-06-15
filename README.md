@@ -113,6 +113,15 @@ Controls which CodeLens buttons are shown above code blocks. Disable buttons you
 
 Dimensions of the virtual terminal used to process ANSI escape sequences in `Run on Markdown` output. Increase `cols` to reduce unwanted line wrapping for wide output. Increase `rows` to capture more buffered lines.
 
+### Keyboard Shortcuts
+
+Default keyboard shortcuts for executing code blocks:
+
+- **Run Block**: `Ctrl+Alt+Enter` — Execute the current code block in a terminal.
+- **Run on Markdown**: `Ctrl+Alt+M` — Execute the current code block and insert its output directly into the document.
+
+Customize these shortcuts via VS Code's Keyboard Shortcuts editor (`Ctrl+K Ctrl+S`).
+
 ## Future Development
 
 Planned features (no guarantee):
