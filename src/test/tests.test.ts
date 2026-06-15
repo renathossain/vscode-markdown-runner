@@ -226,10 +226,12 @@ suite("Run on Markdown", function () {
     );
     const { done } = await runOnMarkdown(lang, code, range);
     await done;
-    assert.match(
-      doc.getText(),
-      new RegExp(`\n\`\`\`output\n(.*)${output}\n\`\`\``, "s"),
-    );
+    const re = new RegExp(`\n\`\`\`output\n(.*)${output}\n\`\`\``, "s");
+    for (let i = 0; i < 20; i++) {
+      if (re.test(doc.getText())) break;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    assert.match(doc.getText(), re);
   }
   cases.forEach(([name, lang, code]) => {
     test(name, () => run(lang, code, output));
