@@ -226,6 +226,32 @@ suite("Run on Markdown", function () {
       output,
     );
   });
+
+  test("Newline Behaviour", () =>
+    run("python", "print('A')\nprint('B')\nprint('C')", "A\nB\nC"));
+
+  test("ANSI Escape Sequences (Spinner)", async () => {
+    // Simulate an Ollama-like spinner: overwrite the same line with spinner
+    // frames using cursor-to-col-1 + erase-line, then correct a typo via
+    // cursor-backward + erase-line, and finally write the result.
+    const code = `import sys
+sys.stdout.write('\\u2819\\x1b[1G\\x1b[K\\u2839\\x1b[1G\\x1b[K\\u2838')
+sys.stdout.write('\\x1b[1G\\x1b[KThe\\x1b[3D\\x1b[KThe answer is 82\\n')`;
+    write("test-ansi.md", `\`\`\`python\n${code}\n\`\`\`\n`);
+    const doc = await open("test-ansi.md");
+    await vscode.window.showTextDocument(doc);
+    const text = doc.getText();
+    const range = new vscode.Range(
+      doc.positionAt(text.indexOf("```")),
+      doc.positionAt(text.lastIndexOf("```") + 3),
+    );
+    const { done } = await runOnMarkdown("python", code, range);
+    await done;
+    const output = doc.getText();
+    assert.match(output, /```output\n[^]*The answer is 82\n```\n/);
+    assert.ok(!output.includes("\x1b"), "escape chars should be stripped");
+    assert.ok(!output.includes("⠙"), "spinner frames should be overwritten");
+  });
 });
 
 suite("Copy", function () {

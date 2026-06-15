@@ -11,7 +11,7 @@ import Mutex from "semaphore-async-await";
 import treeKill from "tree-kill";
 import { parseBlock, blockRegex } from "./codeLens";
 import { codeLensProvider } from "./extension";
-import { VirtualTerminal } from "./virtualTerminal";
+import { Terminal } from "@xterm/xterm";
 
 // Global mutex ensuring only one edit operation (delete or run) is in flight
 // at a time, preventing interleaved writes to the document.
@@ -97,27 +97,46 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
   // process to exit, endMutex waits for the stdout stream to close.
   const done = (async () => {
     const outputMutex = new Mutex(1);
-    await outputMutex.acquire();
+    const exitMutex = new Mutex(0);
+    const endMutex = new Mutex(0);
 
-    const exitMutex = new Mutex(1);
-    await exitMutex.acquire();
+    const term = new Terminal({ cols: 1000, rows: 1000, convertEol: true });
 
-    const endMutex = new Mutex(1);
-    await endMutex.acquire();
+    // Read back the terminal buffer as plain text (all ANSI processed).
+    const getTerminalText = (): string => {
+      const lines: string[] = [];
+      const buffer = term.buffer.active;
+      for (let y = 0; y < buffer.length; y++) {
+        const line = buffer.getLine(y);
+        if (line) lines.push(line.translateToString(true));
+      }
+      while (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
+      return lines.length > 0 ? lines.join("\n") + "\n" : "";
+    };
 
-    const terminal = new VirtualTerminal(editor, range.end.line + 3, 0);
-
-    // Decode a data chunk and insert it at the current output position.
+    // Decode a data chunk, let the virtual terminal process any ANSI sequences,
+    // then replace the output block content with the rendered result.
     const writer = async (data: Buffer) => {
       await outputMutex.acquire();
-      await terminal.write(iconv.decode(data, encoding));
+      const decoded = iconv.decode(data, encoding);
+      await new Promise<void>((resolve) => term.write(decoded, resolve));
+      const content = getTerminalText();
+      const deleteRange = findOutputBlock(editor.document, range.end.line + 2);
+      await editor.edit((text) => {
+        if (deleteRange) {
+          text.delete(deleteRange);
+          text.insert(deleteRange.start, content);
+        } else {
+          text.insert(range.end, `\n\n\`\`\`output\n${content}\`\`\``);
+        }
+      });
       outputMutex.release();
     };
 
     child.stdout.on("data", writer);
     child.stderr.on("data", writer);
 
-    child.on("exit", async () => {
+    child.on("exit", () => {
       childProcesses = childProcesses.filter(({ pid }) => pid !== child.pid);
       if (!childProcesses.length) killAllButton.hide();
       exitMutex.release();
@@ -125,30 +144,15 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
 
     child.stdout.on("end", async () => {
       await outputMutex.acquire();
-      await terminal.end();
       await editor.document.save();
       outputMutex.release();
       endMutex.release();
     });
 
-    // Delete any existing output block for this code block, or insert a new
-    // ``output`` fence header if none exists.
-    const deleteRange = findOutputBlock(editor.document, range.end.line + 2);
-    await editor.edit((text) =>
-      deleteRange
-        ? text.delete(deleteRange)
-        : text.insert(range.end, "\n\n```output\n```"),
-    );
-
-    outputMutex.release();
     await exitMutex.acquire();
     await endMutex.acquire();
-
     codeLensProvider?.refresh();
-
     textEditMutex.release();
-    exitMutex.release();
-    endMutex.release();
   })();
 
   return { pid: child.pid, done };
