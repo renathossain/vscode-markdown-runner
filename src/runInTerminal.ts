@@ -99,7 +99,6 @@ export async function getRunCommand(language: string, code: string) {
 
   const dir = os.tmpdir();
   const base = path.join(dir, name);
-  const exe = process.platform === "win32" ? ".exe" : "";
 
   code = injectDefaultCode(language, code);
 
@@ -117,7 +116,7 @@ export async function getRunCommand(language: string, code: string) {
       .replace(/\$\{dir\}/g, dir)
       .replace(/\$\{name\}/g, name)
       .replace(/\$\{ext\}/g, ext)
-      .replace(/\$\{exe\}/g, exe);
+      .replace(/\$\{exe\}/g, process.platform === "win32" ? ".exe" : "");
 
   const runCmd = fill(interp.command, interpPath, interp.extension);
   if (!runCmd) {

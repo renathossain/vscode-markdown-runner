@@ -100,9 +100,6 @@ export function activate(context: vscode.ExtensionContext) {
       if (e.affectsConfiguration("markdownRunner.enabledButtons"))
         codeLensProvider?.refresh();
     }),
-  );
-
-  context.subscriptions.push(
     ...Object.entries(commands).map(([command, handler]) =>
       vscode.commands.registerCommand(command, handler),
     ),

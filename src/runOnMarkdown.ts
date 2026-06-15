@@ -35,9 +35,8 @@ killAllButton.text = "$(stop-circle) Kill All Processes";
 // avoid racing with an active output stream. Silently skips if mutex is busy.
 export async function deleteOnMarkdown(range: vscode.Range) {
   if (!textEditMutex.tryAcquire()) return;
-  const editor = vscode.window.activeTextEditor;
-  if (await editor?.edit((text) => text.delete(range)))
-    await editor?.document.save();
+  if (await vscode.window.activeTextEditor?.edit((text) => text.delete(range)))
+    await vscode.window.activeTextEditor?.document.save();
   codeLensProvider?.refresh();
   textEditMutex.release();
 }
@@ -56,8 +55,7 @@ function findOutputBlock(document: vscode.TextDocument, startLine: number) {
   const { language, code } = parseBlock(document, match);
   if (language !== "output") return null;
 
-  const matchLine = slicedText.slice(0, match.index).split("\n").length;
-  if (matchLine !== 1) return null;
+  if (slicedText.slice(0, match.index).split("\n").length !== 1) return null;
 
   const endLine = startLine + code.split("\n").length;
   return new vscode.Range(startLine + 1, 0, endLine, 0);
@@ -105,9 +103,8 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
     // Read back the terminal buffer as plain text (all ANSI processed).
     const getTerminalText = (): string => {
       const lines: string[] = [];
-      const buffer = term.buffer.active;
-      for (let y = 0; y < buffer.length; y++) {
-        const line = buffer.getLine(y);
+      for (let y = 0; y < term.buffer.active.length; y++) {
+        const line = term.buffer.active.getLine(y);
         if (line) lines.push(line.translateToString(true));
       }
       while (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
@@ -166,7 +163,5 @@ export async function killProcess(pid: number, signal: string) {
 
 // Clear all tracked PIDs and kill every process with SIGKILL.
 export async function killAllProcesses() {
-  const processes = childProcesses;
-  childProcesses = [];
-  processes.forEach(({ pid }) => treeKill(pid, "SIGKILL"));
+  childProcesses.splice(0).forEach(({ pid }) => treeKill(pid, "SIGKILL"));
 }
