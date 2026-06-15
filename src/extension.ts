@@ -107,6 +107,5 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // Clean up temp files on deactivation.
-export function deactivate() {
+export const deactivate = () =>
   tempFilePaths.forEach(fs.unlinkSync);
-}
