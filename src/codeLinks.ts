@@ -4,6 +4,7 @@
 // Provides clickable links and hover actions for inline code spans (`code`).
 
 import * as vscode from "vscode";
+import { blockRegex } from "./codeLens";
 
 // Matches inline code spans in the format `code`. Lookbehind (?<!`+) and
 // lookahead (?!`+) prevent matching inside longer backtick sequences
@@ -17,14 +18,21 @@ const inlineRegex = () => /(?<!`+)`([^`\n]+?)`(?!`+)/g;
 // in the terminal when clicked.
 export class InlineCodeLinkProvider implements vscode.DocumentLinkProvider {
   provideDocumentLinks(document: vscode.TextDocument) {
-    return [...document.getText().matchAll(inlineRegex())].map((match) => {
-      const start = document.positionAt(match.index);
-      const end = document.positionAt(match.index + match[0].length);
-      const range = new vscode.Range(start, end);
-      const codeString = encodeURIComponent(JSON.stringify([match[1]]));
-      const command = `command:markdown.runInTerminal?${codeString}`;
-      return new vscode.DocumentLink(range, vscode.Uri.parse(command));
-    });
+    return [...document.getText().matchAll(inlineRegex())]
+      .filter(
+        ({ index }) =>
+          ![...document.getText().matchAll(blockRegex())]
+            .map(({ index, 0: { length } }) => [index, index + length])
+            .some((fence) => index >= fence[0] && index < fence[1]),
+      )
+      .map((match) => {
+        const start = document.positionAt(match.index);
+        const end = document.positionAt(match.index + match[0].length);
+        const range = new vscode.Range(start, end);
+        const codeString = encodeURIComponent(JSON.stringify([match[1]]));
+        const command = `command:markdown.runInTerminal?${codeString}`;
+        return new vscode.DocumentLink(range, vscode.Uri.parse(command));
+      });
   }
 }
 
@@ -32,13 +40,16 @@ export class InlineCodeLinkProvider implements vscode.DocumentLinkProvider {
 // clipboard.
 export class InlineCodeHoverProvider implements vscode.HoverProvider {
   provideHover(document: vscode.TextDocument, position: vscode.Position) {
+    const offset = document.offsetAt(position);
+    for (const match of document.getText().matchAll(blockRegex()))
+      if (offset >= match.index && offset < match.index + match[0].length)
+        return;
     const range = document.getWordRangeAtPosition(position, inlineRegex());
     if (!range) return;
     const code = document.getText(range).replace(/`/g, "");
     const contents = new vscode.MarkdownString(
       `[Copy to clipboard](command:markdown.copy?${encodeURIComponent(JSON.stringify([code]))})`,
     );
-    contents.isTrusted = true;
-    return new vscode.Hover(contents, range);
+    return ((contents.isTrusted = true), new vscode.Hover(contents, range));
   }
 }

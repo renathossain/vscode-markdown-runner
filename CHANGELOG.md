@@ -5,6 +5,7 @@
 - **New Feature**: "Run on Markdown" output now processes ANSI escape sequences through a virtual terminal, eliminating unintelligible control characters from commands like `ollama run`. Cursor movement (`\x1b[nD`, `\x1b[nG`, `\x1b[nA`), line clearing (`\x1b[K`, `\x1b[2K`), carriage returns, backspaces, and spinner animations are all rendered into clean plain text.
 - **New Feature**: Added configurable CodeLens button visibility through the `enabledButtons` setting. Users can hide Run Block, Run in Terminal, Run on Markdown, Copy, Clear, and Delete buttons to reduce clutter, while Kill process controls always remain available for safety.
 - **New Feature**: Added built-in Ollama support — code blocks tagged `ollama` or `llm` are piped to `ollama run qwen2.5-coder` via stdin, enabling LLM-powered code transformation directly within Markdown.
+- **Bug Fix**: Inline code spans inside fenced code blocks are no longer parsed as clickable links or hover targets.
 
 ## 3.0.0
 

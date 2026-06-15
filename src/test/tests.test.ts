@@ -135,6 +135,13 @@ suite("Inline Code Links", function () {
       ),
     ]);
   });
+
+  test("Not Inside Fenced Blocks", async () => {
+    write("test-link-no-fence.md", "```bash\nRun `node -v` now\n```");
+    const doc = await open("test-link-no-fence.md");
+    const provider = new InlineCodeLinkProvider();
+    assert.deepStrictEqual(provider.provideDocumentLinks(doc), []);
+  });
 });
 
 suite("Inline Code Hover", function () {
@@ -156,6 +163,16 @@ suite("Inline Code Hover", function () {
         })(),
         new vscode.Range(0, 4, 0, 13),
       ),
+    );
+  });
+
+  test("Not Inside Fenced Blocks", async () => {
+    write("test-hover-no-fence.md", "```bash\nRun `node -v` now\n```");
+    const doc = await open("test-hover-no-fence.md");
+    const provider = new InlineCodeHoverProvider();
+    assert.strictEqual(
+      provider.provideHover(doc, new vscode.Position(1, 8)),
+      undefined,
     );
   });
 });
@@ -213,7 +230,7 @@ suite("Run on Markdown", function () {
     await done;
     assert.match(
       doc.getText(),
-      new RegExp(`\n\`\`\`output\n(.*)${output}\n\`\`\`\n`, "s"),
+      new RegExp(`\n\`\`\`output\n(.*)${output}\n\`\`\``, "s"),
     );
   }
   cases.forEach(([name, lang, code]) => {
