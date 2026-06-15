@@ -73,9 +73,9 @@ Example:
 }
 ```
 
-### Python Path
+### Enabled Buttons
 
-Enable to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.
+Controls which CodeLens buttons are shown above code blocks. Disable buttons you do not use to reduce clutter. Stop, Kill, and Kill All process controls are always shown when needed for safety.
 
 ### Default Codes
 
@@ -97,17 +97,17 @@ With the added default codes:
 - the Python code `print(var)` outputs `123`.
 - the C++ code `cout << 456 << endl;` outputs `456`.
 
-### Activate On Quarto
+### Python Path
 
-Enable to activate the extension on Quarto (.qmd) files.
+Enable to add the Markdown file's parent directory to Python's `sys.path`, allowing you to import modules from that directory.
 
 ### Output Encoding
 
 Encoding used to decode `Run on Markdown` process output via [iconv-lite](https://github.com/pillarjs/iconv-lite). Pick a common value from the list, or set any other [supported encoding](https://github.com/pillarjs/iconv-lite/wiki/Supported-Encodings) directly in `settings.json`. Change to `gbk` if non-ASCII characters appear corrupted on some Windows systems.
 
-### Enabled Buttons
+### Activate On Quarto
 
-Controls which CodeLens buttons are shown above code blocks. Disable buttons you do not use to reduce clutter. Stop, Kill, and Kill All process controls are always shown when needed for safety.
+Enable to activate the extension on Quarto (.qmd) files.
 
 ### Terminal Dimensions
 
