@@ -146,6 +146,27 @@
             "clear": true,
             "delete": true
           }
+        },
+        "markdownRunner.terminalDimensions": {
+          "type": "object",
+          "markdownDescription": "Dimensions of the virtual terminal used to process ANSI escape sequences in `Run on Markdown` output. Increase `cols` to reduce unwanted line wrapping for wide output. Increase `rows` to capture more buffered lines.",
+          "properties": {
+            "cols": {
+              "type": "number",
+              "default": 1000,
+              "description": "Number of columns (width) of the virtual terminal."
+            },
+            "rows": {
+              "type": "number",
+              "default": 1000,
+              "description": "Number of rows (height) of the virtual terminal."
+            }
+          },
+          "additionalProperties": false,
+          "default": {
+            "cols": 1000,
+            "rows": 1000
+          }
         }
       }
     },

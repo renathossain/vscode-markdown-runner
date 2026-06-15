@@ -71,6 +71,10 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
 
   const config = vscode.workspace.getConfiguration();
   const encoding = config.get<string>("markdownRunner.outputEncoding", "utf8");
+  const { cols, rows } = config.get<{ cols: number; rows: number }>(
+    "markdownRunner.terminalDimensions",
+    { cols: 1000, rows: 1000 },
+  );
 
   if (!iconv.encodingExists(encoding)) {
     const errorMessage = `Invalid output encoding "${encoding}". See https://github.com/pillarjs/iconv-lite/wiki/Supported-Encodings`;
@@ -97,7 +101,7 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
     const exitMutex = new Mutex(0);
     const endMutex = new Mutex(0);
 
-    const term = new Terminal({ cols: 1000, rows: 1000, convertEol: true });
+    const term = new Terminal({ cols, rows, convertEol: true });
 
     // Read back the terminal buffer as plain text (all ANSI processed).
     const getTerminalText = (): string => {

@@ -109,6 +109,10 @@ Encoding used to decode `Run on Markdown` process output via [iconv-lite](https:
 
 Controls which CodeLens buttons are shown above code blocks. Disable buttons you do not use to reduce clutter. Stop, Kill, and Kill All process controls are always shown when needed for safety.
 
+### Terminal Dimensions
+
+Dimensions of the virtual terminal used to process ANSI escape sequences in `Run on Markdown` output. Increase `cols` to reduce unwanted line wrapping for wide output. Increase `rows` to capture more buffered lines.
+
 ## Future Development
 
 Planned features (no guarantee):
