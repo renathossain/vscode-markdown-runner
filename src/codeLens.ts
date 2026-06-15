@@ -19,10 +19,10 @@ export const blockRegex = () => /^(`{3,})(.*?)\n(.*?)^\1$/gms;
 // Extract language, code content, and document range from a block regex match.
 export function parseBlock(doc: vscode.TextDocument, match: RegExpExecArray) {
   const cleaned = match[2].trim().toLowerCase();
-  const language = (cleaned.match(/^[\w+#]+/) ?? [""])[0];
+  const lang = (cleaned.match(/^[\w+#]+/) ?? [""])[0];
   const start = doc.positionAt(match.index);
   const end = doc.positionAt(match.index + match[0].length);
-  return { language, code: match[3], range: new vscode.Range(start, end) };
+  return { lang, code: match[3], range: new vscode.Range(start, end) };
 }
 
 // Convenience helper to create and append a CodeLens.
@@ -51,21 +51,21 @@ function provideCodeLenses(document: vscode.TextDocument) {
 
   // Buttons for each fenced code block in the document.
   for (const match of document.getText().matchAll(blockRegex())) {
-    const { language, code, range } = parseBlock(document, match);
-    const name = getLanguageConfig(language, "interpreter")?.name || "";
+    const { lang, code, range } = parseBlock(document, match);
+    const name = getLanguageConfig(lang, "interpreter")?.name || "";
 
     if (name) {
-      const argsRun = [language, code];
+      const argsRun = [lang, code];
       if (enabledButtons["runBlock"])
         add(lenses, range, `Run ${name} Block`, "markdown.runBlock", argsRun);
 
       if (
         enabledButtons["runInTerminal"] &&
-        (language === "bash" || language === "powershell")
+        (lang === "bash" || lang === "powershell")
       )
         add(lenses, range, "Run in Terminal", "markdown.runInTerminal", [code]);
 
-      const argsMark = [language, code, range];
+      const argsMark = [lang, code, range];
       const cmdMark = "markdown.runOnMarkdown";
       if (enabledButtons["runOnMarkdown"])
         add(lenses, range, "Run on Markdown", cmdMark, argsMark);

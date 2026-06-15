@@ -117,8 +117,14 @@ Dimensions of the virtual terminal used to process ANSI escape sequences in `Run
 
 Default keyboard shortcuts for executing code blocks:
 
-- **Run Block**: `Ctrl+Alt+Enter` — Execute the current code block in a terminal.
-- **Run on Markdown**: `Ctrl+Alt+M` — Execute the current code block and insert its output directly into the document.
+- **Run Block**: `Ctrl+Alt+Enter`
+- **Run in Terminal**: `Ctrl+Alt+T` (for Bash and PowerShell code blocks only)
+- **Run on Markdown**: `Ctrl+Alt+M`
+- **Copy**: `Ctrl+Alt+C`
+- **Clear**: `Ctrl+Alt+Shift+D`
+- **Delete**: `Ctrl+Alt+D`
+- **Kill Process**: `Ctrl+Alt+K`
+- **Kill All Processes**: `Ctrl+Alt+Shift+K`
 
 Customize these shortcuts via VS Code's Keyboard Shortcuts editor (`Ctrl+K Ctrl+S`).
 

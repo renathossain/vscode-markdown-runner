@@ -177,8 +177,38 @@
         "when": "editorLangId == markdown || editorLangId == quarto"
       },
       {
+        "command": "markdown.runInTerminal",
+        "key": "ctrl+alt+t",
+        "when": "editorLangId == markdown || editorLangId == quarto"
+      },
+      {
         "command": "markdown.runOnMarkdown",
         "key": "ctrl+alt+m",
+        "when": "editorLangId == markdown || editorLangId == quarto"
+      },
+      {
+        "command": "markdown.copy",
+        "key": "ctrl+alt+c",
+        "when": "editorLangId == markdown || editorLangId == quarto"
+      },
+      {
+        "command": "markdown.clear",
+        "key": "ctrl+alt+shift+d",
+        "when": "editorLangId == markdown || editorLangId == quarto"
+      },
+      {
+        "command": "markdown.delete",
+        "key": "ctrl+alt+d",
+        "when": "editorLangId == markdown || editorLangId == quarto"
+      },
+      {
+        "command": "markdown.killProcess",
+        "key": "ctrl+alt+k",
+        "when": "editorLangId == markdown || editorLangId == quarto"
+      },
+      {
+        "command": "markdown.killAllProcesses",
+        "key": "ctrl+alt+shift+k",
         "when": "editorLangId == markdown || editorLangId == quarto"
       }
     ],

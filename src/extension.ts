@@ -49,14 +49,13 @@ let disposables: vscode.Disposable[] = [];
 
 // Find the fenced code block at the cursor position in the active editor.
 // Returns null when no block is found or no editor is active.
-function getCurrentCodeBlock() {
+function getCurrentBlock() {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return null;
   const cursor = editor.selection.active;
   for (const match of editor.document.getText().matchAll(blockRegex())) {
-    const { language, code, range } = parseBlock(editor.document, match);
-    if (language && range.contains(cursor))
-      return { lang: language, code, range };
+    const { lang, code, range } = parseBlock(editor.document, match);
+    if (lang && range.contains(cursor)) return { lang, code, range };
   }
   return null;
 }
@@ -65,21 +64,28 @@ function getCurrentCodeBlock() {
 const commands = {
   "markdown.runBlock": async (lang?: string, code?: string) => {
     if (!lang || !code) {
-      const block = getCurrentCodeBlock();
+      const block = getCurrentBlock();
       if (!block) return;
       lang = block.lang;
       code = block.code;
     }
     return runInTerminal(await getRunCommand(lang, code));
   },
-  "markdown.runInTerminal": runInTerminal,
+  "markdown.runInTerminal": (code?: string) => {
+    if (!code) {
+      const block = getCurrentBlock();
+      if (!block) return;
+      code = block.code;
+    }
+    runInTerminal(code);
+  },
   "markdown.runOnMarkdown": async (
     lang?: string,
     code?: string,
     range?: vscode.Range,
   ) => {
     if (!lang || !code || !range) {
-      const block = getCurrentCodeBlock();
+      const block = getCurrentBlock();
       if (!block) return;
       lang = block.lang;
       code = block.code;
@@ -87,12 +93,53 @@ const commands = {
     }
     return runOnMarkdown(await getRunCommand(lang, code), range);
   },
-  "markdown.copy": (code: string) => {
+  "markdown.copy": (code?: string) => {
+    if (!code) {
+      const block = getCurrentBlock();
+      if (!block) return;
+      code = block.code;
+    }
     vscode.env.clipboard.writeText(code);
     vscode.window.setStatusBarMessage("Copied to clipboard!", 2000);
   },
-  "markdown.delete": deleteOnMarkdown,
-  "markdown.killProcess": killProcess,
+  "markdown.clear": () => {
+    const block = getCurrentBlock();
+    if (!block) return;
+    const clearRange = new vscode.Range(
+      block.range.start.line + 1,
+      0,
+      block.range.end.line,
+      0,
+    );
+    return deleteOnMarkdown(clearRange);
+  },
+  "markdown.delete": (range?: vscode.Range) => {
+    if (!range) {
+      const block = getCurrentBlock();
+      if (!block) return;
+      range = new vscode.Range(
+        block.range.start.line,
+        0,
+        block.range.end.line + 1,
+        0,
+      );
+    }
+    return deleteOnMarkdown(range);
+  },
+  "markdown.killProcess": (pid?: number, signal?: string) => {
+    if (pid !== undefined && signal !== undefined) {
+      killProcess(pid, signal);
+      return;
+    }
+    const block = getCurrentBlock();
+    if (!block) return;
+    const outputLine =
+      block.lang === "output"
+        ? block.range.start.line
+        : block.range.end.line + 2;
+    const process = childProcesses.find((p) => p.line === outputLine);
+    if (process) killProcess(process.pid, "SIGINT");
+  },
   "markdown.killAllProcesses": killAllProcesses,
   "markdown._getProcesses": () => childProcesses,
 };

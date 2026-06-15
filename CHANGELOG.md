@@ -2,11 +2,13 @@
 
 ## 3.1.0
 
-- **New Feature**: Added keyboard shortcuts for "Run Block" (`Ctrl+Alt+Enter`) and "Run on Markdown" (`Ctrl+Alt+M`). The cursor must be inside a code block for these shortcuts to work. Can be customized in the Keyboard Shortcuts editor (`Ctrl+K Ctrl+S`).
+- **New Feature**: Added keyboard shortcuts for "Run Block" (`Ctrl+Alt+Enter`), "Run in Terminal" (`Ctrl+Alt+T`), "Run on Markdown" (`Ctrl+Alt+M`), "Copy" (`Ctrl+Alt+C`), "Clear" (`Ctrl+Alt+Shift+D`), "Delete" (`Ctrl+Alt+D`), "Kill Process" (`Ctrl+Alt+K`), and "Kill All Processes" (`Ctrl+Alt+Shift+K`). The cursor must be inside a code block for these shortcuts to work. Can be customized in the Keyboard Shortcuts editor (`Ctrl+K Ctrl+S`).
 - **New Feature**: "Run on Markdown" output now processes ANSI escape sequences through a virtual terminal, eliminating unintelligible control characters from commands like `ollama run`. Cursor movement (`\x1b[nD`, `\x1b[nG`, `\x1b[nA`), line clearing (`\x1b[K`, `\x1b[2K`), carriage returns, backspaces, and spinner animations are all rendered into clean plain text.
 - **New Feature**: Added configurable terminal dimensions through the `terminalDimensions` setting. Users can adjust virtual terminal `cols` and `rows` to control line wrapping and buffered line count in `Run on Markdown` output.
 - **New Feature**: Added configurable CodeLens button visibility through the `enabledButtons` setting. Users can hide Run Block, Run in Terminal, Run on Markdown, Copy, Clear, and Delete buttons to reduce clutter, while Kill process controls always remain available for safety.
 - **New Feature**: Added built-in Ollama support — code blocks tagged `ollama` or `llm` are piped to `ollama run qwen2.5-coder` via stdin, enabling LLM-powered code transformation directly within Markdown.
+- **New Feature**: "Run in Terminal" now directly sends code to the terminal for Bash and PowerShell blocks, bypassing the file-based compilation pipeline for faster execution.
+- **Bug Fix**: Fixed the "Copy" command handler so it correctly copies inline code snippets instead of falling through to the code block at the cursor.
 - **Bug Fix**: Inline code spans inside fenced code blocks are no longer parsed as clickable links or hover targets.
 
 ## 3.0.0

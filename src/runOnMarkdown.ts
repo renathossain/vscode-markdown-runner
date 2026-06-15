@@ -51,8 +51,8 @@ function findOutputBlock(document: vscode.TextDocument, startLine: number) {
 
   const match = blockRegex().exec(slicedText);
   if (!match) return null;
-  const { language, code } = parseBlock(document, match);
-  if (language !== "output") return null;
+  const { lang, code } = parseBlock(document, match);
+  if (lang !== "output") return null;
 
   if (slicedText.slice(0, match.index).split("\n").length !== 1) return null;
 
