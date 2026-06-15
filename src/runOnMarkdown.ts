@@ -22,9 +22,8 @@ const textEditMutex = new Mutex(1);
 export let childProcesses: { pid: number; line: number }[] = [];
 
 // Status bar button to kill all running output processes at once.
-const killAllButton = vscode.window.createStatusBarItem(
-  vscode.StatusBarAlignment.Left,
-);
+const killAlign = vscode.StatusBarAlignment.Left;
+const killAllButton = vscode.window.createStatusBarItem(killAlign);
 killAllButton.command = {
   title: "Kill All `Run on Markdown` Processes",
   command: "markdown.killAllProcesses",
@@ -126,9 +125,7 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
         if (deleteRange) {
           text.delete(deleteRange);
           text.insert(deleteRange.start, content);
-        } else {
-          text.insert(range.end, `\n\n\`\`\`output\n${content}\`\`\``);
-        }
+        } else text.insert(range.end, `\n\n\`\`\`output\n${content}\`\`\``);
       });
       outputMutex.release();
     };

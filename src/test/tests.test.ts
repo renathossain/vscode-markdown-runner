@@ -252,8 +252,8 @@ suite("Run on Markdown", function () {
     // frames using cursor-to-col-1 + erase-line, then correct a typo via
     // cursor-backward + erase-line, and finally write the result.
     const code = `import sys
-sys.stdout.write('\\u2819\\x1b[1G\\x1b[K\\u2839\\x1b[1G\\x1b[K\\u2838')
-sys.stdout.write('\\x1b[1G\\x1b[KThe\\x1b[3D\\x1b[KThe answer is 82\\n')`;
+sys.stdout.buffer.write('\\u2819\\x1b[1G\\x1b[K\\u2839\\x1b[1G\\x1b[K\\u2838'.encode('utf-8'))
+sys.stdout.buffer.write('\\x1b[1G\\x1b[KThe\\x1b[3D\\x1b[KThe answer is 82\\n'.encode('utf-8'))`;
     write("test-ansi.md", `\`\`\`python\n${code}\n\`\`\`\n`);
     const doc = await open("test-ansi.md");
     await vscode.window.showTextDocument(doc);

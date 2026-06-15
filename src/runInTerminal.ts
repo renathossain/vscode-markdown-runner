@@ -28,7 +28,6 @@ export function getLanguageConfig(
     const aliases = key.split(",").map((alias) => alias.trim());
     if (!aliases.some((alias) => alias.toLowerCase() === target)) continue;
     const [ext = "", command = ""] = value.split(";", 2);
-
     return { name: aliases[0], extension: ext.trim(), command: command.trim() };
   }
 
