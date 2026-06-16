@@ -68,7 +68,8 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
   const editor = vscode.window.activeTextEditor;
   if (!command || !editor || !textEditMutex.tryAcquire()) return failed;
 
-  const indent = editor.document.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
+  const indent =
+    editor.document.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
   const config = vscode.workspace.getConfiguration();
   const encoding = config.get<string>("markdownRunner.outputEncoding", "utf8");
   const { cols, rows } = config.get<{ cols: number; rows: number }>(
@@ -123,7 +124,10 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
       await new Promise<void>((resolve) => term.write(decoded, resolve));
       const content = getTerminalText();
       const indentedContent = indent
-        ? content.split("\n").map((l) => (l ? indent + l : l)).join("\n")
+        ? content
+            .split("\n")
+            .map((l) => (l ? indent + l : l))
+            .join("\n")
         : content;
       const deleteRange = findOutputBlock(editor.document, range.end.line + 2);
       await editor.edit((text) => {
@@ -154,6 +158,16 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
       outputMutex.release();
       endMutex.release();
     });
+
+    // Create an empty output block (or clear an existing one) as soon as the
+    // child process starts
+    await outputMutex.acquire();
+    const existing = findOutputBlock(editor.document, range.end.line + 2);
+    await editor.edit((text) => {
+      if (existing) text.delete(existing);
+      else text.insert(range.end, `\n\n${indent}\`\`\`output\n${indent}\`\`\``);
+    });
+    outputMutex.release();
 
     await exitMutex.acquire();
     await endMutex.acquire();
