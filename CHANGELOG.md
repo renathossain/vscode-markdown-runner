@@ -7,8 +7,7 @@
 - **New Feature**: Added configurable terminal dimensions through the `terminalDimensions` setting. Users can adjust virtual terminal `cols` and `rows` to control line wrapping and buffered line count in `Run on Markdown` output.
 - **New Feature**: Added configurable CodeLens button visibility through the `enabledButtons` setting. Users can hide Run Block, Run in Terminal, Run on Markdown, Copy, Clear, and Delete buttons to reduce clutter, while Kill process controls always remain available for safety.
 - **New Feature**: Added built-in Ollama support — code blocks tagged `ollama` or `llm` are piped to `ollama run qwen2.5-coder` via stdin, enabling LLM-powered code transformation directly within Markdown.
-- **New Feature**: "Run in Terminal" now directly sends code to the terminal for Bash and PowerShell blocks, bypassing the file-based compilation pipeline for faster execution.
-- **Bug Fix**: Fixed the "Copy" command handler so it correctly copies inline code snippets instead of falling through to the code block at the cursor.
+- **New Feature**: Added support for tabbed/indented code blocks. Code fences prefixed with spaces or tabs are now detected and handled correctly by CodeLens, Run Block, Run on Markdown, Copy, and Delete operations.
 - **Bug Fix**: Inline code spans inside fenced code blocks are no longer parsed as clickable links or hover targets.
 
 ## 3.0.0

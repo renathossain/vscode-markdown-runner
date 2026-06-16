@@ -68,6 +68,7 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
   const editor = vscode.window.activeTextEditor;
   if (!command || !editor || !textEditMutex.tryAcquire()) return failed;
 
+  const indent = editor.document.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
   const config = vscode.workspace.getConfiguration();
   const encoding = config.get<string>("markdownRunner.outputEncoding", "utf8");
   const { cols, rows } = config.get<{ cols: number; rows: number }>(
@@ -115,17 +116,25 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
 
     // Decode a data chunk, let the virtual terminal process any ANSI sequences,
     // then replace the output block content with the rendered result.
+    // The output block is indented to match the source code block's fence line.
     const writer = async (data: Buffer) => {
       await outputMutex.acquire();
       const decoded = iconv.decode(data, encoding);
       await new Promise<void>((resolve) => term.write(decoded, resolve));
       const content = getTerminalText();
+      const indentedContent = indent
+        ? content.split("\n").map((l) => (l ? indent + l : l)).join("\n")
+        : content;
       const deleteRange = findOutputBlock(editor.document, range.end.line + 2);
       await editor.edit((text) => {
         if (deleteRange) {
           text.delete(deleteRange);
-          text.insert(deleteRange.start, content);
-        } else text.insert(range.end, `\n\n\`\`\`output\n${content}\`\`\``);
+          text.insert(deleteRange.start, indentedContent);
+        } else
+          text.insert(
+            range.end,
+            `\n\n${indent}\`\`\`output\n${indentedContent}${indent}\`\`\``,
+          );
       });
       outputMutex.release();
     };

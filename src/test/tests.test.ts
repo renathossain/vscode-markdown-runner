@@ -215,9 +215,9 @@ suite("Run on Markdown", function () {
     ["Ruby", "ruby", `puts 10 + 72`],
     ["JavaScript", "javascript", `console.log(10 + 72);`],
   ];
-  async function run(lang: string, code: string, output: string) {
-    write(`test-${lang}.md`, `\`\`\`${lang}\n${code}\n\`\`\`\n`);
-    const doc = await open(`test-${lang}.md`);
+  async function run(lang: string, code: string, output: string, file?: string) {
+    write(file ?? `test-${lang}.md`, `\`\`\`${lang}\n${code}\n\`\`\`\n`);
+    const doc = await open(file ?? `test-${lang}.md`);
     await vscode.window.showTextDocument(doc);
     const text = doc.getText();
     const range = new vscode.Range(
@@ -245,7 +245,7 @@ suite("Run on Markdown", function () {
   });
 
   test("Newline Behaviour", () =>
-    run("python", "print('A')\nprint('B')\nprint('C')", "A\nB\nC"));
+    run("python", "print('A')\nprint('B')\nprint('C')", "A\nB\nC", "test-newline.md"));
 
   test("ANSI Escape Sequences (Spinner)", async () => {
     // Simulate an Ollama-like spinner: overwrite the same line with spinner
@@ -534,6 +534,76 @@ suite("Keyboard Shortcuts", function () {
     } catch {
       assert.ok(true, "all processes exited");
     }
+  });
+});
+
+suite("Tabbed Code Blocks", function () {
+  this.timeout(60000);
+  suiteSetup(setup);
+
+  test("CodeLens Detection", async () => {
+    write("test-tabbed-lens.md", "\t```python\n\tprint(10 + 72)\n\t```\n");
+    const doc = await open("test-tabbed-lens.md");
+    const lenses = await vscode.commands.executeCommand<vscode.CodeLens[]>(
+      "vscode.executeCodeLensProvider",
+      doc.uri,
+    );
+    assert.ok(
+      (lenses?.length ?? 0) > 0,
+      "CodeLenses should appear for tabbed blocks",
+    );
+  });
+
+  test("Run on Markdown", async () => {
+    write(
+      "test-tabbed-runon.md",
+      "\t```python\nprint(10 + 72)\n\t```\n",
+    );
+    const doc = await open("test-tabbed-runon.md");
+    await vscode.window.showTextDocument(doc);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    const { done } =
+      await vscode.commands.executeCommand<{ done: Promise<void> }>(
+        "markdown.runOnMarkdown",
+      );
+    await done;
+    assert.match(doc.getText(), /[ \t]*```output\n[^]*82\n[ \t]*```/);
+  });
+
+  test("Run Block", async () => {
+    write(
+      "test-tabbed-runblock.md",
+      "\t```bash\n\techo 82\n\t```\n",
+    );
+    const doc = await open("test-tabbed-runblock.md");
+    await vscode.window.showTextDocument(doc);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    await vscode.commands.executeCommand("markdown.runBlock");
+    assert.ok(
+      vscode.window.terminals.length > 0,
+      "terminal should exist for tabbed runBlock",
+    );
+  });
+
+  test("Copy", async () => {
+    write("test-tabbed-copy.md", "\t```python\n\tprint(10 + 72)\n\t```\n");
+    const doc = await open("test-tabbed-copy.md");
+    await vscode.window.showTextDocument(doc);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    await vscode.commands.executeCommand("markdown.copy");
+    assert.strictEqual(
+      await vscode.env.clipboard.readText(),
+      "print(10 + 72)\n",
+    );
+  });
+
+  test("Delete", async () => {
+    write("test-tabbed-delete.md", "\t```python\n\tprint(10 + 72)\n\t```\n");
+    const doc = await open("test-tabbed-delete.md");
+    await vscode.window.showTextDocument(doc);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    await vscode.commands.executeCommand("markdown.delete");
+    assert.strictEqual(doc.getText(), "");
   });
 });
 
