@@ -54,8 +54,8 @@ function getCurrentBlock() {
   if (!editor) return null;
   const cursor = editor.selection.active;
   for (const match of editor.document.getText().matchAll(blockRegex())) {
-    const { lang, code, range } = parseBlock(editor.document, match);
-    if (lang && range.contains(cursor)) return { lang, code, range };
+    const block = parseBlock(editor.document, match);
+    if (block.lang && block.range.contains(cursor)) return block;
   }
   return null;
 }
@@ -69,8 +69,7 @@ const commands = {
   },
   "markdown.runInTerminal": (code?: string) => {
     const block = code ? null : getCurrentBlock();
-    if (block && !(block.lang === "bash" || block.lang === "powershell"))
-      return;
+    if (block && !["bash", "powershell"].includes(block.lang)) return;
     if (!(code ||= block?.code)) return;
     return runInTerminal(code);
   },
@@ -105,15 +104,12 @@ const commands = {
     );
   },
   "markdown.killProcess": (pid?: number, signal?: string) => {
-    if (pid !== undefined && signal !== undefined)
-      return killProcess(pid, signal);
+    if (pid != null && signal != null) return killProcess(pid, signal);
     const block = getCurrentBlock();
     if (!block) return;
-    const outputLine =
-      block.lang === "output"
-        ? block.range.start.line
-        : block.range.end.line + 2;
-    const process = childProcesses.find((p) => p.line === outputLine);
+    const { lang, range } = block;
+    const outLine = lang === "output" ? range.start.line : range.end.line + 2;
+    const process = childProcesses.find((p) => p.line === outLine);
     if (process) killProcess(process.pid, "SIGINT");
   },
   "markdown.killAllProcesses": killAllProcesses,

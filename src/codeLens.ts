@@ -15,7 +15,8 @@ import { childProcesses } from "./runOnMarkdown";
 // length. Group 2 captures the language (e.g. "python"), and Group 3 the code
 // body. Flags: g = global, m = ^/$ match line boundaries, s = . matches
 // newlines (enabling multi-line body capture).
-export const blockRegex = () => /^[ \t]*(\x60{3,})(.*?)\n(.*?)^[ \t]*\1[ \t]*$/gms;
+export const blockRegex = () =>
+  /^[ \t]*(\x60{3,})(.*?)\n(.*?)^[ \t]*\1[ \t]*$/gms;
 
 // Extract language, code content, and document range from a block regex match.
 // Leading whitespace (indentation) is stripped from each code line to avoid
@@ -27,7 +28,9 @@ export function parseBlock(doc: vscode.TextDocument, match: RegExpExecArray) {
   const end = doc.positionAt(match.index + match[0].length);
   const indent = match[0].match(/^[ \t]*/)?.[0] ?? "";
   const code = indent
-    ? match[3].split("\n").map((l) => l.startsWith(indent) ? l.slice(indent.length) : l).join("\n")
+    ? match[3].replace(/^.*$/gm, (l) =>
+        l.startsWith(indent) ? l.slice(indent.length) : l,
+      )
     : match[3];
   return { lang, code, range: new vscode.Range(start, end) };
 }
@@ -45,7 +48,7 @@ const add = (
 // Build the full list of CodeLenses for the active document.
 function provideCodeLenses(document: vscode.TextDocument) {
   const lenses: vscode.CodeLens[] = [];
-  const enabledButtons = vscode.workspace
+  const buttons = vscode.workspace
     .getConfiguration()
     .get<Record<string, boolean>>("markdownRunner.enabledButtons", {});
 
@@ -63,27 +66,26 @@ function provideCodeLenses(document: vscode.TextDocument) {
 
     if (name) {
       const argsRun = [lang, code];
-      if (enabledButtons["runBlock"])
+      if (buttons["runBlock"])
         add(lenses, range, `Run ${name} Block`, "markdown.runBlock", argsRun);
 
       if (
-        enabledButtons["runInTerminal"] &&
+        buttons["runInTerminal"] &&
         (lang === "bash" || lang === "powershell")
       )
         add(lenses, range, "Run in Terminal", "markdown.runInTerminal", [code]);
 
       const argsMark = [lang, code, range];
       const cmdMark = "markdown.runOnMarkdown";
-      if (enabledButtons["runOnMarkdown"])
+      if (buttons["runOnMarkdown"])
         add(lenses, range, "Run on Markdown", cmdMark, argsMark);
     }
 
     // Utility buttons available for every block regardless of language.
-    if (enabledButtons["copy"])
-      add(lenses, range, "Copy", "markdown.copy", [code]);
-    if (enabledButtons["clear"])
+    if (buttons["copy"]) add(lenses, range, "Copy", "markdown.copy", [code]);
+    if (buttons["clear"])
       add(lenses, range, "Clear", "markdown.clear", [range]);
-    if (enabledButtons["delete"])
+    if (buttons["delete"])
       add(lenses, range, "Delete", "markdown.delete", [range]);
   }
 

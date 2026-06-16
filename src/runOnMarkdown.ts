@@ -124,21 +124,15 @@ export function runOnMarkdown(command: string, range: vscode.Range) {
       await new Promise<void>((resolve) => term.write(decoded, resolve));
       const content = getTerminalText();
       const indentedContent = indent
-        ? content
-            .split("\n")
-            .map((l) => (l ? indent + l : l))
-            .join("\n")
+        ? content.replace(/^.*$/gm, (l) => (l ? indent + l : l))
         : content;
       const deleteRange = findOutputBlock(editor.document, range.end.line + 2);
+      const outputBlock = `\n\n${indent}\`\`\`output\n${indentedContent}${indent}\`\`\``;
       await editor.edit((text) => {
         if (deleteRange) {
           text.delete(deleteRange);
           text.insert(deleteRange.start, indentedContent);
-        } else
-          text.insert(
-            range.end,
-            `\n\n${indent}\`\`\`output\n${indentedContent}${indent}\`\`\``,
-          );
+        } else text.insert(range.end, outputBlock);
       });
       outputMutex.release();
     };
