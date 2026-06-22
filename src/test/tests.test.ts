@@ -187,7 +187,12 @@ suite("Run File", function () {
   test("Python", async () => {
     const file = tmp("test-runblock.out");
     const code = `with open(r"${file.replace(/\\/g, "/")}", "w") as f: f.write(str(10 + 72))`;
-    await vscode.commands.executeCommand("markdown.runBlock", "python", code);
+    await vscode.commands.executeCommand(
+      "markdown.runBlock",
+      "python",
+      code,
+      vscode.Uri.file(file),
+    );
     for (let i = 0; i < 100; i++) {
       if (fs.existsSync(file) && fs.readFileSync(file, "utf8").trim() === "82")
         break;
