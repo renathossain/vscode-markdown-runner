@@ -74,7 +74,7 @@ export function runOnMarkdown(
   docUri: vscode.Uri,
 ) {
   const failed = { pid: -1, done: async () => {} };
-  if (!command || !vscode.Uri || !textEditMutex.tryAcquire()) return failed;
+  if (!command || !docUri || !textEditMutex.tryAcquire()) return failed;
 
   const config = vscode.workspace.getConfiguration();
   const encoding = config.get<string>("markdownRunner.outputEncoding", "utf8");

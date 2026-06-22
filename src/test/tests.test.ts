@@ -9,10 +9,10 @@ import * as path from "path";
 import { ButtonCodeLensProvider } from "../codeLens";
 import { InlineCodeLinkProvider, InlineCodeHoverProvider } from "../codeLinks";
 
-const isEditor = (arg: unknown): arg is vscode.TextEditor =>
-  typeof arg === "object" && arg !== null && "document" in arg;
+const isUri = (arg: unknown): arg is vscode.Uri =>
+  typeof arg === "object" && arg !== null && "scheme" in arg;
 const stripEditor = (args: unknown[]) =>
-  args.length > 0 && isEditor(args[args.length - 1]) ? args.slice(0, -1) : args;
+  args.length > 0 && isUri(args[args.length - 1]) ? args.slice(0, -1) : args;
 const publisherId = "renathossain.markdown-runner";
 const ext = vscode.extensions.getExtension(publisherId);
 const isWindows = process.platform === "win32";
