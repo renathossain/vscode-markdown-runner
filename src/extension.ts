@@ -67,10 +67,15 @@ const rangeOff = (range: vscode.Range, startOff: number, endOff: number) =>
 
 // Maps command IDs to their implementations.
 const commands = {
-  "markdown.runBlock": async (lang?: string, code?: string) => {
-    const block = lang && code ? null : getCurrentBlock();
+  "markdown.runBlock": async (
+    lang?: string,
+    code?: string,
+    docUri?: vscode.Uri,
+  ) => {
+    const block = lang && code && docUri ? null : getCurrentBlock();
     if (!(lang ||= block?.lang) || !(code ||= block?.code)) return;
-    return runInTerminal(await getRunCommand(lang, code));
+    if (!(docUri ||= block?.docUri)) return;
+    return runInTerminal(await getRunCommand(lang, code, docUri));
   },
   "markdown.runInTerminal": (code?: string) => {
     const block = code ? null : getCurrentBlock();
@@ -86,9 +91,12 @@ const commands = {
   ) => {
     const block = lang && code && range && docUri ? null : getCurrentBlock();
     if (!(lang ||= block?.lang) || !(code ||= block?.code)) return;
-    if (!(range ||= block?.range)) return;
-    if (!(docUri ||= block?.docUri)) return;
-    return runOnMarkdown(await getRunCommand(lang, code), range, docUri);
+    if (!(range ||= block?.range) || !(docUri ||= block?.docUri)) return;
+    return runOnMarkdown(
+      await getRunCommand(lang, code, docUri),
+      range,
+      docUri,
+    );
   },
   "markdown.copy": (code?: string) => {
     const block = code ? null : getCurrentBlock();
@@ -98,14 +106,12 @@ const commands = {
   },
   "markdown.clear": (range?: vscode.Range, docUri?: vscode.Uri) => {
     const block = range && docUri ? null : getCurrentBlock();
-    if (!(range ||= block?.range)) return;
-    if (!(docUri ||= block?.docUri)) return;
+    if (!(range ||= block?.range) || !(docUri ||= block?.docUri)) return;
     return deleteOnMarkdown(rangeOff(range, 1, 0), docUri);
   },
   "markdown.delete": (range?: vscode.Range, docUri?: vscode.Uri) => {
     const block = range && docUri ? null : getCurrentBlock();
-    if (!(range ||= block?.range)) return;
-    if (!(docUri ||= block?.docUri)) return;
+    if (!(range ||= block?.range) || !(docUri ||= block?.docUri)) return;
     return deleteOnMarkdown(rangeOff(range, 0, 1), docUri);
   },
   "markdown.killProcess": (pid?: number, signal?: string) => {

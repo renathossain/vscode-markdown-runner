@@ -48,7 +48,7 @@ const getBaseName = (lang: string, code: string) =>
 // Inject default boilerplate code from markdownRunner.defaultCodes.
 // Replaces \n with real newlines and ${code} with the user's snippet.
 // If pythonPath is enabled, prepends sys.path.insert for the document dir.
-function injectDefaultCode(language: string, code: string) {
+function injectDefaultCode(language: string, code: string, docUri: vscode.Uri) {
   const config = vscode.workspace.getConfiguration();
   const pythonPathEnabled = config.get<boolean>("markdownRunner.pythonPath");
   const defaultCodeConfig =
@@ -59,9 +59,8 @@ function injectDefaultCode(language: string, code: string) {
       .replace(/\\n/g, "\n")
       .replace(/\$\{code\}/g, code);
 
-  const editor = vscode.window.activeTextEditor;
-  if (pythonPathEnabled && editor && language === "python") {
-    const documentDirectory = path.dirname(editor.document.uri.fsPath);
+  if (pythonPathEnabled && language === "python") {
+    const documentDirectory = path.dirname(docUri.fsPath);
     code = `import sys\nsys.path.insert(0, r'${documentDirectory}')\n` + code;
   }
 
@@ -83,7 +82,11 @@ const compile = (cmd: string) =>
 // temp file, injects default boilerplate, compiles if a compiler is configured,
 // and returns the final interpreter/run command with template placeholders
 // (${path}, ${dir}, ${name}, ${ext}, ${exe}) filled in.
-export async function getRunCommand(language: string, code: string) {
+export async function getRunCommand(
+  language: string,
+  code: string,
+  docUri: vscode.Uri,
+) {
   const name = getBaseName(language, code);
   if (!name) return "";
 
@@ -94,7 +97,7 @@ export async function getRunCommand(language: string, code: string) {
   const dir = os.tmpdir();
   const base = path.join(dir, name);
 
-  code = injectDefaultCode(language, code);
+  code = injectDefaultCode(language, code, docUri);
 
   const compilerPath = compiler ? base + compiler.extension : "";
   const interpPath = base + interp.extension;

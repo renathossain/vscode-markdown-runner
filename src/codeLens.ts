@@ -65,7 +65,7 @@ async function provideCodeLenses(document: vscode.TextDocument) {
     const name = getLanguageConfig(lang, "interpreter")?.name || "";
 
     if (name) {
-      const argsRun = [lang, code];
+      const argsRun = [lang, code, document.uri];
       if (buttons["runBlock"])
         add(lenses, range, `Run ${name} Block`, "markdown.runBlock", argsRun);
 
