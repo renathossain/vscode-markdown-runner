@@ -34,11 +34,13 @@ killAllButton.text = "$(stop-circle) Kill All Processes";
 // avoid racing with an active output stream. Silently skips if mutex is busy.
 export async function deleteOnMarkdown(
   range: vscode.Range,
-  editor: vscode.TextEditor,
+  docUri: vscode.Uri,
 ) {
   if (!textEditMutex.tryAcquire()) return;
-  if (await editor.edit((text) => text.delete(range)))
-    await editor.document.save();
+  const edit = new vscode.WorkspaceEdit();
+  edit.delete(docUri, range);
+  await vscode.workspace.applyEdit(edit);
+  await (await vscode.workspace.openTextDocument(docUri)).save();
   codeLensProvider?.refresh();
   textEditMutex.release();
 }
@@ -69,14 +71,11 @@ function findOutputBlock(document: vscode.TextDocument, startLine: number) {
 export function runOnMarkdown(
   command: string,
   range: vscode.Range,
-  editor: vscode.TextEditor,
+  docUri: vscode.Uri,
 ) {
   const failed = { pid: -1, done: async () => {} };
-  if (!command || !editor || !textEditMutex.tryAcquire()) return failed;
+  if (!command || !vscode.Uri || !textEditMutex.tryAcquire()) return failed;
 
-  const document = editor.document;
-  const indent =
-    document.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
   const config = vscode.workspace.getConfiguration();
   const encoding = config.get<string>("markdownRunner.outputEncoding", "utf8");
   const { cols, rows } = config.get<{ cols: number; rows: number }>(
@@ -109,6 +108,9 @@ export function runOnMarkdown(
     const exitMutex = new Mutex(0);
     const endMutex = new Mutex(0);
 
+    const doc = await vscode.workspace.openTextDocument(docUri);
+    const indent =
+      doc.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
     const term = new Terminal({ cols, rows, convertEol: true });
 
     // Read back the terminal buffer as plain text (all ANSI processed).
@@ -133,14 +135,16 @@ export function runOnMarkdown(
       const indentedContent = indent
         ? content.replace(/^.*$/gm, (l) => (l ? indent + l : l))
         : content;
-      const deleteRange = findOutputBlock(document, range.end.line + 2);
-      console.log(deleteRange);
+      const deleteRange = findOutputBlock(
+        await vscode.workspace.openTextDocument(docUri),
+        range.end.line + 2,
+      );
       const outputBlock = `\n\n${indent}\`\`\`output\n${indentedContent}${indent}\`\`\``;
       const edit = new vscode.WorkspaceEdit();
       if (deleteRange) {
-        edit.delete(document.uri, deleteRange);
-        edit.insert(document.uri, deleteRange.start, indentedContent);
-      } else edit.insert(document.uri, range.end, outputBlock);
+        edit.delete(docUri, deleteRange);
+        edit.insert(docUri, deleteRange.start, indentedContent);
+      } else edit.insert(docUri, range.end, outputBlock);
       await vscode.workspace.applyEdit(edit);
       outputMutex.release();
     };
@@ -156,7 +160,7 @@ export function runOnMarkdown(
 
     child.stdout.on("end", async () => {
       await outputMutex.acquire();
-      await document.save();
+      await (await vscode.workspace.openTextDocument(docUri)).save();
       outputMutex.release();
       endMutex.release();
     });
@@ -164,12 +168,15 @@ export function runOnMarkdown(
     // Create an empty output block (or clear an existing one) as soon as the
     // child process starts
     await outputMutex.acquire();
-    const existing = findOutputBlock(document, range.end.line + 2);
+    const existing = findOutputBlock(
+      await vscode.workspace.openTextDocument(docUri),
+      range.end.line + 2,
+    );
     const edit = new vscode.WorkspaceEdit();
-    if (existing) edit.delete(document.uri, existing);
+    if (existing) edit.delete(docUri, existing);
     else
       edit.insert(
-        document.uri,
+        docUri,
         range.end,
         `\n\n${indent}\`\`\`output\n${indent}\`\`\``,
       );
