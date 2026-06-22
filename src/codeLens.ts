@@ -47,7 +47,7 @@ const add = (
 
 // Get a TextEditor for the document. First checks visible editors, then
 // finally opens the document in a new editor.
-async function getEditor(
+export async function getEditor(
   document: vscode.TextDocument,
 ): Promise<vscode.TextEditor> {
   const visibleEditor = vscode.window.visibleTextEditors.find(

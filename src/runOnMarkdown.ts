@@ -74,8 +74,9 @@ export function runOnMarkdown(
   const failed = { pid: -1, done: async () => {} };
   if (!command || !editor || !textEditMutex.tryAcquire()) return failed;
 
+  const document = editor.document;
   const indent =
-    editor.document.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
+    document.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
   const config = vscode.workspace.getConfiguration();
   const encoding = config.get<string>("markdownRunner.outputEncoding", "utf8");
   const { cols, rows } = config.get<{ cols: number; rows: number }>(
@@ -132,14 +133,15 @@ export function runOnMarkdown(
       const indentedContent = indent
         ? content.replace(/^.*$/gm, (l) => (l ? indent + l : l))
         : content;
-      const deleteRange = findOutputBlock(editor.document, range.end.line + 2);
+      const deleteRange = findOutputBlock(document, range.end.line + 2);
+      console.log(deleteRange);
       const outputBlock = `\n\n${indent}\`\`\`output\n${indentedContent}${indent}\`\`\``;
-      await editor.edit((text) => {
-        if (deleteRange) {
-          text.delete(deleteRange);
-          text.insert(deleteRange.start, indentedContent);
-        } else text.insert(range.end, outputBlock);
-      });
+      const edit = new vscode.WorkspaceEdit();
+      if (deleteRange) {
+        edit.delete(document.uri, deleteRange);
+        edit.insert(document.uri, deleteRange.start, indentedContent);
+      } else edit.insert(document.uri, range.end, outputBlock);
+      await vscode.workspace.applyEdit(edit);
       outputMutex.release();
     };
 
@@ -154,7 +156,7 @@ export function runOnMarkdown(
 
     child.stdout.on("end", async () => {
       await outputMutex.acquire();
-      await editor.document.save();
+      await document.save();
       outputMutex.release();
       endMutex.release();
     });
@@ -162,11 +164,16 @@ export function runOnMarkdown(
     // Create an empty output block (or clear an existing one) as soon as the
     // child process starts
     await outputMutex.acquire();
-    const existing = findOutputBlock(editor.document, range.end.line + 2);
-    await editor.edit((text) => {
-      if (existing) text.delete(existing);
-      else text.insert(range.end, `\n\n${indent}\`\`\`output\n${indent}\`\`\``);
-    });
+    const existing = findOutputBlock(document, range.end.line + 2);
+    const edit = new vscode.WorkspaceEdit();
+    if (existing) edit.delete(document.uri, existing);
+    else
+      edit.insert(
+        document.uri,
+        range.end,
+        `\n\n${indent}\`\`\`output\n${indent}\`\`\``,
+      );
+    await vscode.workspace.applyEdit(edit);
     outputMutex.release();
 
     await exitMutex.acquire();

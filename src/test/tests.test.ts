@@ -285,6 +285,22 @@ sys.stdout.buffer.write('\\x1b[1G\\x1b[KThe\\x1b[3D\\x1b[KThe answer is 82\\n'.e
     assert.ok(!output.includes("\x1b"), "escape chars should be stripped");
     assert.ok(!output.includes("⠙"), "spinner frames should be overwritten");
   });
+
+  test("Handle Editor Close", async () => {
+    const code = `import time\nfor i in range(6):\n  print('a', flush=True)\n  time.sleep(1)`;
+    write("test-handle-close.md", `\`\`\`python\n${code}\n\`\`\`\n`);
+    const doc = await open("test-handle-close.md");
+    await vscode.window.showTextDocument(doc);
+    const text = doc.getText();
+    const range = new vscode.Range(
+      doc.positionAt(text.indexOf("```")),
+      doc.positionAt(text.lastIndexOf("```") + 3),
+    );
+    const { done } = await runOnMarkdown("python", code, range);
+    await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+    await done;
+    assert.match(doc.getText(), /```output\n[^]*a\n```\n/);
+  });
 });
 
 suite("Copy", function () {
