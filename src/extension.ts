@@ -60,6 +60,10 @@ function getCurrentBlock() {
   return null;
 }
 
+// Shift a range's start/end lines by a given offset.
+const rangeOff = (range: vscode.Range, startOff: number, endOff: number) =>
+  new vscode.Range(range.start.line + startOff, 0, range.end.line + endOff, 0);
+
 // Maps command IDs to their implementations.
 const commands = {
   "markdown.runBlock": async (lang?: string, code?: string) => {
@@ -92,16 +96,12 @@ const commands = {
   "markdown.clear": (range?: vscode.Range) => {
     const block = range ? null : getCurrentBlock();
     if (!(range ||= block?.range)) return;
-    return deleteOnMarkdown(
-      new vscode.Range(range.start.line + 1, 0, range.end.line, 0),
-    );
+    return deleteOnMarkdown(rangeOff(range, 1, 0));
   },
   "markdown.delete": (range?: vscode.Range) => {
     const block = range ? null : getCurrentBlock();
     if (!(range ||= block?.range)) return;
-    return deleteOnMarkdown(
-      new vscode.Range(range.start.line, 0, range.end.line + 1, 0),
-    );
+    return deleteOnMarkdown(rangeOff(range, 0, 1));
   },
   "markdown.killProcess": (pid?: number, signal?: string) => {
     if (pid != null && signal != null) return killProcess(pid, signal);
