@@ -168,18 +168,12 @@ export function runOnMarkdown(
     // Create an empty output block (or clear an existing one) as soon as the
     // child process starts
     await outputMutex.acquire();
-    const existing = findOutputBlock(
-      await vscode.workspace.openTextDocument(docUri),
-      range.end.line + 2,
-    );
+    const outputDoc = await vscode.workspace.openTextDocument(docUri);
+    const existing = findOutputBlock(outputDoc, range.end.line + 2);
+    const emptyBlock = `\n\n${indent}\`\`\`output\n${indent}\`\`\``;
     const edit = new vscode.WorkspaceEdit();
     if (existing) edit.delete(docUri, existing);
-    else
-      edit.insert(
-        docUri,
-        range.end,
-        `\n\n${indent}\`\`\`output\n${indent}\`\`\``,
-      );
+    else edit.insert(docUri, range.end, emptyBlock);
     await vscode.workspace.applyEdit(edit);
     outputMutex.release();
 

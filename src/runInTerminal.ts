@@ -11,6 +11,8 @@ import * as path from "path";
 import * as childProcess from "child_process";
 import { tempFilePaths } from "./extension";
 
+const cfg = () => vscode.workspace.getConfiguration();
+
 // Look up a language's compiler or interpreter config from settings. The
 // setting key is a comma-separated list of aliases, the value is "ext;command".
 // Returns the first matching alias as the display name.
@@ -20,9 +22,7 @@ export function getLanguageConfig(
 ) {
   const target = language.trim().toLowerCase();
   const config =
-    vscode.workspace
-      .getConfiguration()
-      .get<Record<string, string>>(`markdownRunner.${type}Settings`) ?? {};
+    cfg().get<Record<string, string>>(`markdownRunner.${type}Settings`) ?? {};
 
   for (const [key, value] of Object.entries(config)) {
     const aliases = key.split(",").map((alias) => alias.trim());
@@ -49,20 +49,19 @@ const getBaseName = (lang: string, code: string) =>
 // Replaces \n with real newlines and ${code} with the user's snippet.
 // If pythonPath is enabled, prepends sys.path.insert for the document dir.
 function injectDefaultCode(language: string, code: string, docUri: vscode.Uri) {
-  const config = vscode.workspace.getConfiguration();
-  const pythonPathEnabled = config.get<boolean>("markdownRunner.pythonPath");
+  const pythonPathEnabled = cfg().get("markdownRunner.pythonPath");
   const defaultCodeConfig =
-    config.get<Record<string, string>>("markdownRunner.defaultCodes") || {};
+    cfg().get<Record<string, string>>("markdownRunner.defaultCodes") || {};
 
   if (defaultCodeConfig[language])
     code = defaultCodeConfig[language]
       .replace(/\\n/g, "\n")
       .replace(/\$\{code\}/g, code);
 
-  if (pythonPathEnabled && language === "python") {
-    const documentDirectory = path.dirname(docUri.fsPath);
-    code = `import sys\nsys.path.insert(0, r'${documentDirectory}')\n` + code;
-  }
+  if (pythonPathEnabled && language === "python")
+    code =
+      `import sys\nsys.path.insert(0, r'${path.dirname(docUri.fsPath)}')\n` +
+      code;
 
   return code;
 }
@@ -99,27 +98,25 @@ export async function getRunCommand(
 
   code = injectDefaultCode(language, code, docUri);
 
-  const compilerPath = compiler ? base + compiler.extension : "";
+  const compPath = compiler ? base + compiler.extension : "";
   const interpPath = base + interp.extension;
-  const file = compiler ? compilerPath : interpPath;
+  const file = compiler ? compPath : interpPath;
 
   fs.writeFileSync(file, code, { mode: 0o600 });
   tempFilePaths.push(file);
 
   // Template fill: replaces ${path}, ${dir}, ${name}, ${ext}, ${exe}.
-  const fill = (s: string, path: string, ext: string) =>
-    s
-      .replace(/\$\{path\}/g, path)
-      .replace(/\$\{dir\}/g, dir)
-      .replace(/\$\{name\}/g, name)
-      .replace(/\$\{ext\}/g, ext)
-      .replace(/\$\{exe\}/g, process.platform === "win32" ? ".exe" : "");
+  const fill = (s: string, path: string, ext: string) => {
+    const vals: Record<string, string> = { path, dir, name, ext };
+    vals.exe = process.platform === "win32" ? ".exe" : "";
+    return s.replace(/\$\{(path|dir|name|ext|exe)\}/g, (_, key) => vals[key]);
+  };
 
   const runCmd = fill(interp.command, interpPath, interp.extension);
   if (!runCmd) return showErr(`No interpreter configured for "${language}".`);
   if (!compiler) return runCmd;
 
-  const compCmd = fill(compiler.command, compilerPath, compiler.extension);
+  const compCmd = fill(compiler.command, compPath, compiler.extension);
   if (!compCmd) return showErr(`No compiler configured for "${language}".`);
 
   return (await compile(compCmd))
