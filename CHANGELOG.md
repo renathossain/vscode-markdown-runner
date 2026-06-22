@@ -2,6 +2,8 @@
 
 ## 3.2.0
 
+- **Bug Fix**: Closing the editor tab while "Run on Markdown" child processes are still running no longer permanently bricks the feature — previously the only way to recover was to restart VS Code.
+
 ## 3.1.0
 
 - **New Feature**: Added keyboard shortcuts for "Run Block" (`Ctrl+Alt+Enter`), "Run in Terminal" (`Ctrl+Alt+T`), "Run on Markdown" (`Ctrl+Alt+M`), "Copy" (`Ctrl+Alt+C`), "Clear" (`Ctrl+Alt+Shift+D`), "Delete" (`Ctrl+Alt+D`), "Kill Process" (`Ctrl+Alt+K`), and "Kill All Processes" (`Ctrl+Alt+Shift+K`). The cursor must be inside a code block for these shortcuts to work. Can be customized in the Keyboard Shortcuts editor (`Ctrl+K Ctrl+S`).
