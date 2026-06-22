@@ -32,10 +32,13 @@ killAllButton.text = "$(stop-circle) Kill All Processes";
 
 // Delete text in a range (Clear / Delete CodeLens). Acquires textEditMutex to
 // avoid racing with an active output stream. Silently skips if mutex is busy.
-export async function deleteOnMarkdown(range: vscode.Range) {
+export async function deleteOnMarkdown(
+  range: vscode.Range,
+  editor: vscode.TextEditor,
+) {
   if (!textEditMutex.tryAcquire()) return;
-  if (await vscode.window.activeTextEditor?.edit((text) => text.delete(range)))
-    await vscode.window.activeTextEditor?.document.save();
+  if (await editor.edit((text) => text.delete(range)))
+    await editor.document.save();
   codeLensProvider?.refresh();
   textEditMutex.release();
 }
@@ -63,9 +66,12 @@ function findOutputBlock(document: vscode.TextDocument, startLine: number) {
 // Spawn a child process and stream its stdout/stderr into a ``output`` fenced
 // block below the source code block. Returns { pid, done } where done resolves
 // when the process exits and all output has been written.
-export function runOnMarkdown(command: string, range: vscode.Range) {
+export function runOnMarkdown(
+  command: string,
+  range: vscode.Range,
+  editor: vscode.TextEditor,
+) {
   const failed = { pid: -1, done: async () => {} };
-  const editor = vscode.window.activeTextEditor;
   if (!command || !editor || !textEditMutex.tryAcquire()) return failed;
 
   const indent =

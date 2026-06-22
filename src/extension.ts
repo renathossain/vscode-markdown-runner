@@ -55,7 +55,7 @@ function getCurrentBlock() {
   const cursor = editor.selection.active;
   for (const match of editor.document.getText().matchAll(blockRegex())) {
     const block = parseBlock(editor.document, match);
-    if (block.lang && block.range.contains(cursor)) return block;
+    if (block.lang && block.range.contains(cursor)) return { ...block, editor };
   }
   return null;
 }
@@ -81,11 +81,13 @@ const commands = {
     lang?: string,
     code?: string,
     range?: vscode.Range,
+    editor?: vscode.TextEditor,
   ) => {
-    const block = lang && code && range ? null : getCurrentBlock();
+    const block = lang && code && range && editor ? null : getCurrentBlock();
     if (!(lang ||= block?.lang) || !(code ||= block?.code)) return;
     if (!(range ||= block?.range)) return;
-    return runOnMarkdown(await getRunCommand(lang, code), range);
+    if (!(editor ||= block?.editor)) return;
+    return runOnMarkdown(await getRunCommand(lang, code), range, editor);
   },
   "markdown.copy": (code?: string) => {
     const block = code ? null : getCurrentBlock();
@@ -93,15 +95,17 @@ const commands = {
     vscode.env.clipboard.writeText(code);
     vscode.window.setStatusBarMessage("Copied to clipboard!", 2000);
   },
-  "markdown.clear": (range?: vscode.Range) => {
-    const block = range ? null : getCurrentBlock();
+  "markdown.clear": (range?: vscode.Range, editor?: vscode.TextEditor) => {
+    const block = range && editor ? null : getCurrentBlock();
     if (!(range ||= block?.range)) return;
-    return deleteOnMarkdown(rangeOff(range, 1, 0));
+    if (!(editor ||= block?.editor)) return;
+    return deleteOnMarkdown(rangeOff(range, 1, 0), editor);
   },
-  "markdown.delete": (range?: vscode.Range) => {
-    const block = range ? null : getCurrentBlock();
+  "markdown.delete": (range?: vscode.Range, editor?: vscode.TextEditor) => {
+    const block = range && editor ? null : getCurrentBlock();
     if (!(range ||= block?.range)) return;
-    return deleteOnMarkdown(rangeOff(range, 0, 1));
+    if (!(editor ||= block?.editor)) return;
+    return deleteOnMarkdown(rangeOff(range, 0, 1), editor);
   },
   "markdown.killProcess": (pid?: number, signal?: string) => {
     if (pid != null && signal != null) return killProcess(pid, signal);

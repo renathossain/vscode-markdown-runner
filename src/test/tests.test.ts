@@ -9,6 +9,10 @@ import * as path from "path";
 import { ButtonCodeLensProvider } from "../codeLens";
 import { InlineCodeLinkProvider, InlineCodeHoverProvider } from "../codeLinks";
 
+const isEditor = (arg: unknown): arg is vscode.TextEditor =>
+  typeof arg === "object" && arg !== null && "document" in arg;
+const stripEditor = (args: unknown[]) =>
+  args.length > 0 && isEditor(args[args.length - 1]) ? args.slice(0, -1) : args;
 const publisherId = "renathossain.markdown-runner";
 const ext = vscode.extensions.getExtension(publisherId);
 const isWindows = process.platform === "win32";
@@ -64,13 +68,13 @@ suite("CodeLens", function () {
     write("test-lens.md", "```python\nprint(10 + 72)\n```\n");
     const doc = await open("test-lens.md");
     const provider = new ButtonCodeLensProvider();
-    const lenses = provider.provideCodeLenses(doc);
+    const lenses = await provider.provideCodeLenses(doc);
     const range = new vscode.Range(0, 0, 2, 3);
     assert.deepStrictEqual(
       lenses.map((x) => ({
         title: x.command?.title,
         command: x.command?.command,
-        args: x.command?.arguments,
+        args: stripEditor(x.command?.arguments ?? []),
         range: x.range,
       })),
       [
@@ -108,7 +112,9 @@ suite("CodeLens", function () {
       const doc = await open("test-enabled-buttons.md");
       const provider = new ButtonCodeLensProvider();
       assert.deepStrictEqual(
-        provider.provideCodeLenses(doc).map((lens) => lens.command?.title),
+        (await provider.provideCodeLenses(doc)).map(
+          (lens) => lens.command?.title,
+        ),
         ["Run on Markdown", "Clear"],
       );
     } finally {
@@ -215,7 +221,12 @@ suite("Run on Markdown", function () {
     ["Ruby", "ruby", `puts 10 + 72`],
     ["JavaScript", "javascript", `console.log(10 + 72);`],
   ];
-  async function run(lang: string, code: string, output: string, file?: string) {
+  async function run(
+    lang: string,
+    code: string,
+    output: string,
+    file?: string,
+  ) {
     write(file ?? `test-${lang}.md`, `\`\`\`${lang}\n${code}\n\`\`\`\n`);
     const doc = await open(file ?? `test-${lang}.md`);
     await vscode.window.showTextDocument(doc);
@@ -245,7 +256,12 @@ suite("Run on Markdown", function () {
   });
 
   test("Newline Behaviour", () =>
-    run("python", "print('A')\nprint('B')\nprint('C')", "A\nB\nC", "test-newline.md"));
+    run(
+      "python",
+      "print('A')\nprint('B')\nprint('C')",
+      "A\nB\nC",
+      "test-newline.md",
+    ));
 
   test("ANSI Escape Sequences (Spinner)", async () => {
     // Simulate an Ollama-like spinner: overwrite the same line with spinner
@@ -416,7 +432,12 @@ suite("Keyboard Shortcuts", function () {
     );
     const doc = await open("test-kb-runblock.md");
     await vscode.window.showTextDocument(doc);
-    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(
+      1,
+      0,
+      1,
+      0,
+    );
     await vscode.commands.executeCommand("markdown.runBlock");
     assert.ok(
       vscode.window.terminals.length > 0,
@@ -430,7 +451,12 @@ suite("Keyboard Shortcuts", function () {
     write("test-kb-terminal.md", "```" + shell + "\n" + command + "\n```\n");
     const doc = await open("test-kb-terminal.md");
     await vscode.window.showTextDocument(doc);
-    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(
+      1,
+      0,
+      1,
+      0,
+    );
     await vscode.commands.executeCommand("markdown.runInTerminal");
     assert.ok(
       vscode.window.terminals.length > 0,
@@ -442,11 +468,15 @@ suite("Keyboard Shortcuts", function () {
     write("test-kb-runon.md", "```python\nprint(10 + 72)\n```\n");
     const doc = await open("test-kb-runon.md");
     await vscode.window.showTextDocument(doc);
-    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
-    const { done } =
-      await vscode.commands.executeCommand<{ done: Promise<void> }>(
-        "markdown.runOnMarkdown",
-      );
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(
+      1,
+      0,
+      1,
+      0,
+    );
+    const { done } = await vscode.commands.executeCommand<{
+      done: Promise<void>;
+    }>("markdown.runOnMarkdown");
     await done;
     assert.match(doc.getText(), /```output\n[^]*82\n```/);
   });
@@ -455,7 +485,12 @@ suite("Keyboard Shortcuts", function () {
     write("test-kb-copy.md", "```python\nprint(10 + 72)\n```\n");
     const doc = await open("test-kb-copy.md");
     await vscode.window.showTextDocument(doc);
-    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(
+      1,
+      0,
+      1,
+      0,
+    );
     await vscode.commands.executeCommand("markdown.copy");
     assert.strictEqual(
       await vscode.env.clipboard.readText(),
@@ -467,7 +502,12 @@ suite("Keyboard Shortcuts", function () {
     write("test-kb-clear.md", "```python\nprint(10 + 72)\n```\n");
     const doc = await open("test-kb-clear.md");
     await vscode.window.showTextDocument(doc);
-    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(
+      1,
+      0,
+      1,
+      0,
+    );
     await vscode.commands.executeCommand("markdown.clear");
     assert.strictEqual(doc.getText(), "```python\n```\n");
   });
@@ -476,7 +516,12 @@ suite("Keyboard Shortcuts", function () {
     write("test-kb-delete.md", "```python\nprint(10 + 72)\n```\n");
     const doc = await open("test-kb-delete.md");
     await vscode.window.showTextDocument(doc);
-    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(
+      1,
+      0,
+      1,
+      0,
+    );
     await vscode.commands.executeCommand("markdown.delete");
     assert.strictEqual(doc.getText(), "");
   });
@@ -490,7 +535,12 @@ suite("Keyboard Shortcuts", function () {
       "while True: pass",
       new vscode.Range(0, 0, 2, 3),
     );
-    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(
+      1,
+      0,
+      1,
+      0,
+    );
     await vscode.commands.executeCommand("markdown.killProcess");
     await done;
     for (let i = 0; i < 20; i++) {
@@ -555,29 +605,32 @@ suite("Tabbed Code Blocks", function () {
   });
 
   test("Run on Markdown", async () => {
-    write(
-      "test-tabbed-runon.md",
-      "\t```python\nprint(10 + 72)\n\t```\n",
-    );
+    write("test-tabbed-runon.md", "\t```python\nprint(10 + 72)\n\t```\n");
     const doc = await open("test-tabbed-runon.md");
     await vscode.window.showTextDocument(doc);
-    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
-    const { done } =
-      await vscode.commands.executeCommand<{ done: Promise<void> }>(
-        "markdown.runOnMarkdown",
-      );
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(
+      1,
+      0,
+      1,
+      0,
+    );
+    const { done } = await vscode.commands.executeCommand<{
+      done: Promise<void>;
+    }>("markdown.runOnMarkdown");
     await done;
     assert.match(doc.getText(), /[ \t]*```output\n[^]*82\n[ \t]*```/);
   });
 
   test("Run Block", async () => {
-    write(
-      "test-tabbed-runblock.md",
-      "\t```bash\n\techo 82\n\t```\n",
-    );
+    write("test-tabbed-runblock.md", "\t```bash\n\techo 82\n\t```\n");
     const doc = await open("test-tabbed-runblock.md");
     await vscode.window.showTextDocument(doc);
-    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(
+      1,
+      0,
+      1,
+      0,
+    );
     await vscode.commands.executeCommand("markdown.runBlock");
     assert.ok(
       vscode.window.terminals.length > 0,
@@ -589,7 +642,12 @@ suite("Tabbed Code Blocks", function () {
     write("test-tabbed-copy.md", "\t```python\n\tprint(10 + 72)\n\t```\n");
     const doc = await open("test-tabbed-copy.md");
     await vscode.window.showTextDocument(doc);
-    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(
+      1,
+      0,
+      1,
+      0,
+    );
     await vscode.commands.executeCommand("markdown.copy");
     assert.strictEqual(
       await vscode.env.clipboard.readText(),
@@ -601,7 +659,12 @@ suite("Tabbed Code Blocks", function () {
     write("test-tabbed-delete.md", "\t```python\n\tprint(10 + 72)\n\t```\n");
     const doc = await open("test-tabbed-delete.md");
     await vscode.window.showTextDocument(doc);
-    vscode.window.activeTextEditor!.selection = new vscode.Selection(1, 0, 1, 0);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(
+      1,
+      0,
+      1,
+      0,
+    );
     await vscode.commands.executeCommand("markdown.delete");
     assert.strictEqual(doc.getText(), "");
   });

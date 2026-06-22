@@ -45,8 +45,20 @@ const add = (
 ) =>
   lenses.push(new vscode.CodeLens(range, { title, command, arguments: args }));
 
+// Get a TextEditor for the document. First checks visible editors, then
+// finally opens the document in a new editor.
+async function getEditor(
+  document: vscode.TextDocument,
+): Promise<vscode.TextEditor> {
+  const visibleEditor = vscode.window.visibleTextEditors.find(
+    (e) => e.document === document,
+  );
+  if (visibleEditor) return visibleEditor;
+  return await vscode.window.showTextDocument(document);
+}
+
 // Build the full list of CodeLenses for the active document.
-function provideCodeLenses(document: vscode.TextDocument) {
+async function provideCodeLenses(document: vscode.TextDocument) {
   const lenses: vscode.CodeLens[] = [];
   const buttons = vscode.workspace
     .getConfiguration()
@@ -60,6 +72,7 @@ function provideCodeLenses(document: vscode.TextDocument) {
   }
 
   // Buttons for each fenced code block in the document.
+  const editor = await getEditor(document);
   for (const match of document.getText().matchAll(blockRegex())) {
     const { lang, code, range } = parseBlock(document, match);
     const name = getLanguageConfig(lang, "interpreter")?.name || "";
@@ -75,7 +88,7 @@ function provideCodeLenses(document: vscode.TextDocument) {
       )
         add(lenses, range, "Run in Terminal", "markdown.runInTerminal", [code]);
 
-      const argsMark = [lang, code, range];
+      const argsMark = [lang, code, range, editor];
       const cmdMark = "markdown.runOnMarkdown";
       if (buttons["runOnMarkdown"])
         add(lenses, range, "Run on Markdown", cmdMark, argsMark);
@@ -84,9 +97,9 @@ function provideCodeLenses(document: vscode.TextDocument) {
     // Utility buttons available for every block regardless of language.
     if (buttons["copy"]) add(lenses, range, "Copy", "markdown.copy", [code]);
     if (buttons["clear"])
-      add(lenses, range, "Clear", "markdown.clear", [range]);
+      add(lenses, range, "Clear", "markdown.clear", [range, editor]);
     if (buttons["delete"])
-      add(lenses, range, "Delete", "markdown.delete", [range]);
+      add(lenses, range, "Delete", "markdown.delete", [range, editor]);
   }
 
   return lenses;
