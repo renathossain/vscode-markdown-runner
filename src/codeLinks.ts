@@ -12,7 +12,7 @@ import { blockRegex } from "./codeLens";
 // [^`\n]+ matches one or more characters that are neither a backtick nor
 // a newline, so the code cannot contain inner backticks or span multiple lines.
 // Flags: g = global (find all occurrences).
-const inlineRegex = () => /(?<!`+)`([^`\n]+?)`(?!`+)/g;
+export const inlineRegex = () => /(?<!`+)`([^`\n]+?)`(?!`+)/g;
 
 // Adds a clickable DocumentLink to each inline code span that runs the code
 // in the terminal when clicked.

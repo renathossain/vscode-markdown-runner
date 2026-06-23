@@ -115,12 +115,12 @@ Dimensions of the virtual terminal used to process ANSI escape sequences in `Run
 
 ### Keyboard Shortcuts
 
-Default keyboard shortcuts for executing code blocks:
+Default keyboard shortcuts for executing code blocks and inline snippets:
 
 - **Run Block**: `Ctrl+Alt+Enter`
-- **Run in Terminal**: `Ctrl+Alt+T` (for Bash and PowerShell code blocks only)
+- **Run in Terminal**: `Ctrl+Alt+T` (for Bash and PowerShell code blocks, or inline code snippets)
 - **Run on Markdown**: `Ctrl+Alt+M`
-- **Copy**: `Ctrl+Alt+C`
+- **Copy**: `Ctrl+Alt+C` (for code blocks or inline code snippets)
 - **Clear**: `Ctrl+Alt+Shift+D`
 - **Delete**: `Ctrl+Alt+D`
 - **Kill Process**: `Ctrl+Alt+K`

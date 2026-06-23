@@ -27,7 +27,11 @@
 
 import * as vscode from "vscode";
 import * as fs from "fs";
-import { InlineCodeLinkProvider, InlineCodeHoverProvider } from "./codeLinks";
+import {
+  InlineCodeLinkProvider,
+  InlineCodeHoverProvider,
+  inlineRegex,
+} from "./codeLinks";
 import { ButtonCodeLensProvider, blockRegex, parseBlock } from "./codeLens";
 import { runInTerminal, getRunCommand } from "./runInTerminal";
 import {
@@ -61,6 +65,24 @@ function getCurrentBlock() {
   return null;
 }
 
+// Find the inline code span at the cursor position. Returns null when inside a
+// fenced code block, no match is found, or no editor is active.
+function getCurrentLink() {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return null;
+  const docUri = editor.document.uri;
+  const cursor = editor.selection.active;
+  const offset = editor.document.offsetAt(cursor);
+  for (const match of editor.document.getText().matchAll(blockRegex()))
+    if (offset >= match.index && offset < match.index + match[0].length)
+      return null;
+  const range = editor.document.getWordRangeAtPosition(cursor, inlineRegex());
+  if (!range) return null;
+  const code = editor.document.getText(range).replace(/`/g, "");
+  if (!code) return null;
+  return { code, docUri };
+}
+
 // Shift a range's start/end lines by a given offset.
 const rangeOff = (range: vscode.Range, startOff: number, endOff: number) =>
   new vscode.Range(range.start.line + startOff, 0, range.end.line + endOff, 0);
@@ -80,7 +102,8 @@ const commands = {
   "markdown.runInTerminal": (code?: string) => {
     const block = code ? null : getCurrentBlock();
     if (block && !["bash", "powershell"].includes(block.lang)) return;
-    if (!(code ||= block?.code)) return;
+    const link = !block && !code ? getCurrentLink() : null;
+    if (!(code ||= block?.code || link?.code)) return;
     return runInTerminal(code);
   },
   "markdown.runOnMarkdown": async (
@@ -100,7 +123,8 @@ const commands = {
   },
   "markdown.copy": (code?: string) => {
     const block = code ? null : getCurrentBlock();
-    if (!(code ||= block?.code)) return;
+    const link = !block && !code ? getCurrentLink() : null;
+    if (!(code ||= block?.code || link?.code)) return;
     vscode.env.clipboard.writeText(code);
     vscode.window.setStatusBarMessage("Copied to clipboard!", 2000);
   },
