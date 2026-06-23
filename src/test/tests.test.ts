@@ -519,6 +519,46 @@ suite("Keyboard Shortcuts", function () {
     );
   });
 
+  test("Ctrl+Alt+T: runInTerminal with inline code", async () => {
+    const outputFile = tmp("test-kb-terminal-inline.output");
+    if (fs.existsSync(outputFile)) fs.unlinkSync(outputFile);
+    const shellCommand = `echo 82 > ${outputFile}`;
+    write("test-kb-terminal-inline.md", `Run \`${shellCommand}\` now`);
+    const doc = await open("test-kb-terminal-inline.md");
+    await vscode.window.showTextDocument(doc);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(
+      0,
+      5,
+      0,
+      5,
+    );
+    await vscode.commands.executeCommand("markdown.runInTerminal");
+    for (let i = 0; i < 100; i++) {
+      if (
+        fs.existsSync(outputFile) &&
+        fs.readFileSync(outputFile, "utf8").trim() === "82"
+      )
+        break;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    assert.strictEqual(fs.readFileSync(outputFile, "utf-8").trim(), "82");
+  });
+
+  test("Ctrl+Alt+C: copy with inline code", async () => {
+    await vscode.env.clipboard.writeText("__dummy_marker__");
+    write("test-kb-copy-inline.md", "Run `node -v` now");
+    const doc = await open("test-kb-copy-inline.md");
+    await vscode.window.showTextDocument(doc);
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(
+      0,
+      8,
+      0,
+      8,
+    );
+    await vscode.commands.executeCommand("markdown.copy");
+    assert.strictEqual(await vscode.env.clipboard.readText(), "node -v");
+  });
+
   test("Ctrl+Alt+Shift+D: clear", async () => {
     write("test-kb-clear.md", "```python\nprint(10 + 72)\n```\n");
     const doc = await open("test-kb-clear.md");
