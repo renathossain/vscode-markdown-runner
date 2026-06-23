@@ -52,7 +52,7 @@ export let codeLensProvider: ButtonCodeLensProvider | undefined;
 let disposables: vscode.Disposable[] = [];
 
 // Find the fenced code block at the cursor position in the active editor.
-// Returns null when no block is found or no editor is active.
+// Returns null when no editor is active, or no block is found.
 function getCurrentBlock() {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return null;
@@ -65,22 +65,17 @@ function getCurrentBlock() {
   return null;
 }
 
-// Find the inline code span at the cursor position. Returns null when inside a
-// fenced code block, no match is found, or no editor is active.
+// Find the inline code span at the cursor position.
+// Returns null when no editor is active, or no match is found.
 function getCurrentLink() {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return null;
-  const docUri = editor.document.uri;
   const cursor = editor.selection.active;
-  const offset = editor.document.offsetAt(cursor);
-  for (const match of editor.document.getText().matchAll(blockRegex()))
-    if (offset >= match.index && offset < match.index + match[0].length)
-      return null;
   const range = editor.document.getWordRangeAtPosition(cursor, inlineRegex());
   if (!range) return null;
   const code = editor.document.getText(range).replace(/`/g, "");
   if (!code) return null;
-  return { code, docUri };
+  return { code };
 }
 
 // Shift a range's start/end lines by a given offset.
