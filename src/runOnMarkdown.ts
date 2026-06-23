@@ -46,9 +46,14 @@ export async function deleteOnMarkdown(
 }
 
 // Starting from startLine, check if the first fenced code block is an ``output``
-// block. If so, return the range of its content (excluding the fences). Returns
-// null if no matching block is found or it is not immediately adjacent.
-function findOutputBlock(document: vscode.TextDocument, startLine: number) {
+// block whose indentation matches `indent`. If so, return the range of its
+// content (excluding the fences). Returns null if no matching block is found
+// or it is not immediately adjacent.
+function findOutputBlock(
+  document: vscode.TextDocument,
+  startLine: number,
+  indent: string,
+) {
   if (startLine < 0 || startLine >= document.lineCount) return null;
 
   const startOffset = document.offsetAt(new vscode.Position(startLine, 0));
@@ -60,6 +65,9 @@ function findOutputBlock(document: vscode.TextDocument, startLine: number) {
   if (lang !== "output") return null;
 
   if (slicedText.slice(0, match.index).split("\n").length !== 1) return null;
+
+  const blockIndent = match[0].match(/^[ \t]*/)?.[0] ?? "";
+  if (blockIndent !== indent) return null;
 
   const endLine = startLine + code.split("\n").length;
   return new vscode.Range(startLine + 1, 0, endLine, 0);
@@ -138,6 +146,7 @@ export function runOnMarkdown(
       const deleteRange = findOutputBlock(
         await vscode.workspace.openTextDocument(docUri),
         range.end.line + 2,
+        indent,
       );
       const outputBlock = `\n\n${indent}\`\`\`output\n${indentedContent}${indent}\`\`\``;
       const edit = new vscode.WorkspaceEdit();
@@ -169,7 +178,7 @@ export function runOnMarkdown(
     // child process starts
     await outputMutex.acquire();
     const outputDoc = await vscode.workspace.openTextDocument(docUri);
-    const existing = findOutputBlock(outputDoc, range.end.line + 2);
+    const existing = findOutputBlock(outputDoc, range.end.line + 2, indent);
     const emptyBlock = `\n\n${indent}\`\`\`output\n${indent}\`\`\``;
     const edit = new vscode.WorkspaceEdit();
     if (existing) edit.delete(docUri, existing);

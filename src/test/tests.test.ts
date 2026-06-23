@@ -652,6 +652,29 @@ suite("Tabbed Code Blocks", function () {
   this.timeout(60000);
   suiteSetup(setup);
 
+  test("Different Tabbing Level", async () => {
+    const code = "print(10 + 72)";
+    write(
+      "test-diff-tab.md",
+      "```python\n" + code + "\n```\n\n\t```output\nold\n\t```\n",
+    );
+    const doc = await open("test-diff-tab.md");
+    await vscode.window.showTextDocument(doc);
+    const range = new vscode.Range(0, 0, 2, 3);
+    const { done } = await runOnMarkdown("python", code, range);
+    await done;
+    const result = doc.getText();
+    assert.ok(
+      result.includes("\t```output\nold\n\t```"),
+      "tab-indented output should be preserved:\n" + JSON.stringify(result),
+    );
+    assert.ok(
+      result.indexOf("\n```output\n") >= 0,
+      "new unindented output block should be created:\n" +
+        JSON.stringify(result),
+    );
+  });
+
   test("CodeLens Detection", async () => {
     write("test-tabbed-lens.md", "\t```python\n\tprint(10 + 72)\n\t```\n");
     const doc = await open("test-tabbed-lens.md");

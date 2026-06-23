@@ -4,6 +4,7 @@
 
 - **New Feature**: Keyboard shortcuts for "Run in Terminal" (`Ctrl+Alt+T`) and "Copy" (`Ctrl+Alt+C`) now also work with inline code snippets (`code`), not just fenced code blocks.
 - **Bug Fix**: Closing the editor tab while "Run on Markdown" child processes are still running no longer permanently bricks the feature — previously the only way to recover was to restart VS Code.
+- **Bug Fix**: "Run on Markdown" no longer claims an existing output block at a different indentation level. If the code block and an existing output block have mismatched leading whitespace, the command now inserts a new output block at the correct indentation instead of corrupting the existing one.
 
 ## 3.1.0
 
