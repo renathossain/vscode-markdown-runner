@@ -48,7 +48,7 @@ export class InlineCodeHoverProvider implements vscode.HoverProvider {
     if (!range) return;
     const code = document.getText(range).replace(/`/g, "");
     const contents = new vscode.MarkdownString(
-      `[Copy to clipboard](command:markdown.copy?${encodeURIComponent(JSON.stringify([code]))})`,
+      `[Copy to clipboard](command:markdown.copy?${encodeURIComponent(JSON.stringify([{ code }]))})`,
     );
     return ((contents.isTrusted = true), new vscode.Hover(contents, range));
   }

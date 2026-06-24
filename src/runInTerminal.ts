@@ -9,7 +9,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as childProcess from "child_process";
-import { tempFilePaths } from "./extension";
+import { CodeBlock, tempFilePaths } from "./extension";
 
 const cfg = () => vscode.workspace.getConfiguration();
 
@@ -81,22 +81,18 @@ const compile = (cmd: string) =>
 // temp file, injects default boilerplate, compiles if a compiler is configured,
 // and returns the final interpreter/run command with template placeholders
 // (${path}, ${dir}, ${name}, ${ext}, ${exe}) filled in.
-export async function getRunCommand(
-  language: string,
-  code: string,
-  docUri: vscode.Uri,
-) {
-  const name = getBaseName(language, code);
+export async function getRunCommand(block: CodeBlock) {
+  const name = getBaseName(block.lang, block.code);
   if (!name) return "";
 
-  const compiler = getLanguageConfig(language, "compiler");
-  const interp = getLanguageConfig(language, "interpreter");
-  if (!interp) return showErr(`No interpreter configured for "${language}".`);
+  const compiler = getLanguageConfig(block.lang, "compiler");
+  const interp = getLanguageConfig(block.lang, "interpreter");
+  if (!interp) return showErr(`No interpreter configured for "${block.lang}".`);
 
   const dir = os.tmpdir();
   const base = path.join(dir, name);
 
-  code = injectDefaultCode(language, code, docUri);
+  const code = injectDefaultCode(block.lang, block.code, block.docUri);
 
   const compPath = compiler ? base + compiler.extension : "";
   const interpPath = base + interp.extension;
@@ -113,11 +109,11 @@ export async function getRunCommand(
   };
 
   const runCmd = fill(interp.command, interpPath, interp.extension);
-  if (!runCmd) return showErr(`No interpreter configured for "${language}".`);
+  if (!runCmd) return showErr(`No interpreter configured for "${block.lang}".`);
   if (!compiler) return runCmd;
 
   const compCmd = fill(compiler.command, compPath, compiler.extension);
-  if (!compCmd) return showErr(`No compiler configured for "${language}".`);
+  if (!compCmd) return showErr(`No compiler configured for "${block.lang}".`);
 
   return (await compile(compCmd))
     ? (tempFilePaths.push(interpPath), runCmd)

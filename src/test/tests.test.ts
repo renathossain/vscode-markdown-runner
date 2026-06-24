@@ -26,12 +26,16 @@ const setCfg = (config: string, value: unknown) =>
     .getConfiguration()
     .update(config, value, vscode.ConfigurationTarget.Global);
 const clearCfg = (config: string) => setCfg(config, undefined);
-const runOnMarkdown = (lang: string, code: string, range: vscode.Range) =>
+const runOnMarkdown = (block: {
+  lang: string;
+  code: string;
+  range: vscode.Range;
+  docUri: vscode.Uri;
+  pid: number;
+}) =>
   vscode.commands.executeCommand<{ pid: number; done: Promise<void> }>(
     "markdown.runOnMarkdown",
-    lang,
-    code,
-    range,
+    block,
   );
 
 const setup = async () => {
@@ -70,6 +74,13 @@ suite("CodeLens", function () {
     const provider = new ButtonCodeLensProvider();
     const lenses = await provider.provideCodeLenses(doc);
     const range = new vscode.Range(0, 0, 2, 3);
+    const blockArgs = {
+      docUri: doc.uri,
+      range,
+      lang: "python",
+      code: "print(10 + 72)\n",
+      pid: -1,
+    };
     assert.deepStrictEqual(
       lenses.map((x) => ({
         title: x.command?.title,
@@ -81,23 +92,33 @@ suite("CodeLens", function () {
         {
           title: "Run Python Block",
           command: "markdown.runBlock",
-          args: ["python", "print(10 + 72)\n"],
+          args: [blockArgs],
           range,
         },
         {
           title: "Run on Markdown",
           command: "markdown.runOnMarkdown",
-          args: ["python", "print(10 + 72)\n", range],
+          args: [blockArgs],
           range,
         },
         {
           title: "Copy",
           command: "markdown.copy",
-          args: ["print(10 + 72)\n"],
+          args: [blockArgs],
           range,
         },
-        { title: "Clear", command: "markdown.clear", args: [range], range },
-        { title: "Delete", command: "markdown.delete", args: [range], range },
+        {
+          title: "Clear",
+          command: "markdown.clear",
+          args: [blockArgs],
+          range,
+        },
+        {
+          title: "Delete",
+          command: "markdown.delete",
+          args: [blockArgs],
+          range,
+        },
       ],
     );
   });
@@ -156,7 +177,7 @@ suite("Inline Code Hover", function () {
     const doc = await open("test-hover.md");
     const provider = new InlineCodeHoverProvider();
     const hover = provider.provideHover(doc, new vscode.Position(0, 8));
-    const command = `[Copy to clipboard](command:markdown.copy?${encodeURIComponent(JSON.stringify(["node -v"]))})`;
+    const command = `[Copy to clipboard](command:markdown.copy?${encodeURIComponent(JSON.stringify([{ code: "node -v" }]))})`;
     assert.deepStrictEqual(
       hover,
       new vscode.Hover(
@@ -187,12 +208,13 @@ suite("Run File", function () {
   test("Python", async () => {
     const file = tmp("test-runblock.out");
     const code = `with open(r"${file.replace(/\\/g, "/")}", "w") as f: f.write(str(10 + 72))`;
-    await vscode.commands.executeCommand(
-      "markdown.runBlock",
-      "python",
+    await vscode.commands.executeCommand("markdown.runBlock", {
+      lang: "python",
       code,
-      vscode.Uri.file(file),
-    );
+      docUri: vscode.Uri.file(file),
+      range: new vscode.Range(0, 0, 0, 0),
+      pid: -1,
+    });
     for (let i = 0; i < 100; i++) {
       if (fs.existsSync(file) && fs.readFileSync(file, "utf8").trim() === "82")
         break;
@@ -240,7 +262,7 @@ suite("Run on Markdown", function () {
       doc.positionAt(text.indexOf("```")),
       doc.positionAt(text.lastIndexOf("```") + 3),
     );
-    const { done } = await runOnMarkdown(lang, code, range);
+    const { done } = await runOnMarkdown({ lang, code, range, docUri: doc.uri, pid: -1 });
     await done;
     const re = new RegExp(`\n\`\`\`output\n(.*)${output}\n\`\`\``, "s");
     for (let i = 0; i < 20; i++) {
@@ -283,7 +305,7 @@ sys.stdout.buffer.write('\\x1b[1G\\x1b[KThe\\x1b[3D\\x1b[KThe answer is 82\\n'.e
       doc.positionAt(text.indexOf("```")),
       doc.positionAt(text.lastIndexOf("```") + 3),
     );
-    const { done } = await runOnMarkdown("python", code, range);
+    const { done } = await runOnMarkdown({ lang: "python", code, range, docUri: doc.uri, pid: -1 });
     await done;
     const output = doc.getText();
     assert.match(output, /```output\n[^]*The answer is 82\n```\n/);
@@ -301,7 +323,7 @@ sys.stdout.buffer.write('\\x1b[1G\\x1b[KThe\\x1b[3D\\x1b[KThe answer is 82\\n'.e
       doc.positionAt(text.indexOf("```")),
       doc.positionAt(text.lastIndexOf("```") + 3),
     );
-    const { done } = await runOnMarkdown("python", code, range);
+    const { done } = await runOnMarkdown({ lang: "python", code, range, docUri: doc.uri, pid: -1 });
     await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
     await done;
     assert.match(doc.getText(), /```output\n[^]*a\n```\n/);
@@ -312,7 +334,7 @@ suite("Copy", function () {
   this.timeout(60000);
   suiteSetup(setup);
   test("Code", async () => {
-    await vscode.commands.executeCommand("markdown.copy", "node -v");
+    await vscode.commands.executeCommand("markdown.copy", { code: "node -v" });
     assert.strictEqual(await vscode.env.clipboard.readText(), "node -v");
   });
 });
@@ -325,7 +347,7 @@ suite("Delete", function () {
     const doc = await open("test-delete.md");
     await vscode.window.showTextDocument(doc);
     const range = new vscode.Range(0, 0, 2, 3);
-    await vscode.commands.executeCommand("markdown.delete", range);
+    await vscode.commands.executeCommand("markdown.delete", { code: "print(10 + 72)\n", lang: "python", docUri: doc.uri, range, pid: -1 });
     assert.strictEqual(doc.getText(), "");
   });
 });
@@ -341,14 +363,16 @@ suite("Kill Processes", function () {
     ).map((p) => p.pid);
   const run = async (file: string, command: string) => {
     fs.writeFileSync(file, command);
-    await vscode.workspace
-      .openTextDocument(file)
-      .then(vscode.window.showTextDocument);
-    return runOnMarkdown(
-      "python",
-      "while True: pass",
-      new vscode.Range(0, 0, 2, 3),
-    );
+    const doc = await vscode.workspace.openTextDocument(file);
+    await vscode.window.showTextDocument(doc);
+    const result = await runOnMarkdown({
+      lang: "python",
+      code: "while True: pass",
+      range: new vscode.Range(0, 0, 2, 3),
+      docUri: doc.uri,
+      pid: -1,
+    });
+    return { ...result, docUri: doc.uri };
   };
   const waitDead = async (pid: number, done: Promise<void>) => {
     try {
@@ -367,11 +391,11 @@ suite("Kill Processes", function () {
   };
   test("One", async () => {
     const file = tmp("kill-one.md");
-    const { pid, done } = await run(file, "```python\nwhile True: pass\n```");
+    const { pid, done, docUri } = await run(file, "```python\nwhile True: pass\n```");
     assert.ok((await pids()).includes(pid));
     await vscode.commands.executeCommand(
       "markdown.killProcess",
-      pid,
+      { pid, docUri },
       "SIGKILL",
     );
     assert.ok(!(await pids()).includes(pid));
@@ -398,11 +422,7 @@ suite("Code Manipulation", function () {
     write("test-python-path.md", `\`\`\`python\n${code}\n\`\`\`\n`);
     const doc = await open("test-python-path.md");
     await vscode.window.showTextDocument(doc);
-    const { done } = await runOnMarkdown(
-      "python",
-      code,
-      new vscode.Range(0, 0, 2, 3),
-    );
+    const { done } = await runOnMarkdown({ lang: "python", code, range: new vscode.Range(0, 0, 2, 3), docUri: doc.uri, pid: -1 });
     await done;
     assert.ok(doc.getText().includes("82"));
   });
@@ -411,11 +431,7 @@ suite("Code Manipulation", function () {
     write(fileName, text);
     const doc = await open(fileName);
     await vscode.window.showTextDocument(doc);
-    const { done } = await runOnMarkdown(
-      "python",
-      code,
-      new vscode.Range(0, 0, 2, 3),
-    );
+    const { done } = await runOnMarkdown({ lang: "python", code, range: new vscode.Range(0, 0, 2, 3), docUri: doc.uri, pid: -1 });
     await done;
     assert.strictEqual(
       doc.getText(),
@@ -591,11 +607,7 @@ suite("Keyboard Shortcuts", function () {
     write("test-kb-kill.md", "```python\nwhile True: pass\n```\n");
     const doc = await open("test-kb-kill.md");
     await vscode.window.showTextDocument(doc);
-    const { pid, done } = await runOnMarkdown(
-      "python",
-      "while True: pass",
-      new vscode.Range(0, 0, 2, 3),
-    );
+    const { pid, done } = await runOnMarkdown({ lang: "python", code: "while True: pass", range: new vscode.Range(0, 0, 2, 3), docUri: doc.uri, pid: -1 });
     vscode.window.activeTextEditor!.selection = new vscode.Selection(
       1,
       0,
@@ -624,11 +636,7 @@ suite("Keyboard Shortcuts", function () {
     write("test-kb-killall.md", "```python\nwhile True: pass\n```\n");
     const doc = await open("test-kb-killall.md");
     await vscode.window.showTextDocument(doc);
-    const { pid, done } = await runOnMarkdown(
-      "python",
-      "while True: pass",
-      new vscode.Range(0, 0, 2, 3),
-    );
+    const { pid, done } = await runOnMarkdown({ lang: "python", code: "while True: pass", range: new vscode.Range(0, 0, 2, 3), docUri: doc.uri, pid: -1 });
     await vscode.commands.executeCommand("markdown.killAllProcesses");
     await done;
     for (let i = 0; i < 20; i++) {
@@ -661,7 +669,7 @@ suite("Tabbed Code Blocks", function () {
     const doc = await open("test-diff-tab.md");
     await vscode.window.showTextDocument(doc);
     const range = new vscode.Range(0, 0, 2, 3);
-    const { done } = await runOnMarkdown("python", code, range);
+    const { done } = await runOnMarkdown({ lang: "python", code, range, docUri: doc.uri, pid: -1 });
     await done;
     const result = doc.getText();
     assert.ok(

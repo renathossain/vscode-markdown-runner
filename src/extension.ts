@@ -36,11 +36,20 @@ import { ButtonCodeLensProvider, blockRegex, parseBlock } from "./codeLens";
 import { runInTerminal, getRunCommand } from "./runInTerminal";
 import {
   childProcesses,
-  deleteOnMarkdown,
+  deleteBlock,
   runOnMarkdown,
   killProcess,
   killAllProcesses,
 } from "./runOnMarkdown";
+
+// Represents a code block extracted from a document
+export interface CodeBlock {
+  docUri: vscode.Uri;
+  range: vscode.Range;
+  lang: string;
+  code: string;
+  pid: number;
+}
 
 // Temp files created for compilation/execution; cleaned up on deactivation.
 export const tempFilePaths: string[] = [];
@@ -58,8 +67,7 @@ function getCurrentBlock() {
   if (!editor) return null;
   for (const match of editor.document.getText().matchAll(blockRegex())) {
     const block = parseBlock(editor.document, match);
-    if (block.range.contains(editor.selection.active))
-      return { ...block, docUri: editor.document.uri };
+    if (block.range.contains(editor.selection.active)) return block;
   }
   return null;
 }
@@ -82,65 +90,49 @@ const rangeOff = (range: vscode.Range, startOff: number, endOff: number) =>
 
 // Curried helper for clear/delete commands – only the offset differs.
 const clearOrDelete =
-  (startOff: number, endOff: number) =>
-  (range?: vscode.Range, docUri?: vscode.Uri) => {
-    const block = range && docUri ? null : getCurrentBlock();
-    if (!(range ||= block?.range) || !(docUri ||= block?.docUri)) return;
-    return deleteOnMarkdown(rangeOff(range, startOff, endOff), docUri);
+  (startOff: number, endOff: number) => (parsed?: CodeBlock) => {
+    const block = parsed ? parsed : getCurrentBlock();
+    if (!block) return;
+    const range = rangeOff(block.range, startOff, endOff);
+    return deleteBlock(block, range);
   };
 
 // Maps command IDs to their implementations.
 const commands = {
-  "markdown.runBlock": async (
-    lang?: string,
-    code?: string,
-    docUri?: vscode.Uri,
-  ) => {
-    const block = lang && code && docUri ? null : getCurrentBlock();
-    if (!(lang ||= block?.lang) || !(code ||= block?.code)) return;
-    if (!(docUri ||= block?.docUri)) return;
-    return runInTerminal(await getRunCommand(lang, code, docUri));
+  "markdown.runBlock": async (parsed?: CodeBlock) => {
+    const block = parsed ? parsed : getCurrentBlock();
+    if (!block) return;
+    return runInTerminal(await getRunCommand(block));
   },
-  "markdown.runInTerminal": (code?: string) => {
-    const block = code ? null : getCurrentBlock();
+  "markdown.runInTerminal": (parsed?: CodeBlock) => {
+    const block = parsed ? parsed : getCurrentBlock();
     if (block && !["bash", "powershell"].includes(block.lang)) return;
-    const link = !block && !code ? getCurrentLink() : null;
-    if (!(code ||= block?.code || link?.code)) return;
-    return runInTerminal(code);
+    const link = !block ? getCurrentLink() : null;
+    const command = block?.code || link?.code;
+    if (!command) return;
+    return runInTerminal(command);
   },
-  "markdown.runOnMarkdown": async (
-    lang?: string,
-    code?: string,
-    range?: vscode.Range,
-    docUri?: vscode.Uri,
-  ) => {
-    const block = lang && code && range && docUri ? null : getCurrentBlock();
-    if (!(lang ||= block?.lang) || !(code ||= block?.code)) return;
-    if (!(range ||= block?.range) || !(docUri ||= block?.docUri)) return;
-    return runOnMarkdown(
-      await getRunCommand(lang, code, docUri),
-      range,
-      docUri,
-    );
+  "markdown.runOnMarkdown": async (parsed?: CodeBlock) => {
+    const block = parsed ? parsed : getCurrentBlock();
+    if (!block) return;
+    return runOnMarkdown(block, await getRunCommand(block));
   },
-  "markdown.copy": (code?: string) => {
-    const block = code ? null : getCurrentBlock();
-    const link = !block && !code ? getCurrentLink() : null;
-    if (!(code ||= block?.code || link?.code)) return;
+  "markdown.copy": (parsed?: CodeBlock) => {
+    const code = parsed?.code ?? getCurrentBlock()?.code ?? getCurrentLink()?.code;
+    if (!code) return;
     vscode.env.clipboard.writeText(code);
     vscode.window.setStatusBarMessage("Copied to clipboard!", 2000);
   },
   "markdown.clear": clearOrDelete(1, 0),
   "markdown.delete": clearOrDelete(0, 1),
-  "markdown.killProcess": (pid?: number, signal?: string) => {
-    if (pid != null && signal != null) return killProcess(pid, signal);
-    const block = getCurrentBlock();
+  "markdown.killProcess": (parsed?: CodeBlock, signal?: string) => {
+    const block = parsed ? parsed : getCurrentBlock();
     if (!block) return;
-    const process = childProcesses.find(
-      (p) =>
-        p.pid === block.pid || p.docUri.toString() === block.docUri.toString(),
-    );
-    if (process) killProcess(process.pid, "SIGINT");
+    if (block.pid === -1) {
+      const child = childProcesses.find((c) => c.docUri.toString() === block.docUri.toString());
+      if (child) block.pid = child.pid;
+    }
+    return killProcess(block, signal ?? "SIGINT");
   },
   "markdown.killAllProcesses": killAllProcesses,
   "markdown._getProcesses": () => childProcesses,

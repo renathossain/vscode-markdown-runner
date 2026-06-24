@@ -10,7 +10,7 @@ import iconv from "iconv-lite";
 import Mutex from "semaphore-async-await";
 import treeKill from "tree-kill";
 import { parseBlock, blockRegex } from "./codeLens";
-import { codeLensProvider } from "./extension";
+import { CodeBlock, codeLensProvider } from "./extension";
 import { Terminal } from "@xterm/xterm";
 
 // Global mutex ensuring only one edit operation (delete or run) is in flight
@@ -36,15 +36,12 @@ killAllButton.text = "$(stop-circle) Kill All Processes";
 
 // Delete text in a range (Clear / Delete CodeLens). Acquires textEditMutex to
 // avoid racing with an active output stream. Silently skips if mutex is busy.
-export async function deleteOnMarkdown(
-  range: vscode.Range,
-  docUri: vscode.Uri,
-) {
+export async function deleteBlock(block: CodeBlock, range: vscode.Range) {
   await textEditMutex.acquire();
   const edit = new vscode.WorkspaceEdit();
-  edit.delete(docUri, range);
+  edit.delete(block.docUri, range);
   await vscode.workspace.applyEdit(edit);
-  await (await vscode.workspace.openTextDocument(docUri)).save();
+  await (await vscode.workspace.openTextDocument(block.docUri)).save();
   refreshAndRelease();
 }
 
@@ -73,11 +70,8 @@ function findOutputBlock(
 // Spawn a child process and stream its stdout/stderr into a ``output`` fenced
 // block below the source code block. Returns { pid, done } where done resolves
 // when the process exits and all output has been written.
-export function runOnMarkdown(
-  command: string,
-  range: vscode.Range,
-  docUri: vscode.Uri,
-) {
+export function runOnMarkdown(block: CodeBlock, command: string) {
+  const { docUri, range } = block;
   const failed = { pid: -1, done: async () => {} };
   if (!command || !docUri) return failed;
 
@@ -191,9 +185,11 @@ export function runOnMarkdown(
 }
 
 // Remove a PID from tracking and kill it with the given signal.
-export async function killProcess(pid: number, signal: string) {
-  childProcesses = childProcesses.filter((p) => p.pid !== pid);
-  treeKill(pid, signal);
+export async function killProcess(block: CodeBlock, signal: string) {
+  childProcesses = childProcesses.filter(
+    (p) => p.pid !== block.pid && p.docUri !== block.docUri,
+  );
+  if (block.pid !== -1) treeKill(block.pid, signal);
 }
 
 // Clear all tracked PIDs and kill every process with SIGKILL.
