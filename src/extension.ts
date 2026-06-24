@@ -60,7 +60,7 @@ function getCurrentBlock() {
   const cursor = editor.selection.active;
   for (const match of editor.document.getText().matchAll(blockRegex())) {
     const block = parseBlock(editor.document, match);
-    if (block.lang && block.range.contains(cursor)) return { ...block, docUri };
+    if (block.range.contains(cursor)) return { ...block, docUri };
   }
   return null;
 }
@@ -136,10 +136,8 @@ const commands = {
   "markdown.killProcess": (pid?: number, signal?: string) => {
     if (pid != null && signal != null) return killProcess(pid, signal);
     const block = getCurrentBlock();
-    if (!block) return;
-    const { lang, range } = block;
-    const outLine = lang === "output" ? range.start.line : range.end.line + 2;
-    const process = childProcesses.find((p) => p.line === outLine);
+    if (!block || !block.pid) return;
+    const process = childProcesses.find((p) => p.pid === block.pid);
     if (process) killProcess(process.pid, "SIGINT");
   },
   "markdown.killAllProcesses": killAllProcesses,

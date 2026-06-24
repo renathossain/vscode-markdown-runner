@@ -19,7 +19,14 @@ const textEditMutex = new Mutex(1);
 
 // Tracks active child PIDs and the document line where their output starts
 // (used by codeLens.ts to place Stop/Kill buttons).
-export let childProcesses: { pid: number; line: number }[] = [];
+export let childProcesses: {
+  pid: number;
+  docUri: vscode.Uri;
+}[] = [];
+
+// Global mutex ensuring only one process is modifying the childProcesses
+// datastructure at a time.
+const childProcessesMutex = new Mutex(1);
 
 // Status bar button to kill all running output processes at once.
 const killAlign = vscode.StatusBarAlignment.Left;
@@ -51,26 +58,19 @@ export async function deleteOnMarkdown(
 // or it is not immediately adjacent.
 function findOutputBlock(
   document: vscode.TextDocument,
-  startLine: number,
+  pid: number,
   indent: string,
 ) {
-  if (startLine < 0 || startLine >= document.lineCount) return null;
-
-  const startOffset = document.offsetAt(new vscode.Position(startLine, 0));
-  const slicedText = document.getText().slice(startOffset);
-
-  const match = blockRegex().exec(slicedText);
-  if (!match) return null;
-  const { lang, code } = parseBlock(document, match);
-  if (lang !== "output") return null;
-
-  if (slicedText.slice(0, match.index).split("\n").length !== 1) return null;
-
-  const blockIndent = match[0].match(/^[ \t]*/)?.[0] ?? "";
-  if (blockIndent !== indent) return null;
-
-  const endLine = startLine + code.split("\n").length;
-  return new vscode.Range(startLine + 1, 0, endLine, 0);
+  for (const match of document.getText().matchAll(blockRegex())) {
+    const block = parseBlock(document, match);
+    if (block.lang !== "output" || !block.pid) continue;
+    if (block.pid !== pid) continue;
+    const blockIndent = match[0].match(/^[ \t]*/)?.[0] ?? "";
+    if (blockIndent !== indent) continue;
+    const codeStart = block.range.start.line + 1;
+    return new vscode.Range(codeStart, 0, block.range.end.line, 0);
+  }
+  return null;
 }
 
 // Spawn a child process and stream its stdout/stderr into a ``output`` fenced
@@ -99,19 +99,22 @@ export function runOnMarkdown(
   }
 
   const child = childProcess.spawn(command, { shell: true });
-  if (child.pid == null) {
+  if (!child.pid) {
     vscode.window.showErrorMessage("Failed to start process.");
     textEditMutex.release();
     return failed;
   }
-
-  childProcesses.push({ pid: child.pid, line: range.end.line + 2 });
-  killAllButton.show();
+  const childPid = child.pid;
 
   // Orchestrates all output writing and cleanup. Three mutexes coordinate the
   // async pipeline: outputMutex serialises edits, exitMutex waits for the
   // process to exit, endMutex waits for the stdout stream to close.
   const done = (async () => {
+    await childProcessesMutex.acquire();
+    childProcesses.push({ pid: childPid, docUri });
+    killAllButton.show();
+    childProcessesMutex.release();
+
     const outputMutex = new Mutex(1);
     const exitMutex = new Mutex(0);
     const endMutex = new Mutex(0);
@@ -143,12 +146,9 @@ export function runOnMarkdown(
       const indentedContent = indent
         ? content.replace(/^.*$/gm, (l) => (l ? indent + l : l))
         : content;
-      const deleteRange = findOutputBlock(
-        await vscode.workspace.openTextDocument(docUri),
-        range.end.line + 2,
-        indent,
-      );
-      const outputBlock = `\n\n${indent}\`\`\`output\n${indentedContent}${indent}\`\`\``;
+      const outputDoc = await vscode.workspace.openTextDocument(docUri);
+      const deleteRange = findOutputBlock(outputDoc, childPid, indent);
+      const outputBlock = `\n\n${indent}\`\`\`output pid_${childPid}\n${indentedContent}${indent}\`\`\``;
       const edit = new vscode.WorkspaceEdit();
       if (deleteRange) {
         edit.delete(docUri, deleteRange);
@@ -178,8 +178,8 @@ export function runOnMarkdown(
     // child process starts
     await outputMutex.acquire();
     const outputDoc = await vscode.workspace.openTextDocument(docUri);
-    const existing = findOutputBlock(outputDoc, range.end.line + 2, indent);
-    const emptyBlock = `\n\n${indent}\`\`\`output\n${indent}\`\`\``;
+    const existing = findOutputBlock(outputDoc, childPid, indent);
+    const emptyBlock = `\n\n${indent}\`\`\`output pid_${childPid}\n${indent}\`\`\``;
     const edit = new vscode.WorkspaceEdit();
     if (existing) edit.delete(docUri, existing);
     else edit.insert(docUri, range.end, emptyBlock);
@@ -197,10 +197,15 @@ export function runOnMarkdown(
 
 // Remove a PID from tracking and kill it with the given signal.
 export async function killProcess(pid: number, signal: string) {
-  childProcesses = childProcesses.filter((process) => process.pid !== pid);
+  await childProcessesMutex.acquire();
+  childProcesses = childProcesses.filter((p) => p.pid !== pid);
   treeKill(pid, signal);
+  childProcessesMutex.release();
 }
 
 // Clear all tracked PIDs and kill every process with SIGKILL.
-export const killAllProcesses = () =>
+export async function killAllProcesses() {
+  await childProcessesMutex.acquire();
   childProcesses.splice(0).forEach(({ pid }) => treeKill(pid, "SIGKILL"));
+  childProcessesMutex.release();
+}

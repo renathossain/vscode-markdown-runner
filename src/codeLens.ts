@@ -23,7 +23,8 @@ export const blockRegex = () =>
 // sending formatting artifacts to interpreters/compilers.
 export function parseBlock(doc: vscode.TextDocument, match: RegExpExecArray) {
   const cleaned = match[2].trim().toLowerCase();
-  const lang = (cleaned.match(/^[\w+#]+/) ?? [""])[0];
+  const lang = cleaned.match(/^[\w+#]+/)?.[0] ?? "";
+  const pid = Number(cleaned.match(/^output pid_(\d+)/)?.[1] ?? -1);
   const start = doc.positionAt(match.index);
   const end = doc.positionAt(match.index + match[0].length);
   const indent = match[0].match(/^[ \t]*/)?.[0] ?? "";
@@ -32,7 +33,7 @@ export function parseBlock(doc: vscode.TextDocument, match: RegExpExecArray) {
         l.startsWith(indent) ? l.slice(indent.length) : l,
       )
     : match[3];
-  return { lang, code, range: new vscode.Range(start, end) };
+  return { lang, code, range: new vscode.Range(start, end), pid };
 }
 
 // Convenience helper to create and append a CodeLens.
@@ -52,18 +53,19 @@ async function provideCodeLenses(document: vscode.TextDocument) {
     .getConfiguration()
     .get<Record<string, boolean>>("markdownRunner.enabledButtons", {});
 
-  // Stop/kill buttons for any running child processes.
-  for (const { pid, line } of childProcesses) {
-    const range = new vscode.Range(line, 0, line, 0);
-    add(lenses, range, "Stop", "markdown.killProcess", [pid, "SIGINT"]);
-    add(lenses, range, "Kill", "markdown.killProcess", [pid, "SIGKILL"]);
-  }
-
   // Buttons for each fenced code block in the document.
   for (const match of document.getText().matchAll(blockRegex())) {
-    const { lang, code, range } = parseBlock(document, match);
-    const name = getLanguageConfig(lang, "interpreter")?.name || "";
+    const { lang, code, range, pid } = parseBlock(document, match);
 
+    // Stop/kill buttons for any running child processes.
+    for (const child of childProcesses) {
+      if (child.pid === pid && child.docUri === document.uri) {
+        add(lenses, range, "Stop", "markdown.killProcess", [pid, "SIGINT"]);
+        add(lenses, range, "Kill", "markdown.killProcess", [pid, "SIGKILL"]);
+      }
+    }
+
+    const name = getLanguageConfig(lang, "interpreter")?.name || "";
     if (name) {
       const argsRun = [lang, code, document.uri];
       if (buttons["runBlock"])
