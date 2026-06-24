@@ -19,10 +19,7 @@ const textEditMutex = new Mutex(1);
 
 // Tracks active child PIDs and the document line where their output starts
 // (used by codeLens.ts to place Stop/Kill buttons).
-export let childProcesses: {
-  pid: number;
-  docUri: vscode.Uri;
-}[] = [];
+export let childProcesses: { pid: number; docUri: vscode.Uri }[] = [];
 
 // Status bar button to kill all running output processes at once.
 const killAlign = vscode.StatusBarAlignment.Left;
@@ -95,10 +92,8 @@ export function runOnMarkdown(
   }
 
   const child = childProcess.spawn(command, { shell: true });
-  if (!child.pid) {
-    vscode.window.showErrorMessage("Failed to start process.");
-    return failed;
-  }
+  if (!child.pid)
+    return (vscode.window.showErrorMessage("Failed to start process."), failed);
   const childPid = child.pid;
   childProcesses.push({ pid: childPid, docUri });
   killAllButton.show();
@@ -111,17 +106,8 @@ export function runOnMarkdown(
     const endMutex = new Mutex(0);
     let indent = "";
 
-    // Read back the terminal buffer as plain text (all ANSI processed).
+    // Terminal buffer for ANSI processing
     const term = new Terminal({ cols, rows, convertEol: true });
-    const getTerminalText = (): string => {
-      const lines: string[] = [];
-      for (let y = 0; y < term.buffer.active.length; y++) {
-        const line = term.buffer.active.getLine(y);
-        if (line) lines.push(line.translateToString(true));
-      }
-      while (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
-      return lines.length > 0 ? lines.join("\n") + "\n" : "";
-    };
 
     // Decode a data chunk, let the virtual terminal process any ANSI sequences,
     // then replace the output block content with the rendered result.
@@ -130,7 +116,11 @@ export function runOnMarkdown(
       await textEditMutex.acquire();
       const decoded = iconv.decode(data, encoding);
       await new Promise<void>((resolve) => term.write(decoded, resolve));
-      const content = getTerminalText();
+      const lines: string[] = [];
+      for (let y = 0; y < term.buffer.active.length; y++)
+        lines.push(term.buffer.active.getLine(y)!.translateToString(true));
+      while (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
+      const content = lines.length > 0 ? lines.join("\n") + "\n" : "";
       const indentedContent = indent
         ? content.replace(/^.*$/gm, (l) => (l ? indent + l : l))
         : content;
@@ -192,8 +182,7 @@ export function runOnMarkdown(
     await vscode.workspace.applyEdit(edit);
     textEditMutex.release();
 
-    await exitMutex.acquire();
-    await endMutex.acquire();
+    void (await exitMutex.acquire(), await endMutex.acquire());
     codeLensProvider?.refresh();
   })();
 
