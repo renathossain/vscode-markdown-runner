@@ -136,6 +136,7 @@ export function runOnMarkdown(
         edit.insert(docUri, deleteRange.start, indentedContent);
       } else edit.insert(docUri, range.end, outputStr);
       await vscode.workspace.applyEdit(edit);
+      codeLensProvider?.refresh();
       textEditMutex.release();
     };
 
@@ -160,6 +161,7 @@ export function runOnMarkdown(
         await vscode.workspace.applyEdit(edit);
       }
       await textDoc.save();
+      codeLensProvider?.refresh();
       textEditMutex.release();
       endMutex.release();
     });
@@ -180,10 +182,10 @@ export function runOnMarkdown(
       edit.insert(docUri, outTag.range.end, ` pid_${childPid}`);
     } else edit.insert(docUri, range.end, outputStr);
     await vscode.workspace.applyEdit(edit);
+    codeLensProvider?.refresh();
     textEditMutex.release();
 
     void (await exitMutex.acquire(), await endMutex.acquire());
-    codeLensProvider?.refresh();
   })();
 
   return { pid: child.pid, done };
