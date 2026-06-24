@@ -149,8 +149,7 @@ export function runOnMarkdown(block: CodeBlock, command: string) {
       const textDoc = await vscode.workspace.openTextDocument(docUri);
       const outputBlock = findOutputBlock(textDoc, child.pid!, indent, range);
       if (outputBlock) {
-        const tagLine = outputBlock.range.start.line;
-        const tagRange = textDoc.lineAt(tagLine).range;
+        const tagRange = textDoc.lineAt(outputBlock.range.start.line).range;
         const edit = new vscode.WorkspaceEdit();
         edit.replace(docUri, tagRange, `\`\`\`output`);
         await vscode.workspace.applyEdit(edit);

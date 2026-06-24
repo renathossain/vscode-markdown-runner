@@ -69,19 +69,15 @@ async function provideCodeLenses(document: vscode.TextDocument) {
     }
 
     const name = getLanguageConfig(lang, "interpreter")?.name || "";
-    if (name) {
-      if (buttons["runBlock"])
-        add(lenses, range, `Run ${name} Block`, "markdown.runBlock", args);
+    if (name && buttons["runBlock"])
+      add(lenses, range, `Run ${name} Block`, "markdown.runBlock", args);
 
-      if (
-        buttons["runInTerminal"] &&
-        (lang === "bash" || lang === "powershell")
-      )
-        add(lenses, range, "Run in Terminal", "markdown.runInTerminal", args);
+    const isShell = lang === "bash" || lang === "powershell";
+    if (name && buttons["runInTerminal"] && isShell)
+      add(lenses, range, "Run in Terminal", "markdown.runInTerminal", args);
 
-      if (buttons["runOnMarkdown"])
-        add(lenses, range, "Run on Markdown", "markdown.runOnMarkdown", args);
-    }
+    if (name && buttons["runOnMarkdown"])
+      add(lenses, range, "Run on Markdown", "markdown.runOnMarkdown", args);
 
     // Utility buttons available for every block regardless of language.
     if (buttons["copy"]) add(lenses, range, "Copy", "markdown.copy", args);

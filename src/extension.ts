@@ -80,8 +80,7 @@ function getCurrentLink() {
   const cursor = editor.selection.active;
   const range = editor.document.getWordRangeAtPosition(cursor, inlineRegex());
   if (!range) return null;
-  const code = editor.document.getText(range).replace(/`/g, "");
-  return code ? { code } : null;
+  return { code: editor.document.getText(range).replace(/`/g, "") };
 }
 
 // Shift a range's start/end lines by a given offset.
