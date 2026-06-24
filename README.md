@@ -130,10 +130,6 @@ Customize these shortcuts via VS Code's Keyboard Shortcuts editor (`Ctrl+K Ctrl+
 
 ## Future Development
 
-Planned features (no guarantee):
-
-- Support for multiple `Run on Markdown` output streams.
-
 Your feedback and contributions are welcome in shaping the future of this extension!
 
 ## License
