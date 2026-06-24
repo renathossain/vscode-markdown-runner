@@ -167,10 +167,9 @@ export function runOnMarkdown(
       const outputBlock = findOutputBlock(textDoc, childPid, indent, range);
       if (outputBlock) {
         const tagLine = outputBlock.range.start.line;
-        const deleteRange = new vscode.Range(tagLine, 0, tagLine + 1, 0);
+        const tagRange = textDoc.lineAt(tagLine).range;
         const edit = new vscode.WorkspaceEdit();
-        edit.delete(docUri, deleteRange);
-        edit.insert(docUri, deleteRange.start, `\`\`\`output\n`);
+        edit.replace(docUri, tagRange, `\`\`\`output`);
         await vscode.workspace.applyEdit(edit);
       }
       await textDoc.save();
@@ -191,7 +190,7 @@ export function runOnMarkdown(
       const outEnd = outputBlock.range.end.line;
       edit.delete(docUri, new vscode.Range(outStart, 0, outEnd, 0));
       const outTag = textDoc.lineAt(outStart - 1);
-      edit.replace(docUri, outTag.range, outTag.text + ` pid_${childPid}`);
+      edit.insert(docUri, outTag.range.end, ` pid_${childPid}`);
     } else edit.insert(docUri, range.end, outputStr);
     await vscode.workspace.applyEdit(edit);
     outputMutex.release();
