@@ -9,8 +9,8 @@ import * as childProcess from "child_process";
 import iconv from "iconv-lite";
 import Mutex from "semaphore-async-await";
 import treeKill from "tree-kill";
-import { parseBlock, blockRegex } from "./codeLens";
-import { CodeBlock, codeLensProvider, getCurrentBlock } from "./extension";
+import { parseBlock, blockRegex, CodeBlock } from "./codeLens";
+import { codeLensProvider, getCurrentBlock } from "./extension";
 import { Terminal } from "@xterm/xterm";
 
 // Global mutex ensuring only one edit operation (delete or run) is in flight

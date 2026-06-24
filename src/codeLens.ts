@@ -8,6 +8,15 @@ import * as vscode from "vscode";
 import { getLanguageConfig } from "./runInTerminal";
 import { childProcesses } from "./runOnMarkdown";
 
+// Represents a code block extracted from a document
+export interface CodeBlock {
+  docUri: vscode.Uri;
+  range: vscode.Range;
+  lang: string;
+  code: string;
+  pid: number;
+}
+
 // Matches fenced code blocks, with support for leading whitespace (tabs/spaces)
 // before both the opening and closing fences. Each group is enclosed within
 // brackets e.g. (`{3,}). Group 1 captures the opening fence (3+ backticks) and
@@ -47,54 +56,81 @@ const add = (
 ) =>
   lenses.push(new vscode.CodeLens(range, { title, command, arguments: args }));
 
-// Build the full list of CodeLenses for the active document.
-async function provideCodeLenses(document: vscode.TextDocument) {
-  const lenses: vscode.CodeLens[] = [];
-  const buttons = vscode.workspace
-    .getConfiguration()
-    .get<Record<string, boolean>>("markdownRunner.enabledButtons", {});
-
-  // Buttons for each fenced code block in the document.
-  for (const match of document.getText().matchAll(blockRegex())) {
-    const block = parseBlock(document, match);
-    const args = [block];
-    const { docUri, range, lang, pid } = block;
-
-    // Stop/kill buttons for any running child processes.
-    for (const child of childProcesses) {
-      if (child.pid === pid && child.docUri === docUri) {
-        add(lenses, range, "Stop", "markdown.killProcess", [block, "SIGINT"]);
-        add(lenses, range, "Kill", "markdown.killProcess", [block, "SIGKILL"]);
-      }
-    }
-
-    const name = getLanguageConfig(lang, "interpreter")?.name || "";
-    if (name && buttons["runBlock"])
-      add(lenses, range, `Run ${name} Block`, "markdown.runBlock", args);
-
-    const isShell = lang === "bash" || lang === "powershell";
-    if (name && buttons["runInTerminal"] && isShell)
-      add(lenses, range, "Run in Terminal", "markdown.runInTerminal", args);
-
-    if (name && buttons["runOnMarkdown"])
-      add(lenses, range, "Run on Markdown", "markdown.runOnMarkdown", args);
-
-    // Utility buttons available for every block regardless of language.
-    if (buttons["copy"]) add(lenses, range, "Copy", "markdown.copy", args);
-    if (buttons["clear"]) add(lenses, range, "Clear", "markdown.clear", args);
-    if (buttons["delete"])
-      add(lenses, range, "Delete", "markdown.delete", args);
-  }
-
-  return lenses;
-}
-
 // CodeLens provider overlaying action buttons on fenced code blocks.
 export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
+  readonly blocks = new Map<string, CodeBlock[]>();
+
   private _emitter = new vscode.EventEmitter<void>();
   onDidChangeCodeLenses = this._emitter.event;
-  provideCodeLenses = provideCodeLenses;
+
+  provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
+    const uri = document.uri.toString();
+    if (!this.blocks.has(uri))
+      this.blocks.set(uri, this._parseDocument(document));
+    return this._buildLenses(document.uri, this.blocks.get(uri)!);
+  }
+
+  handleDocumentChange(doc: vscode.TextDocument): void {
+    this.blocks.set(doc.uri.toString(), this._parseDocument(doc));
+    this._emitter.fire();
+  }
+
+  handleDocumentClose(uri: vscode.Uri): void {
+    this.blocks.delete(uri.toString());
+  }
 
   // Force the editor to regenerate lenses (e.g. after a process starts/stops).
-  public refresh = () => this._emitter.fire();
+  refresh(): void {
+    this._emitter.fire();
+  }
+
+  private _parseDocument(doc: vscode.TextDocument): CodeBlock[] {
+    const blocks: CodeBlock[] = [];
+    for (const match of doc.getText().matchAll(blockRegex()))
+      blocks.push(parseBlock(doc, match));
+    return blocks;
+  }
+
+  private _buildLenses(docUri: vscode.Uri, blocks: CodeBlock[]) {
+    const lenses: vscode.CodeLens[] = [];
+    const buttons = vscode.workspace
+      .getConfiguration()
+      .get<Record<string, boolean>>("markdownRunner.enabledButtons", {});
+
+    for (const block of blocks) {
+      const args = [block];
+      const { range, lang, pid } = block;
+
+      for (const child of childProcesses) {
+        if (
+          child.pid === pid &&
+          child.docUri.toString() === docUri.toString()
+        ) {
+          add(lenses, range, "Stop", "markdown.killProcess", [block, "SIGINT"]);
+          add(lenses, range, "Kill", "markdown.killProcess", [
+            block,
+            "SIGKILL",
+          ]);
+        }
+      }
+
+      const name = getLanguageConfig(lang, "interpreter")?.name || "";
+      if (name && buttons["runBlock"])
+        add(lenses, range, `Run ${name} Block`, "markdown.runBlock", args);
+
+      const isShell = lang === "bash" || lang === "powershell";
+      if (name && buttons["runInTerminal"] && isShell)
+        add(lenses, range, "Run in Terminal", "markdown.runInTerminal", args);
+
+      if (name && buttons["runOnMarkdown"])
+        add(lenses, range, "Run on Markdown", "markdown.runOnMarkdown", args);
+
+      if (buttons["copy"]) add(lenses, range, "Copy", "markdown.copy", args);
+      if (buttons["clear"]) add(lenses, range, "Clear", "markdown.clear", args);
+      if (buttons["delete"])
+        add(lenses, range, "Delete", "markdown.delete", args);
+    }
+
+    return lenses;
+  }
 }

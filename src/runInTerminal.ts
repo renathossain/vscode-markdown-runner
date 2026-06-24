@@ -9,7 +9,8 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as childProcess from "child_process";
-import { CodeBlock, tempFilePaths } from "./extension";
+import { CodeBlock } from "./codeLens";
+import { tempFilePaths } from "./extension";
 
 const cfg = () => vscode.workspace.getConfiguration();
 

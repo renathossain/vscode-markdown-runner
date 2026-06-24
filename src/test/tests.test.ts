@@ -72,7 +72,7 @@ suite("CodeLens", function () {
     write("test-lens.md", "```python\nprint(10 + 72)\n```\n");
     const doc = await open("test-lens.md");
     const provider = new ButtonCodeLensProvider();
-    const lenses = await provider.provideCodeLenses(doc);
+    const lenses = provider.provideCodeLenses(doc);
     const range = new vscode.Range(0, 0, 2, 3);
     const blockArgs = {
       docUri: doc.uri,
@@ -133,9 +133,7 @@ suite("CodeLens", function () {
       const doc = await open("test-enabled-buttons.md");
       const provider = new ButtonCodeLensProvider();
       assert.deepStrictEqual(
-        (await provider.provideCodeLenses(doc)).map(
-          (lens) => lens.command?.title,
-        ),
+        provider.provideCodeLenses(doc).map((lens) => lens.command?.title),
         ["Run on Markdown", "Clear"],
       );
     } finally {

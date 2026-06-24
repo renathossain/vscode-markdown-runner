@@ -32,7 +32,12 @@ import {
   InlineCodeHoverProvider,
   inlineRegex,
 } from "./codeLinks";
-import { ButtonCodeLensProvider, blockRegex, parseBlock } from "./codeLens";
+import {
+  ButtonCodeLensProvider,
+  blockRegex,
+  parseBlock,
+  CodeBlock,
+} from "./codeLens";
 import { runInTerminal, getRunCommand } from "./runInTerminal";
 import {
   childProcesses,
@@ -41,15 +46,6 @@ import {
   killProcess,
   killAllProcesses,
 } from "./runOnMarkdown";
-
-// Represents a code block extracted from a document
-export interface CodeBlock {
-  docUri: vscode.Uri;
-  range: vscode.Range;
-  lang: string;
-  code: string;
-  pid: number;
-}
 
 // Temp files created for compilation/execution; cleaned up on deactivation.
 export const tempFilePaths: string[] = [];
@@ -162,6 +158,19 @@ export function activate(context: vscode.ExtensionContext) {
         registerProviders(context);
       if (e.affectsConfiguration("markdownRunner.enabledButtons"))
         codeLensProvider?.refresh();
+    }),
+    vscode.workspace.onDidChangeTextDocument((e) => {
+      if (!codeLensProvider) return;
+      if (
+        e.document.languageId !== "markdown" &&
+        e.document.languageId !== "quarto"
+      )
+        return;
+      if (e.contentChanges.length === 0) return;
+      codeLensProvider.handleDocumentChange(e.document);
+    }),
+    vscode.workspace.onDidCloseTextDocument((e) => {
+      codeLensProvider?.handleDocumentClose(e.uri);
     }),
     ...Object.entries(commands).map(([command, handler]) =>
       vscode.commands.registerCommand(command, handler),
