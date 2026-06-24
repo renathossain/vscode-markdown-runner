@@ -24,7 +24,7 @@ export const blockRegex = () =>
 export function parseBlock(doc: vscode.TextDocument, match: RegExpExecArray) {
   const cleaned = match[2].trim().toLowerCase();
   const lang = cleaned.match(/^[\w+#]+/)?.[0] ?? "";
-  const pid = Number(cleaned.match(/^output pid_(\d+)/)?.[1] ?? -1);
+  const pid = Number(cleaned.match(/pid_(\d+)$/)?.[1] ?? -1);
   const start = doc.positionAt(match.index);
   const end = doc.positionAt(match.index + match[0].length);
   const indent = match[0].match(/^[ \t]*/)?.[0] ?? "";

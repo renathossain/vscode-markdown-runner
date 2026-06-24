@@ -120,23 +120,21 @@ export function runOnMarkdown(
     const exitMutex = new Mutex(0);
     const endMutex = new Mutex(0);
 
-    const doc = await vscode.workspace.openTextDocument(docUri);
-    const indent =
-      doc.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
-
     // Create an empty output block (or clear an existing one) as soon as the
     // child process starts
     await outputMutex.acquire();
     const textDoc = await vscode.workspace.openTextDocument(docUri);
+    const indent =
+      textDoc.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
     const outputBlock = findOutputBlock(textDoc, -1, indent, range);
     const outputStr = `\n\n${indent}\`\`\`output pid_${childPid}\n${indent}\`\`\``;
     const edit = new vscode.WorkspaceEdit();
     if (outputBlock) {
-      const deleteStart = outputBlock.range.start.line;
-      const deleteEnd = outputBlock.range.end.line;
-      const deleteRange = new vscode.Range(deleteStart, 0, deleteEnd, 0);
-      edit.delete(docUri, deleteRange);
-      edit.insert(docUri, deleteRange.start, `\`\`\`output pid_${childPid}\n`);
+      const outStart = outputBlock.range.start.line + 1;
+      const outEnd = outputBlock.range.end.line;
+      edit.delete(docUri, new vscode.Range(outStart, 0, outEnd, 0));
+      const outTag = textDoc.lineAt(outStart - 1);
+      edit.replace(docUri, outTag.range, outTag.text + ` pid_${childPid}`);
     } else edit.insert(docUri, range.end, outputStr);
     await vscode.workspace.applyEdit(edit);
     outputMutex.release();
