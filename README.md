@@ -49,7 +49,7 @@ For other systems, research language installation or use the [Windows Subsystem 
 
 ## Demo File
 
-Download or copy [DEMO.md](DEMO.md)/[DEMO.qmd](DEMO.qmd) and the [demo_helpers](demo_helpers) folder into VS Code after installing this extension, and test all the features out!
+Download or copy [DEMO.md](DEMO.md) and the [demo_helpers](demo_helpers) folder into VS Code after installing this extension, and test all the features out!
 
 ## Extension Settings
 
