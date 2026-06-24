@@ -39,7 +39,7 @@ export async function deleteOnMarkdown(
   range: vscode.Range,
   docUri: vscode.Uri,
 ) {
-  if (!textEditMutex.tryAcquire()) return;
+  await textEditMutex.acquire();
   const edit = new vscode.WorkspaceEdit();
   edit.delete(docUri, range);
   await vscode.workspace.applyEdit(edit);
@@ -79,7 +79,7 @@ export function runOnMarkdown(
   docUri: vscode.Uri,
 ) {
   const failed = { pid: -1, done: async () => {} };
-  if (!command || !docUri || !textEditMutex.tryAcquire()) return failed;
+  if (!command || !docUri) return failed;
 
   const config = vscode.workspace.getConfiguration();
   const encoding = config.get<string>("markdownRunner.outputEncoding", "utf8");
@@ -91,14 +91,12 @@ export function runOnMarkdown(
   if (!iconv.encodingExists(encoding)) {
     const errorMessage = `Invalid output encoding "${encoding}". See https://github.com/pillarjs/iconv-lite/wiki/Supported-Encodings`;
     vscode.window.showErrorMessage(errorMessage);
-    textEditMutex.release();
     return failed;
   }
 
   const child = childProcess.spawn(command, { shell: true });
   if (!child.pid) {
     vscode.window.showErrorMessage("Failed to start process.");
-    textEditMutex.release();
     return failed;
   }
   const childPid = child.pid;
@@ -109,7 +107,6 @@ export function runOnMarkdown(
   // async pipeline: outputMutex serialises edits, exitMutex waits for the
   // process to exit, endMutex waits for the stdout stream to close.
   const done = (async () => {
-    const outputMutex = new Mutex(1);
     const exitMutex = new Mutex(0);
     const endMutex = new Mutex(0);
     let indent = "";
@@ -130,7 +127,7 @@ export function runOnMarkdown(
     // then replace the output block content with the rendered result.
     // The output block is indented to match the source code block's fence line.
     const writer = async (data: Buffer) => {
-      await outputMutex.acquire();
+      await textEditMutex.acquire();
       const decoded = iconv.decode(data, encoding);
       await new Promise<void>((resolve) => term.write(decoded, resolve));
       const content = getTerminalText();
@@ -149,7 +146,7 @@ export function runOnMarkdown(
         edit.insert(docUri, deleteRange.start, indentedContent);
       } else edit.insert(docUri, range.end, outputStr);
       await vscode.workspace.applyEdit(edit);
-      outputMutex.release();
+      textEditMutex.release();
     };
 
     child.stdout.on("data", writer);
@@ -162,7 +159,7 @@ export function runOnMarkdown(
     });
 
     child.stdout.on("end", async () => {
-      await outputMutex.acquire();
+      await textEditMutex.acquire();
       const textDoc = await vscode.workspace.openTextDocument(docUri);
       const outputBlock = findOutputBlock(textDoc, childPid, indent, range);
       if (outputBlock) {
@@ -173,13 +170,13 @@ export function runOnMarkdown(
         await vscode.workspace.applyEdit(edit);
       }
       await textDoc.save();
-      outputMutex.release();
+      textEditMutex.release();
       endMutex.release();
     });
 
     // Create an empty output block (or clear an existing one) as soon as the
     // child process starts
-    await outputMutex.acquire();
+    await textEditMutex.acquire();
     const textDoc = await vscode.workspace.openTextDocument(docUri);
     indent = textDoc.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
     const outputBlock = findOutputBlock(textDoc, -1, indent, range);
@@ -193,12 +190,11 @@ export function runOnMarkdown(
       edit.insert(docUri, outTag.range.end, ` pid_${childPid}`);
     } else edit.insert(docUri, range.end, outputStr);
     await vscode.workspace.applyEdit(edit);
-    outputMutex.release();
+    textEditMutex.release();
 
     await exitMutex.acquire();
     await endMutex.acquire();
     codeLensProvider?.refresh();
-    textEditMutex.release();
   })();
 
   return { pid: child.pid, done };
