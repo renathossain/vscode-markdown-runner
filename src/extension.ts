@@ -56,11 +56,10 @@ let disposables: vscode.Disposable[] = [];
 function getCurrentBlock() {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return null;
-  const docUri = editor.document.uri;
-  const cursor = editor.selection.active;
   for (const match of editor.document.getText().matchAll(blockRegex())) {
     const block = parseBlock(editor.document, match);
-    if (block.range.contains(cursor)) return { ...block, docUri };
+    if (block.range.contains(editor.selection.active))
+      return { ...block, docUri: editor.document.uri };
   }
   return null;
 }
@@ -74,13 +73,21 @@ function getCurrentLink() {
   const range = editor.document.getWordRangeAtPosition(cursor, inlineRegex());
   if (!range) return null;
   const code = editor.document.getText(range).replace(/`/g, "");
-  if (!code) return null;
-  return { code };
+  return code ? { code } : null;
 }
 
 // Shift a range's start/end lines by a given offset.
 const rangeOff = (range: vscode.Range, startOff: number, endOff: number) =>
   new vscode.Range(range.start.line + startOff, 0, range.end.line + endOff, 0);
+
+// Curried helper for clear/delete commands – only the offset differs.
+const clearOrDelete =
+  (startOff: number, endOff: number) =>
+  (range?: vscode.Range, docUri?: vscode.Uri) => {
+    const block = range && docUri ? null : getCurrentBlock();
+    if (!(range ||= block?.range) || !(docUri ||= block?.docUri)) return;
+    return deleteOnMarkdown(rangeOff(range, startOff, endOff), docUri);
+  };
 
 // Maps command IDs to their implementations.
 const commands = {
@@ -123,16 +130,8 @@ const commands = {
     vscode.env.clipboard.writeText(code);
     vscode.window.setStatusBarMessage("Copied to clipboard!", 2000);
   },
-  "markdown.clear": (range?: vscode.Range, docUri?: vscode.Uri) => {
-    const block = range && docUri ? null : getCurrentBlock();
-    if (!(range ||= block?.range) || !(docUri ||= block?.docUri)) return;
-    return deleteOnMarkdown(rangeOff(range, 1, 0), docUri);
-  },
-  "markdown.delete": (range?: vscode.Range, docUri?: vscode.Uri) => {
-    const block = range && docUri ? null : getCurrentBlock();
-    if (!(range ||= block?.range) || !(docUri ||= block?.docUri)) return;
-    return deleteOnMarkdown(rangeOff(range, 0, 1), docUri);
-  },
+  "markdown.clear": clearOrDelete(1, 0),
+  "markdown.delete": clearOrDelete(0, 1),
   "markdown.killProcess": (pid?: number, signal?: string) => {
     if (pid != null && signal != null) return killProcess(pid, signal);
     const block = getCurrentBlock();

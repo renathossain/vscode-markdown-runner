@@ -17,6 +17,10 @@ import { Terminal } from "@xterm/xterm";
 // at a time, preventing interleaved writes to the document.
 const textEditMutex = new Mutex(1);
 
+// Combined refresh + release for use after edit operations.
+const refreshAndRelease = () =>
+  void (codeLensProvider?.refresh(), textEditMutex.release());
+
 // Tracks active child PIDs and the document line where their output starts
 // (used by codeLens.ts to place Stop/Kill buttons).
 export let childProcesses: { pid: number; docUri: vscode.Uri }[] = [];
@@ -41,8 +45,7 @@ export async function deleteOnMarkdown(
   edit.delete(docUri, range);
   await vscode.workspace.applyEdit(edit);
   await (await vscode.workspace.openTextDocument(docUri)).save();
-  codeLensProvider?.refresh();
-  textEditMutex.release();
+  refreshAndRelease();
 }
 
 // Starting from startLine, check if the first fenced code block is an ``output``
@@ -94,8 +97,7 @@ export function runOnMarkdown(
   const child = childProcess.spawn(command, { shell: true });
   if (!child.pid)
     return (vscode.window.showErrorMessage("Failed to start process."), failed);
-  const childPid = child.pid;
-  childProcesses.push({ pid: childPid, docUri });
+  childProcesses.push({ pid: child.pid, docUri });
   killAllButton.show();
 
   // Orchestrates all output writing and cleanup. Three mutexes coordinate the
@@ -125,8 +127,8 @@ export function runOnMarkdown(
         ? content.replace(/^.*$/gm, (l) => (l ? indent + l : l))
         : content;
       const textDoc = await vscode.workspace.openTextDocument(docUri);
-      const outputBlock = findOutputBlock(textDoc, childPid, indent, range);
-      const outputStr = `\n\n${indent}\`\`\`output pid_${childPid}\n${indentedContent}${indent}\`\`\``;
+      const outputBlock = findOutputBlock(textDoc, child.pid!, indent, range);
+      const outputStr = `\n\n${indent}\`\`\`output pid_${child.pid}\n${indentedContent}${indent}\`\`\``;
       const edit = new vscode.WorkspaceEdit();
       if (outputBlock) {
         const deleteStart = outputBlock.range.start.line + 1;
@@ -136,8 +138,7 @@ export function runOnMarkdown(
         edit.insert(docUri, deleteRange.start, indentedContent);
       } else edit.insert(docUri, range.end, outputStr);
       await vscode.workspace.applyEdit(edit);
-      codeLensProvider?.refresh();
-      textEditMutex.release();
+      refreshAndRelease();
     };
 
     child.stdout.on("data", writer);
@@ -152,7 +153,7 @@ export function runOnMarkdown(
     child.stdout.on("end", async () => {
       await textEditMutex.acquire();
       const textDoc = await vscode.workspace.openTextDocument(docUri);
-      const outputBlock = findOutputBlock(textDoc, childPid, indent, range);
+      const outputBlock = findOutputBlock(textDoc, child.pid!, indent, range);
       if (outputBlock) {
         const tagLine = outputBlock.range.start.line;
         const tagRange = textDoc.lineAt(tagLine).range;
@@ -161,8 +162,7 @@ export function runOnMarkdown(
         await vscode.workspace.applyEdit(edit);
       }
       await textDoc.save();
-      codeLensProvider?.refresh();
-      textEditMutex.release();
+      refreshAndRelease();
       endMutex.release();
     });
 
@@ -172,18 +172,17 @@ export function runOnMarkdown(
     const textDoc = await vscode.workspace.openTextDocument(docUri);
     indent = textDoc.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
     const outputBlock = findOutputBlock(textDoc, -1, indent, range);
-    const outputStr = `\n\n${indent}\`\`\`output pid_${childPid}\n${indent}\`\`\``;
+    const outputStr = `\n\n${indent}\`\`\`output pid_${child.pid}\n${indent}\`\`\``;
     const edit = new vscode.WorkspaceEdit();
     if (outputBlock) {
       const outStart = outputBlock.range.start.line + 1;
       const outEnd = outputBlock.range.end.line;
       edit.delete(docUri, new vscode.Range(outStart, 0, outEnd, 0));
       const outTag = textDoc.lineAt(outStart - 1);
-      edit.insert(docUri, outTag.range.end, ` pid_${childPid}`);
+      edit.insert(docUri, outTag.range.end, ` pid_${child.pid}`);
     } else edit.insert(docUri, range.end, outputStr);
     await vscode.workspace.applyEdit(edit);
-    codeLensProvider?.refresh();
-    textEditMutex.release();
+    refreshAndRelease();
 
     void (await exitMutex.acquire(), await endMutex.acquire());
   })();
