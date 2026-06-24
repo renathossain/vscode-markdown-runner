@@ -62,7 +62,7 @@ let disposables: vscode.Disposable[] = [];
 
 // Find the fenced code block at the cursor position in the active editor.
 // Returns null when no editor is active, or no block is found.
-function getCurrentBlock() {
+export function getCurrentBlock() {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return null;
   for (const match of editor.document.getText().matchAll(blockRegex())) {
@@ -118,22 +118,15 @@ const commands = {
     return runOnMarkdown(block, await getRunCommand(block));
   },
   "markdown.copy": (parsed?: CodeBlock) => {
-    const code = parsed?.code ?? getCurrentBlock()?.code ?? getCurrentLink()?.code;
+    const code =
+      parsed?.code ?? getCurrentBlock()?.code ?? getCurrentLink()?.code;
     if (!code) return;
     vscode.env.clipboard.writeText(code);
     vscode.window.setStatusBarMessage("Copied to clipboard!", 2000);
   },
   "markdown.clear": clearOrDelete(1, 0),
   "markdown.delete": clearOrDelete(0, 1),
-  "markdown.killProcess": (parsed?: CodeBlock, signal?: string) => {
-    const block = parsed ? parsed : getCurrentBlock();
-    if (!block) return;
-    if (block.pid === -1) {
-      const child = childProcesses.find((c) => c.docUri.toString() === block.docUri.toString());
-      if (child) block.pid = child.pid;
-    }
-    return killProcess(block, signal ?? "SIGINT");
-  },
+  "markdown.killProcess": killProcess,
   "markdown.killAllProcesses": killAllProcesses,
   "markdown._getProcesses": () => childProcesses,
 };

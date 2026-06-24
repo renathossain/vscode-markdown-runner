@@ -10,7 +10,7 @@ import iconv from "iconv-lite";
 import Mutex from "semaphore-async-await";
 import treeKill from "tree-kill";
 import { parseBlock, blockRegex } from "./codeLens";
-import { CodeBlock, codeLensProvider } from "./extension";
+import { CodeBlock, codeLensProvider, getCurrentBlock } from "./extension";
 import { Terminal } from "@xterm/xterm";
 
 // Global mutex ensuring only one edit operation (delete or run) is in flight
@@ -185,11 +185,13 @@ export function runOnMarkdown(block: CodeBlock, command: string) {
 }
 
 // Remove a PID from tracking and kill it with the given signal.
-export async function killProcess(block: CodeBlock, signal: string) {
+export async function killProcess(parsed?: CodeBlock, signal?: string) {
+  const block = parsed ?? getCurrentBlock();
+  if (!block) return;
   childProcesses = childProcesses.filter(
-    (p) => p.pid !== block.pid && p.docUri !== block.docUri,
+    (p) => p.pid !== block.pid || p.docUri !== block.docUri,
   );
-  if (block.pid !== -1) treeKill(block.pid, signal);
+  if (block.pid !== -1) treeKill(block.pid, signal ?? "SIGINT");
 }
 
 // Clear all tracked PIDs and kill every process with SIGKILL.
