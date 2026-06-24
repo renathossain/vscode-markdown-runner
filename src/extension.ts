@@ -136,8 +136,11 @@ const commands = {
   "markdown.killProcess": (pid?: number, signal?: string) => {
     if (pid != null && signal != null) return killProcess(pid, signal);
     const block = getCurrentBlock();
-    if (!block || !block.pid) return;
-    const process = childProcesses.find((p) => p.pid === block.pid);
+    if (!block) return;
+    const process = childProcesses.find(
+      (p) =>
+        p.pid === block.pid || p.docUri.toString() === block.docUri.toString(),
+    );
     if (process) killProcess(process.pid, "SIGINT");
   },
   "markdown.killAllProcesses": killAllProcesses,

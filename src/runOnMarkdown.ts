@@ -24,10 +24,6 @@ export let childProcesses: {
   docUri: vscode.Uri;
 }[] = [];
 
-// Global mutex ensuring only one process is modifying the childProcesses
-// datastructure at a time.
-const childProcessesMutex = new Mutex(1);
-
 // Status bar button to kill all running output processes at once.
 const killAlign = vscode.StatusBarAlignment.Left;
 const killAllButton = vscode.window.createStatusBarItem(killAlign);
@@ -106,38 +102,17 @@ export function runOnMarkdown(
     return failed;
   }
   const childPid = child.pid;
+  childProcesses.push({ pid: childPid, docUri });
+  killAllButton.show();
 
   // Orchestrates all output writing and cleanup. Three mutexes coordinate the
   // async pipeline: outputMutex serialises edits, exitMutex waits for the
   // process to exit, endMutex waits for the stdout stream to close.
   const done = (async () => {
-    await childProcessesMutex.acquire();
-    childProcesses.push({ pid: childPid, docUri });
-    killAllButton.show();
-    childProcessesMutex.release();
-
     const outputMutex = new Mutex(1);
     const exitMutex = new Mutex(0);
     const endMutex = new Mutex(0);
-
-    // Create an empty output block (or clear an existing one) as soon as the
-    // child process starts
-    await outputMutex.acquire();
-    const textDoc = await vscode.workspace.openTextDocument(docUri);
-    const indent =
-      textDoc.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
-    const outputBlock = findOutputBlock(textDoc, -1, indent, range);
-    const outputStr = `\n\n${indent}\`\`\`output pid_${childPid}\n${indent}\`\`\``;
-    const edit = new vscode.WorkspaceEdit();
-    if (outputBlock) {
-      const outStart = outputBlock.range.start.line + 1;
-      const outEnd = outputBlock.range.end.line;
-      edit.delete(docUri, new vscode.Range(outStart, 0, outEnd, 0));
-      const outTag = textDoc.lineAt(outStart - 1);
-      edit.replace(docUri, outTag.range, outTag.text + ` pid_${childPid}`);
-    } else edit.insert(docUri, range.end, outputStr);
-    await vscode.workspace.applyEdit(edit);
-    outputMutex.release();
+    let indent = "";
 
     // Read back the terminal buffer as plain text (all ANSI processed).
     const term = new Terminal({ cols, rows, convertEol: true });
@@ -203,6 +178,24 @@ export function runOnMarkdown(
       endMutex.release();
     });
 
+    // Create an empty output block (or clear an existing one) as soon as the
+    // child process starts
+    await outputMutex.acquire();
+    const textDoc = await vscode.workspace.openTextDocument(docUri);
+    indent = textDoc.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
+    const outputBlock = findOutputBlock(textDoc, -1, indent, range);
+    const outputStr = `\n\n${indent}\`\`\`output pid_${childPid}\n${indent}\`\`\``;
+    const edit = new vscode.WorkspaceEdit();
+    if (outputBlock) {
+      const outStart = outputBlock.range.start.line + 1;
+      const outEnd = outputBlock.range.end.line;
+      edit.delete(docUri, new vscode.Range(outStart, 0, outEnd, 0));
+      const outTag = textDoc.lineAt(outStart - 1);
+      edit.replace(docUri, outTag.range, outTag.text + ` pid_${childPid}`);
+    } else edit.insert(docUri, range.end, outputStr);
+    await vscode.workspace.applyEdit(edit);
+    outputMutex.release();
+
     await exitMutex.acquire();
     await endMutex.acquire();
     codeLensProvider?.refresh();
@@ -214,15 +207,10 @@ export function runOnMarkdown(
 
 // Remove a PID from tracking and kill it with the given signal.
 export async function killProcess(pid: number, signal: string) {
-  await childProcessesMutex.acquire();
   childProcesses = childProcesses.filter((p) => p.pid !== pid);
   treeKill(pid, signal);
-  childProcessesMutex.release();
 }
 
 // Clear all tracked PIDs and kill every process with SIGKILL.
-export async function killAllProcesses() {
-  await childProcessesMutex.acquire();
+export const killAllProcesses = async () =>
   childProcesses.splice(0).forEach(({ pid }) => treeKill(pid, "SIGKILL"));
-  childProcessesMutex.release();
-}
