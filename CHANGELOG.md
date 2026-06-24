@@ -1,5 +1,7 @@
 # Change Log
 
+## 4.0.0
+
 ## 3.2.0
 
 - **New Feature**: Added preliminary support for running multiple "Run on Markdown" processes concurrently, both across different documents and within the same document.
