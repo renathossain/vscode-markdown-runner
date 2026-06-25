@@ -217,6 +217,27 @@ suite("Inline Code Hover", function () {
       undefined,
     );
   });
+
+  test("Hover and Click Copies Code", async () => {
+    await vscode.env.clipboard.writeText("__dummy_marker__");
+    write("test-hover-click.md", "Run `node -v` now");
+    const doc = await open("test-hover-click.md");
+    const provider = new InlineCodeHoverProvider();
+    const hover = provider.provideHover(doc, new vscode.Position(0, 8));
+    assert.ok(hover);
+    const raw = hover.contents;
+    const md = Array.isArray(raw) ? raw[0] : raw;
+    assert.ok(typeof md === "object" && md !== null && "value" in md);
+    const cmdLine = (md as { value: string }).value.match(
+      /\(command:([^)]+)\)/,
+    )![1];
+    const parts = cmdLine.split("?");
+    await vscode.commands.executeCommand(
+      parts[0],
+      ...JSON.parse(decodeURIComponent(parts[1])),
+    );
+    assert.strictEqual(await vscode.env.clipboard.readText(), "node -v");
+  });
 });
 
 suite("Run File", function () {
