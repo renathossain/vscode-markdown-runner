@@ -150,7 +150,7 @@ suite("Inline Code Links", function () {
     const doc = await open("test-link.md");
     const provider = new InlineCodeLinkProvider();
     const links = provider.provideDocumentLinks(doc);
-    const command = `command:markdown.runInTerminal?${encodeURIComponent(JSON.stringify(["node -v"]))}`;
+    const command = `command:markdown.runInTerminal?${encodeURIComponent(JSON.stringify([{ code: "node -v", lang: "bash" }]))}`;
     assert.deepStrictEqual(links, [
       new vscode.DocumentLink(
         new vscode.Range(0, 4, 0, 13),
@@ -170,10 +170,10 @@ suite("Inline Code Links", function () {
     const outputFile = tmp("test-inline-python-output.txt");
     if (fs.existsSync(outputFile)) fs.unlinkSync(outputFile);
     const pythonCommand = `python -c "open('${outputFile.replace(/\\/g, "/")}', 'w').write(str(10 + 72))"`;
-    await vscode.commands.executeCommand(
-      "markdown.runInTerminal",
-      pythonCommand,
-    );
+    await vscode.commands.executeCommand("markdown.runInTerminal", {
+      code: pythonCommand,
+      lang: "bash",
+    });
     for (let i = 0; i < 100; i++) {
       if (
         fs.existsSync(outputFile) &&

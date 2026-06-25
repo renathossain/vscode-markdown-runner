@@ -29,8 +29,10 @@ export class InlineCodeLinkProvider implements vscode.DocumentLinkProvider {
         const start = document.positionAt(match.index);
         const end = document.positionAt(match.index + match[0].length);
         const range = new vscode.Range(start, end);
-        const code = encodeURIComponent(JSON.stringify([match[1]]));
-        const command = `command:markdown.runInTerminal?${{ code }}`;
+        const cmdStr = encodeURIComponent(
+          JSON.stringify([{ code: match[1], lang: "bash" }]),
+        );
+        const command = `command:markdown.runInTerminal?${cmdStr}`;
         return new vscode.DocumentLink(range, vscode.Uri.parse(command));
       });
   }
