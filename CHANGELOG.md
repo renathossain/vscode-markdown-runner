@@ -1,6 +1,8 @@
 # Change Log
 
-## 4.0.0
+## 3.3.0
+
+- **Bug Fix**: "Run in Terminal" via inline code (`code`) DocumentLinks feature has been restored.
 
 ## 3.2.0
 

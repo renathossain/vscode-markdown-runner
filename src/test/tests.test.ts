@@ -165,6 +165,25 @@ suite("Inline Code Links", function () {
     const provider = new InlineCodeLinkProvider();
     assert.deepStrictEqual(provider.provideDocumentLinks(doc), []);
   });
+
+  test("Inline Python Command Creates Output File", async () => {
+    const outputFile = tmp("test-inline-python-output.txt");
+    if (fs.existsSync(outputFile)) fs.unlinkSync(outputFile);
+    const pythonCommand = `python -c "open('${outputFile.replace(/\\/g, "/")}', 'w').write(str(10 + 72))"`;
+    await vscode.commands.executeCommand(
+      "markdown.runInTerminal",
+      pythonCommand,
+    );
+    for (let i = 0; i < 100; i++) {
+      if (
+        fs.existsSync(outputFile) &&
+        fs.readFileSync(outputFile, "utf8").trim() === "82"
+      )
+        break;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    assert.strictEqual(fs.readFileSync(outputFile, "utf-8").trim(), "82");
+  });
 });
 
 suite("Inline Code Hover", function () {
