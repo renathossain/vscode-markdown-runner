@@ -1,5 +1,9 @@
 # Change Log
 
+## 3.4.0
+
+- **Bug Fix**: Fixed a race condition in "Run on Markdown" where code that only wrote to stderr (e.g. a bash code block calling a missing command `pythno`) could produce two output blocks — one with a stale `pid_` tag and one empty.
+
 ## 3.3.0
 
 - **Bug Fix**: "Run in Terminal" via inline code (`code`) DocumentLinks feature has been restored.

@@ -387,7 +387,7 @@ sys.stdout.buffer.write('\\x1b[1G\\x1b[KThe\\x1b[3D\\x1b[KThe answer is 82\\n'.e
   });
 
   test("Bash Command Not Found (Stderr Race)", async () => {
-    write("test-stderr-race.md", "```bash\nasd\n```\n");
+    write("test-stderr-race.md", "```bash\npythno\n```\n");
     const doc = await open("test-stderr-race.md");
     await vscode.window.showTextDocument(doc);
     const text = doc.getText();

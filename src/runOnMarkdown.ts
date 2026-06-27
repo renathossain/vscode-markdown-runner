@@ -141,38 +141,50 @@ export function runOnMarkdown(block: CodeBlock, command: string) {
       exitMutex.release();
     });
 
-    child.stdout.on("end", async () => {
-      await textEditMutex.acquire();
-      const textDoc = await vscode.workspace.openTextDocument(docUri);
-      const outputBlock = findOutputBlock(textDoc, child.pid!, indent, range);
-      if (outputBlock) {
-        const tagRange = textDoc.lineAt(outputBlock.range.start.line).range;
-        const edit = new vscode.WorkspaceEdit();
-        edit.replace(docUri, tagRange, `\`\`\`output`);
-        await vscode.workspace.applyEdit(edit);
-      }
-      await textDoc.save();
-      textEditMutex.release();
-      endMutex.release();
-    });
+    let streamsEnded = 0;
+    const onStreamEnd = () => {
+      streamsEnded++;
+      if (streamsEnded >= 2) endMutex.release();
+    };
+
+    child.stdout.on("end", onStreamEnd);
+    child.stderr.on("end", onStreamEnd);
 
     // Create an empty output block (or clear an existing one) as soon as the
     // child process starts
-    const textDoc = await vscode.workspace.openTextDocument(docUri);
-    indent = textDoc.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
-    const outputBlock = findOutputBlock(textDoc, -1, indent, range);
-    const outputStr = `\n\n${indent}\`\`\`output pid_${child.pid}\n${indent}\`\`\``;
-    const edit = new vscode.WorkspaceEdit();
-    if (outputBlock) {
-      const outStart = outputBlock.range.start.line + 1;
-      const outEnd = outputBlock.range.end.line;
-      edit.delete(docUri, new vscode.Range(outStart, 0, outEnd, 0));
-      const outTag = textDoc.lineAt(outStart - 1);
-      edit.insert(docUri, outTag.range.end, ` pid_${child.pid}`);
-    } else edit.insert(docUri, range.end, outputStr);
-    await vscode.workspace.applyEdit(edit);
-    textEditMutex.release();
+    const start = async () => {
+      const textDoc = await vscode.workspace.openTextDocument(docUri);
+      indent =
+        textDoc.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
+      const outputBlock = findOutputBlock(textDoc, -1, indent, range);
+      const outputStr = `\n\n${indent}\`\`\`output pid_${child.pid}\n${indent}\`\`\``;
+      const edit = new vscode.WorkspaceEdit();
+      if (outputBlock) {
+        const outStart = outputBlock.range.start.line + 1;
+        const outEnd = outputBlock.range.end.line;
+        edit.delete(docUri, new vscode.Range(outStart, 0, outEnd, 0));
+        const outTag = textDoc.lineAt(outStart - 1);
+        edit.insert(docUri, outTag.range.end, ` pid_${child.pid}`);
+      } else edit.insert(docUri, range.end, outputStr);
+      await vscode.workspace.applyEdit(edit);
+      textEditMutex.release();
+    };
+
+    await start();
+
+    // Remove output block pid tag and save the document.
     void (await exitMutex.acquire(), await endMutex.acquire());
+    await textEditMutex.acquire();
+    const textDoc = await vscode.workspace.openTextDocument(docUri);
+    const outputBlock = findOutputBlock(textDoc, child.pid!, indent, range);
+    if (outputBlock) {
+      const tagRange = textDoc.lineAt(outputBlock.range.start.line).range;
+      const edit = new vscode.WorkspaceEdit();
+      edit.replace(docUri, tagRange, `\`\`\`output`);
+      await vscode.workspace.applyEdit(edit);
+    }
+    await textDoc.save();
+    textEditMutex.release();
   })();
 
   return { pid: child.pid, done };
