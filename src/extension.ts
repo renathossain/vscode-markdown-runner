@@ -86,29 +86,26 @@ const rangeOff = (range: vscode.Range, startOff: number, endOff: number) =>
 // Curried helper for clear/delete commands – only the offset differs.
 const clearOrDelete =
   (startOff: number, endOff: number) => (parsed?: CodeBlock) => {
-    const block = parsed ? parsed : getCurrentBlock();
+    const block = parsed ?? getCurrentBlock();
     if (!block) return;
-    const range = rangeOff(block.range, startOff, endOff);
-    return deleteBlock(block, range);
+    return deleteBlock(block, rangeOff(block.range, startOff, endOff));
   };
 
 // Maps command IDs to their implementations.
 const commands = {
   "markdown.runBlock": async (parsed?: CodeBlock) => {
-    const block = parsed ? parsed : getCurrentBlock();
-    if (!block) return;
-    return runInTerminal(await getRunCommand(block));
+    const block = parsed ?? getCurrentBlock();
+    return block && runInTerminal(await getRunCommand(block));
   },
   "markdown.runInTerminal": (parsed?: CodeBlock) => {
-    const block = parsed ? parsed : getCurrentBlock();
+    const block = parsed ?? getCurrentBlock();
     if (block && !["bash", "powershell"].includes(block.lang)) return;
-    const link = !block ? getCurrentLink() : null;
-    const command = block?.code || link?.code;
+    const command = block?.code || getCurrentLink()?.code;
     if (!command) return;
     return runInTerminal(command);
   },
   "markdown.runOnMarkdown": async (parsed?: CodeBlock) => {
-    const block = parsed ? parsed : getCurrentBlock();
+    const block = parsed ?? getCurrentBlock();
     if (!block) return;
     return runOnMarkdown(block, await getRunCommand(block));
   },
@@ -160,13 +157,12 @@ export function activate(context: vscode.ExtensionContext) {
         codeLensProvider?.refresh();
     }),
     vscode.workspace.onDidChangeTextDocument((e) => {
-      if (!codeLensProvider) return;
       if (
-        e.document.languageId !== "markdown" &&
-        e.document.languageId !== "quarto"
+        !codeLensProvider ||
+        e.contentChanges.length === 0 ||
+        !["markdown", "quarto"].includes(e.document.languageId)
       )
         return;
-      if (e.contentChanges.length === 0) return;
       codeLensProvider.handleDocumentChange(e.document);
     }),
     vscode.workspace.onDidCloseTextDocument((e) => {

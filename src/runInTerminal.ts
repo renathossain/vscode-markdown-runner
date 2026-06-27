@@ -72,8 +72,8 @@ function injectDefaultCode(language: string, code: string, docUri: vscode.Uri) {
 const compile = (cmd: string) =>
   new Promise<boolean>((resolve) =>
     childProcess.exec(cmd, (error, _, stderr) => {
-      const errorMsg = stderr || error?.message;
-      if (errorMsg) vscode.window.showErrorMessage(errorMsg);
+      const msg = stderr || error?.message;
+      if (msg) vscode.window.showErrorMessage(msg);
       resolve(!error);
     }),
   );
@@ -126,6 +126,5 @@ export function runInTerminal(command: string) {
   if (!command) return;
   const terminal =
     vscode.window.activeTerminal || vscode.window.createTerminal();
-  terminal.show();
-  terminal.sendText(command);
+  void (terminal.show(), terminal.sendText(command));
 }

@@ -80,16 +80,12 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
   }
 
   // Force the editor to regenerate lenses (e.g. after a process starts/stops).
-  refresh(): void {
-    this._emitter.fire();
-  }
+  refresh = () => this._emitter.fire();
 
-  private _parseDocument(doc: vscode.TextDocument): CodeBlock[] {
-    const blocks: CodeBlock[] = [];
-    for (const match of doc.getText().matchAll(blockRegex()))
-      blocks.push(parseBlock(doc, match));
-    return blocks;
-  }
+  private _parseDocument = (doc: vscode.TextDocument): CodeBlock[] =>
+    [...doc.getText().matchAll(blockRegex())].map((match) =>
+      parseBlock(doc, match),
+    );
 
   private _buildLenses(docUri: vscode.Uri, blocks: CodeBlock[]) {
     const lenses: vscode.CodeLens[] = [];
@@ -101,17 +97,13 @@ export class ButtonCodeLensProvider implements vscode.CodeLensProvider {
       const args = [block];
       const { range, lang, pid } = block;
 
-      for (const child of childProcesses) {
-        if (
-          child.pid === pid &&
-          child.docUri.toString() === docUri.toString()
-        ) {
-          add(lenses, range, "Stop", "markdown.killProcess", [block, "SIGINT"]);
-          add(lenses, range, "Kill", "markdown.killProcess", [
-            block,
-            "SIGKILL",
-          ]);
-        }
+      const isRunning = childProcesses.some(
+        (child) =>
+          child.pid === pid && child.docUri.toString() === docUri.toString(),
+      );
+      if (isRunning) {
+        add(lenses, range, "Stop", "markdown.killProcess", [block, "SIGINT"]);
+        add(lenses, range, "Kill", "markdown.killProcess", [block, "SIGKILL"]);
       }
 
       const name = getLanguageConfig(lang, "interpreter")?.name || "";
