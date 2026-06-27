@@ -10,16 +10,12 @@ import iconv from "iconv-lite";
 import Mutex from "semaphore-async-await";
 import treeKill from "tree-kill";
 import { parseBlock, blockRegex, CodeBlock } from "./codeLens";
-import { codeLensProvider, getCurrentBlock } from "./extension";
+import { getCurrentBlock } from "./extension";
 import { Terminal } from "@xterm/xterm";
 
 // Global mutex ensuring only one edit operation (delete or run) is in flight
 // at a time, preventing interleaved writes to the document.
 const textEditMutex = new Mutex(1);
-
-// Combined refresh + release for use after edit operations.
-const refreshAndRelease = () =>
-  void (codeLensProvider?.refresh(), textEditMutex.release());
 
 // Tracks active child PIDs and the document line where their output starts
 // (used by codeLens.ts to place Stop/Kill buttons).
@@ -42,7 +38,7 @@ export async function deleteBlock(block: CodeBlock, range: vscode.Range) {
   edit.delete(block.docUri, range);
   await vscode.workspace.applyEdit(edit);
   await (await vscode.workspace.openTextDocument(block.docUri)).save();
-  refreshAndRelease();
+  textEditMutex.release();
 }
 
 // Starting from startLine, check if the first fenced code block is an ``output``
@@ -132,7 +128,7 @@ export function runOnMarkdown(block: CodeBlock, command: string) {
         edit.insert(docUri, deleteRange.start, indentedContent);
       } else edit.insert(docUri, range.end, outputStr);
       await vscode.workspace.applyEdit(edit);
-      refreshAndRelease();
+      textEditMutex.release();
     };
 
     child.stdout.on("data", writer);
@@ -155,7 +151,7 @@ export function runOnMarkdown(block: CodeBlock, command: string) {
         await vscode.workspace.applyEdit(edit);
       }
       await textDoc.save();
-      refreshAndRelease();
+      textEditMutex.release();
       endMutex.release();
     });
 
@@ -175,7 +171,7 @@ export function runOnMarkdown(block: CodeBlock, command: string) {
       edit.insert(docUri, outTag.range.end, ` pid_${child.pid}`);
     } else edit.insert(docUri, range.end, outputStr);
     await vscode.workspace.applyEdit(edit);
-    refreshAndRelease();
+    textEditMutex.release();
 
     void (await exitMutex.acquire(), await endMutex.acquire());
   })();
