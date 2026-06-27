@@ -94,6 +94,7 @@ export function runOnMarkdown(block: CodeBlock, command: string) {
   // async pipeline: outputMutex serialises edits, exitMutex waits for the
   // process to exit, endMutex waits for the stdout stream to close.
   const done = (async () => {
+    await textEditMutex.acquire();
     const exitMutex = new Mutex(0);
     const endMutex = new Mutex(0);
     let indent = "";
@@ -157,7 +158,6 @@ export function runOnMarkdown(block: CodeBlock, command: string) {
 
     // Create an empty output block (or clear an existing one) as soon as the
     // child process starts
-    await textEditMutex.acquire();
     const textDoc = await vscode.workspace.openTextDocument(docUri);
     indent = textDoc.lineAt(range.start.line).text.match(/^[ \t]*/)?.[0] ?? "";
     const outputBlock = findOutputBlock(textDoc, -1, indent, range);
@@ -172,7 +172,6 @@ export function runOnMarkdown(block: CodeBlock, command: string) {
     } else edit.insert(docUri, range.end, outputStr);
     await vscode.workspace.applyEdit(edit);
     textEditMutex.release();
-
     void (await exitMutex.acquire(), await endMutex.acquire());
   })();
 

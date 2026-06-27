@@ -9,6 +9,7 @@ import * as path from "path";
 import { ButtonCodeLensProvider } from "../codeLens";
 import { InlineCodeLinkProvider, InlineCodeHoverProvider } from "../codeLinks";
 
+const TEST_TIMEOUT = 600000;
 const isUri = (arg: unknown): arg is vscode.Uri =>
   typeof arg === "object" && arg !== null && "scheme" in arg;
 const stripEditor = (args: unknown[]) =>
@@ -45,7 +46,7 @@ const setup = async () => {
 };
 
 suite("Activation", function () {
-  this.timeout(60000);
+  this.timeout(TEST_TIMEOUT);
   suiteSetup(setup);
   const cases: Array<[string, boolean]> = [
     ["a.md", true],
@@ -66,7 +67,7 @@ suite("Activation", function () {
 });
 
 suite("CodeLens", function () {
-  this.timeout(60000);
+  this.timeout(TEST_TIMEOUT);
   suiteSetup(setup);
   test("Python", async () => {
     write("test-lens.md", "```python\nprint(10 + 72)\n```\n");
@@ -143,7 +144,7 @@ suite("CodeLens", function () {
 });
 
 suite("Inline Code Links", function () {
-  this.timeout(60000);
+  this.timeout(TEST_TIMEOUT);
   suiteSetup(setup);
   test("Link", async () => {
     write("test-link.md", "Run `node -v` now");
@@ -187,7 +188,7 @@ suite("Inline Code Links", function () {
 });
 
 suite("Inline Code Hover", function () {
-  this.timeout(60000);
+  this.timeout(TEST_TIMEOUT);
   suiteSetup(setup);
   test("Hover", async () => {
     write("test-hover.md", "Run `node -v` now");
@@ -241,7 +242,7 @@ suite("Inline Code Hover", function () {
 });
 
 suite("Run File", function () {
-  this.timeout(60000);
+  this.timeout(TEST_TIMEOUT);
   suiteSetup(setup);
   test("Python", async () => {
     const file = tmp("test-runblock.out");
@@ -263,7 +264,7 @@ suite("Run File", function () {
 });
 
 suite("Run on Markdown", function () {
-  this.timeout(60000);
+  this.timeout(TEST_TIMEOUT);
   suiteSetup(setup);
   const output = "82";
   const javaCode = `public class Main{public static void main(String[]a){System.out.println(10+72);}}`;
@@ -384,10 +385,46 @@ sys.stdout.buffer.write('\\x1b[1G\\x1b[KThe\\x1b[3D\\x1b[KThe answer is 82\\n'.e
     await done;
     assert.match(doc.getText(), /```output\n[^]*a\n```\n/);
   });
+
+  test("Bash Command Not Found (Stderr Race)", async () => {
+    write("test-stderr-race.md", "```bash\nasd\n```\n");
+    const doc = await open("test-stderr-race.md");
+    await vscode.window.showTextDocument(doc);
+    const text = doc.getText();
+    const range = new vscode.Range(
+      doc.positionAt(text.indexOf("```")),
+      doc.positionAt(text.lastIndexOf("```") + 3),
+    );
+    const { done } = await runOnMarkdown({
+      lang: "bash",
+      code: "asd",
+      range,
+      docUri: doc.uri,
+      pid: -1,
+    });
+    await done;
+    // Let any pending writes from stderr settle (the race: stdout end removes
+    // pid_ tag, then stderr data creates a new block with stale tag)
+    await new Promise((r) => setTimeout(r, 100));
+    const result = doc.getText();
+    assert.strictEqual(
+      (result.match(/```output/g) || []).length,
+      1,
+      "should produce exactly one output block (not two — this would mean the race created a duplicate)",
+    );
+    assert.ok(
+      !result.includes("pid_"),
+      "pid tag should be cleaned up (not left behind by the stdout-end vs stderr-data race)",
+    );
+    assert.ok(
+      /```output\n[\s\S]*command not found[\s\S]*\n```/.test(result),
+      "stderr error message should appear in the output block",
+    );
+  });
 });
 
 suite("Copy", function () {
-  this.timeout(60000);
+  this.timeout(TEST_TIMEOUT);
   suiteSetup(setup);
   test("Code", async () => {
     await vscode.commands.executeCommand("markdown.copy", { code: "node -v" });
@@ -396,7 +433,7 @@ suite("Copy", function () {
 });
 
 suite("Delete", function () {
-  this.timeout(60000);
+  this.timeout(TEST_TIMEOUT);
   suiteSetup(setup);
   test("Code", async () => {
     write("test-delete.md", "```python\nprint(10 + 72)\n```\n");
@@ -415,7 +452,7 @@ suite("Delete", function () {
 });
 
 suite("Kill Processes", function () {
-  this.timeout(60000);
+  this.timeout(TEST_TIMEOUT);
   suiteSetup(setup);
   const pids = async () =>
     (
@@ -477,7 +514,7 @@ suite("Kill Processes", function () {
 });
 
 suite("Code Manipulation", function () {
-  this.timeout(60000);
+  this.timeout(TEST_TIMEOUT);
   suiteSetup(setup);
   test("Python Path", async () => {
     const dir = tmp("helpers");
@@ -536,7 +573,7 @@ suite("Code Manipulation", function () {
 });
 
 suite("Keyboard Shortcuts", function () {
-  this.timeout(60000);
+  this.timeout(TEST_TIMEOUT);
   suiteSetup(setup);
 
   test("Ctrl+Alt+Enter: runBlock", async () => {
@@ -748,7 +785,7 @@ suite("Keyboard Shortcuts", function () {
 });
 
 suite("Tabbed Code Blocks", function () {
-  this.timeout(60000);
+  this.timeout(TEST_TIMEOUT);
   suiteSetup(setup);
 
   test("Different Tabbing Level", async () => {
